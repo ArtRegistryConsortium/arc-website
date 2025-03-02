@@ -1,38 +1,51 @@
-# sv
+# ARC - Art Registry Consortium
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The official website for the Art Registry Consortium (ARC), an open standard designed to document, verify, and manage the provenance of physical artworks on the blockchain.
 
-## Creating a project
+## About ARC
 
-If you're seeing this, you've probably already done this step. Congrats!
+ARC brings transparency, authenticity, and permanence to physical art records through blockchain technology. The platform allows artists to maintain control of their catalogues, ensuring their legacy remains immutable.
+
+Key features include:
+- Decentralized & secure immutable provenance tracking
+- Artist-owned contracts
+- Evolving documentation for exhibition history and ownership
+- Tools for galleries and collectors to verify authenticity
+
+## Development
+
+This project is built with Svelte and uses TailwindCSS for styling.
+
+### Setup
 
 ```bash
-# create a new project in the current directory
-npx sv create
+# Install dependencies
+npm install
 
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
+# Start the development server
 npm run dev
 
-# or start the server and open the app in a new browser tab
+# Start the server and open in a browser
 npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
+### Building for Production
 
 ```bash
+# Create a production build
 npm run build
+
+# Preview the production build
+npm run preview
 ```
 
-You can preview the production build with `npm run preview`.
+## Contributing
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+We welcome contributions to the ARC website. Please feel free to submit issues or pull requests to our [GitHub repository](https://github.com/ArtRegistryConsortium).
+
+## Connect with ARC
+
+- [GitHub](https://github.com/ArtRegistryConsortium)
+- [Discord](https://discord.gg/arc)
+- [X (Twitter)](https://x.com/artregistryconsortium)
+- [Threads](https://threads.net/artregistryconsortium)
