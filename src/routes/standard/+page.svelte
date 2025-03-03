@@ -3,7 +3,7 @@
 </script>
 
 <div class="container mx-auto px-4 py-20 max-w-4xl">
-  <h1 class="text-4xl font-bold mb-6">The Standard</h1>
+  <h1 class="text-4xl font-extrabold mb-6">The Standard</h1>
   
   <p class="mb-8">
     The Art Registry Consortium (ARC) establishes an open standard for documenting and tracking physical 
@@ -22,13 +22,13 @@
       dashboard and verify their works.
     </p>
 
-    <div class="bg-gray-50 p-4 rounded-md mb-4">
+    <div class="bg-muted p-4 rounded-md mb-4">
       <h3 class="font-semibold mb-2">Naming convention:</h3>
       <p class="mb-2">"ARC / Artist Name" (e.g., "ARC / Banksy")</p>
       <p>By maintaining individual contracts, artists retain sovereignty over their body of work while ensuring interoperability across the ARC ecosystem.</p>
     </div>
 
-    <div class="bg-gray-50 p-4 rounded-md">
+    <div class="bg-muted p-4 rounded-md">
       <h3 class="font-semibold mb-2">Registering Existing Contracts</h3>
       <p>
         Artists who have already deployed their own smart contract(s) (e.g., through Manifold) can easily map 
@@ -93,7 +93,7 @@
         discreet location:
       </p>
 
-      <div class="bg-gray-50 p-4 rounded-md">
+      <div class="bg-muted p-4 rounded-md">
         <p>ART ID: [Token ID]</p>
         <p>Artist: [Artist Name or Pseudonym] / [Wallet addr.]</p>
         <p>Title: [Artwork Title]</p>
@@ -184,7 +184,7 @@
     </p>
 
 
-    <Button class="bg-black text-white hover:bg-gray-800">Launch Dashboard</Button>
+    <Button>Launch Dashboard</Button>
 
   </section>
 </div> 

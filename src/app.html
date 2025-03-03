@@ -4,6 +4,19 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// On page load, check localStorage for theme preference
+			// This prevents flash of wrong theme
+			const theme = localStorage.getItem('theme');
+			const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			
+			// Apply dark mode if explicitly set to dark or if system preference is dark and theme is set to system
+			if (theme === 'dark' || (theme === 'system' && systemDarkMode) || (!theme && systemDarkMode)) {
+				document.documentElement.classList.add('dark');
+			} else {
+				document.documentElement.classList.remove('dark');
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

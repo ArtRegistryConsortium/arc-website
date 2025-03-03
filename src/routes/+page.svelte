@@ -4,20 +4,20 @@
 
 <div class="container mx-auto px-4">
   <!-- Hero Section -->
-  <section class="py-20 text-center">
-    <div class="py-20">
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">A New Standard for Art Documentation</h1>
-      <p class="text-lg mb-8">ARC brings transparency, authenticity, and permanence to physical art records through blockchain technology.</p>
-      <Button class="bg-black text-white hover:bg-gray-800">Join the Consortium</Button>
+  <section class="py-12 md:py-20 text-center">
+    <div class="py-12 md:py-20">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">A New Standard for Art Documentation</h1>
+      <p class="text-base md:text-lg mb-6 md:mb-8 max-w-2xl mx-auto">ARC brings transparency, authenticity, and permanence to physical art records through blockchain technology.</p>
+      <Button>Join the Consortium</Button>
     </div>
     
   </section>
 
   <!-- Introduction Section -->
-  <section class="py-20 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-8">Introduction to ARC</h2>
-      <p class="text-center max-w-3xl mx-auto">
+  <section class="py-12 md:py-20 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">Introduction to ARC</h2>
+      <p class="text-center max-w-3xl mx-auto px-2">
         The Art Registry Consortium (ARC) is an open standard designed to document, verify, and manage the 
         provenance of physical artworks on the blockchain. Artists maintain control of their catalogues, ensuring 
         their legacy remains immutable.
@@ -27,10 +27,10 @@
   </section>
 
   <!-- Key Features Section -->
-  <section class="py-16 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-12">Key Features</h2>
-      <div class="space-y-4 max-w-3xl mx-auto">
+  <section class="py-10 md:py-16 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Key Features</h2>
+      <div class="space-y-3 md:space-y-4 max-w-3xl mx-auto px-2">
         <p class="text-center max-w-3xl mx-auto">
           <span class="font-semibold">Decentralized & Secure</span> - Immutable provenance tracking for artworks.
         </p>
@@ -49,10 +49,10 @@
   </section>
 
   <!-- How It Works Section -->
-  <section class="py-20 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
-      <div class="space-y-4 max-w-3xl mx-auto">
+  <section class="py-12 md:py-20 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How It Works</h2>
+      <div class="space-y-3 md:space-y-4 max-w-3xl mx-auto px-2">
         <p class="text-center max-w-3xl mx-auto">
         <span class="font-semibold">1. Create Your Registry</span> - Deploy your personalized ARC contract.
       </p>
@@ -66,26 +66,25 @@
   </section>
 
   <!-- The Standard Section -->
-  <section class="py-20 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-8">The Standard</h2>
-      <p class="text-center max-w-3xl mx-auto mb-8">
+  <section class="py-12 md:py-20 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">The Standard</h2>
+      <p class="text-center max-w-3xl mx-auto mb-6 md:mb-8 px-2">
         Learn how to properly document and authenticate your physical artworks using the ARC 
         standard, including best practices for the ART Stamp.
       </p>
       <div class="text-center">
-        <Button class="bg-black text-white hover:bg-gray-800">Explore the Standard</Button>
+        <Button>Explore the Standard</Button>
       </div>
     </div>
       
   </section>
 
   <!-- Who It's For Section -->
-  <section class="py-20 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-12">Who It's For</h2>
-      <div class="space-y-4 max-w-3xl mx-auto">
-        <div class="space-y-4 max-w-3xl mx-auto">
+  <section class="py-12 md:py-20 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Who It's For</h2>
+      <div class="space-y-3 md:space-y-4 max-w-3xl mx-auto px-2">
         <p class="text-center max-w-3xl mx-auto">
         <span class="font-semibold">Artists</span> - Maintain and control your catalogue raisonné.
       </p>
@@ -102,14 +101,14 @@
   </section>
 
   <!-- Contribute Section -->
-  <section class="py-20 border-t border-gray-100">
-    <div class="py-10">
-      <h2 class="text-3xl font-bold text-center mb-8">Contribute</h2>
-      <p class="text-center max-w-3xl mx-auto mb-8">
+  <section class="py-12 md:py-20 border-t border-muted">
+    <div class="py-6 md:py-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">Contribute</h2>
+      <p class="text-center max-w-3xl mx-auto mb-6 md:mb-8 px-2">
           Be part of the future of art documentation.
       </p>
       <div class="text-center">
-        <Button class="bg-black text-white hover:bg-gray-800">Join the Discussion on Discord</Button>
+        <Button>Join the Discussion on Discord</Button>
       </div>
     </div>
   </section>

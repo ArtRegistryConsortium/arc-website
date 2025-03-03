@@ -9,6 +9,6 @@
 	export let value: $$Props["value"];
 </script>
 
-<AccordionPrimitive.Item {value} class={cn("border-b", className)} {...$$restProps}>
+<AccordionPrimitive.Item {value} class={cn("border-b border-border", className)} {...$$restProps}>
 	<slot />
 </AccordionPrimitive.Item>
