@@ -3,13 +3,15 @@
 </script>
 
 <nav class="fixed top-0 left-0 right-0 py-4 px-4 flex items-center border-b border-gray-100 bg-white z-10">
-  <div class="font-semibold flex-1">Art Registry Consortium</div>
+  <div class="font-semibold flex-1">
+    <a href="/" class="hover:text-gray-600">Art Registry Consortium</a>
+  </div>
   
   <div class="hidden md:flex space-x-8 flex-1 justify-center">
     <a href="/standard" class="hover:text-gray-600">The Standard</a>
     <a href="/registry" class="hover:text-gray-600">Registry</a>
     <a href="/about" class="hover:text-gray-600">About</a>
-    <a href="/contact" class="hover:text-gray-600">Contact</a>
+    <a href="/faq" class="hover:text-gray-600">FAQ</a>
   </div>
   
   <div class="flex-1 flex justify-end">

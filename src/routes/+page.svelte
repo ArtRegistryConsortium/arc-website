@@ -15,7 +15,7 @@
 
   <!-- Introduction Section -->
   <section class="py-20 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-8">Introduction to ARC</h2>
       <p class="text-center max-w-3xl mx-auto">
         The Art Registry Consortium (ARC) is an open standard designed to document, verify, and manage the 
@@ -28,7 +28,7 @@
 
   <!-- Key Features Section -->
   <section class="py-16 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-12">Key Features</h2>
       <div class="space-y-4 max-w-3xl mx-auto">
         <p class="text-center max-w-3xl mx-auto">
@@ -50,7 +50,7 @@
 
   <!-- How It Works Section -->
   <section class="py-20 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
       <div class="space-y-4 max-w-3xl mx-auto">
         <p class="text-center max-w-3xl mx-auto">
@@ -67,7 +67,7 @@
 
   <!-- The Standard Section -->
   <section class="py-20 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-8">The Standard</h2>
       <p class="text-center max-w-3xl mx-auto mb-8">
         Learn how to properly document and authenticate your physical artworks using the ARC 
@@ -82,7 +82,7 @@
 
   <!-- Who It's For Section -->
   <section class="py-20 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-12">Who It's For</h2>
       <div class="space-y-4 max-w-3xl mx-auto">
         <div class="space-y-4 max-w-3xl mx-auto">
@@ -103,7 +103,7 @@
 
   <!-- Contribute Section -->
   <section class="py-20 border-t border-gray-100">
-    <div class="py-20">
+    <div class="py-10">
       <h2 class="text-3xl font-bold text-center mb-8">Contribute</h2>
       <p class="text-center max-w-3xl mx-auto mb-8">
           Be part of the future of art documentation.
@@ -115,27 +115,3 @@
   </section>
 </div>
 
-<!-- Footer -->
-<footer class="py-8 border-t border-gray-100 w-full">
-  <div class="mx-auto px-4 flex justify-between items-center">
-    <div class="flex items-center gap-4">
-      <span>ARC</span>
-      <div class="flex gap-3">
-        <a href="#" aria-label="X (Twitter)">
-          <img src="/images/x-logo.png" alt="X logo" class="h-4 w-4" />
-        </a>
-        <a href="#" aria-label="Threads">
-          <img src="/images/thread-logo.png" alt="Threads logo" class="h-4 w-4" />
-        </a>
-        <a href="#" aria-label="Discord">
-          <img src="/images/discord-logo.png" alt="Discord logo" class="h-4 w-4" />
-        </a>
-      </div>
-    </div>
-    <div class="flex gap-4">
-      <a href="https://github.com/ArtRegistryConsortium" target="_blank" class="text-gray-600 hover:text-black">GitHub</a>
-      <a href="#" class="text-gray-600 hover:text-black">Blog</a>
-      <a href="#" class="text-gray-600 hover:text-black">FAQ</a>
-    </div>
-  </div>
-</footer>
