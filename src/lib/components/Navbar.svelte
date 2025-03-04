@@ -35,12 +35,12 @@
   </div>
   
   <!-- Desktop Navigation -->
-  <div class="hidden md:flex space-x-8 flex-1 justify-center">
-    <a href="/registry" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
-    <a href="/standard" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
-    <a href="/about" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
-    <a href="/faq" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
-    <a href="/contact" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
+  <div class="hidden md:flex space-x-4 lg:space-x-8 flex-1 justify-center">
+    <a href="/registry" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
+    <a href="/standard" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
+    <a href="/about" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
+    <a href="/faq" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
+    <a href="/contact" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
   </div>
   
   <div class="flex-1 flex justify-end items-center space-x-4">
