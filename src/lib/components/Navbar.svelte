@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   
   let mobileMenuOpen = false;
   
@@ -35,11 +36,11 @@
   
   <!-- Desktop Navigation -->
   <div class="hidden md:flex space-x-8 flex-1 justify-center">
-    <a href="/registry" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">Registry</a>
-    <a href="/standard" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">The Standard</a>
-    <a href="/about" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">About</a>
-    <a href="/faq" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">FAQ</a>
-    <a href="/contact" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">Contact</a>
+    <a href="/registry" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
+    <a href="/standard" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
+    <a href="/about" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
+    <a href="/faq" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
+    <a href="/contact" class="hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
   </div>
   
   <div class="flex-1 flex justify-end items-center space-x-4">
@@ -66,11 +67,18 @@
 {#if mobileMenuOpen}
   <div class="md:hidden fixed top-16 left-0 right-0 bg-white dark:bg-[#09090b] border-b border-border z-10 mobile-menu shadow-lg">
     <div class="flex flex-col py-4 px-4 space-y-4">
-      <a href="/registry" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white">Registry</a>
-      <a href="/standard" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white">The Standard</a>
-      <a href="/about" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white">About</a>
-      <a href="/faq" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white">FAQ</a>
-      <a href="/contact" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white">Contact</a>
+      <a href="/registry" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
+      <a href="/standard" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
+      <a href="/about" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
+      <a href="/faq" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
+      <a href="/contact" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
     </div>
   </div>
 {/if} 
+
+<style>
+  a.active {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style> 

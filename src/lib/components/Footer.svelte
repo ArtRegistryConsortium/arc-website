@@ -1,5 +1,6 @@
 <script lang="ts">
   import ThemeToggle from './ThemeToggle.svelte';
+  import { page } from '$app/stores';
 </script>
 
 <footer class="bg-gray-50 dark:bg-[#09090b] border-t border-border py-8 md:py-12 w-full">
@@ -15,21 +16,21 @@
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Resources</h3>
         <ul class="space-y-1 md:space-y-2">
-          <li><a href="/registry" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Registry</a></li>
-          <li><a href="/standard" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">The Standard</a></li>
-          <li><a href="/blog" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Blog</a></li>
-          <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">FAQ</a></li>
-          <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Contact</a></li>
+          <li><a href="/registry" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/registry'}>Registry</a></li>
+          <li><a href="/standard" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/standard'}>The Standard</a></li>
+          <li><a href="/blog" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
+          <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/faq'}>FAQ</a></li>
+          <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/contact'}>Contact</a></li>
         </ul>
       </div>
       
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Company</h3>
         <ul class="space-y-1 md:space-y-2">
-          <li><a href="/about" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">About</a></li>
-          <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Contact</a></li>
-          <li><a href="/privacy-policy" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Privacy Policy</a></li>
-          <li><a href="/terms-of-service" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Terms of Service</a></li>
+          <li><a href="/about" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/about'}>About</a></li>
+          <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/contact'}>Contact</a></li>
+          <li><a href="/privacy-policy" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/privacy-policy'}>Privacy Policy</a></li>
+          <li><a href="/terms-of-service" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/terms-of-service'}>Terms of Service</a></li>
         </ul>
       </div>
       
@@ -50,4 +51,11 @@
       </div>
     </div>
   </div>
-</footer> 
+</footer>
+
+<style>
+  a.active {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style> 

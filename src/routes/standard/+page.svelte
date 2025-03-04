@@ -11,7 +11,7 @@
     ensures that each artwork has a secure, standardized, and immutable record of provenance, exhibition 
     history, and ownership.
   </p>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- 1. Artist-Owned Contracts -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold mb-4">1. Artist-Owned Contracts</h2>
@@ -28,7 +28,7 @@
       <p>By maintaining individual contracts, artists retain sovereignty over their body of work while ensuring interoperability across the ARC ecosystem.</p>
     </div>
 
-    <div class="bg-muted p-4 rounded-md">
+    <div class="">
       <h3 class="font-semibold mb-2">Registering Existing Contracts</h3>
       <p>
         Artists who have already deployed their own smart contract(s) (e.g., through Manifold) can easily map 
@@ -38,7 +38,7 @@
       </p>
     </div>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- 2. The Artwork Registry Token (ART) -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold mb-4">2. The Artwork Registry Token (ART)</h2>
@@ -47,35 +47,37 @@
       Each ART is unique, non-transferable record token to a physical artwork. It contains critical 
       metadata, including provenance, documentation, and ownership tracking.
     </p>
-
-    <div class="mb-4">
+    <div class="bg-muted p-4 rounded-md">
       <h3 class="font-semibold mb-2">ART Fields:</h3>
       <ol class="list-decimal pl-6 space-y-1">
-        <li><strong>Catalogue Inventory:</strong> A unique identifier assigned to the artwork within the artist's personal registry. E.g. INV-0001 or similar.</li>
-        <li><strong>Artist Info:</strong> Name of the artist and location (if applicable) / wallet address.</li>
-        <li><strong>Title:</strong> Title of the artwork.</li>
-        <li><strong>Year of Creation:</strong> Year the physical work was completed.</li>
-        <li><strong>Medium:</strong> Materials used to create the physical artwork (or "various materials").</li>
-        <li><strong>Dimensions:</strong> Size of the physical work as height x width x depth (in your preferred units).</li>
-        <li><strong>Edition Information:</strong> Edition number and size (e.g., "3/5") or "unique" if one-of-a-kind.</li>
-        <li><strong>Series:</strong> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows collectors to understand the context of an artwork by exploring its relationship to other works by selecting series.</li>
-        <li><strong>Description:</strong> Brief description of the physical artwork.</li>
-        <li><strong>Provenance:</strong> Chronological record of ownership, custody, and location of the artwork.</li>
-        <li><strong>Exhibition History:</strong> List of exhibitions where the artwork has been displayed.</li>
-        <li><strong>Certification Method:</strong> How the artwork is linked to the ART (e.g., NFC chip, QR code, token ID inscribed).</li>
-        <li><strong>Condition Report:</strong> Documentation of the artwork's physical condition, including notes and photos.</li>
-        <li><strong>Conservation History:</strong> Record of any conservation or restoration work performed on the artwork.</li>
-        <li><strong>Bibliography:</strong> List of publications, articles, or catalogs where the artwork has been featured, with details such as author, title, publication, date, and page numbers.</li>
-        <li><strong>Appraisals:</strong> History of professional appraisals of the artwork (e.g., "Sotheby's, September 2023").</li>
-        <li><strong>Related Works:</strong> Links to other artworks by the artist that are related to this piece.</li>
-        <li><strong>Notes:</strong> Additional information relevant to the artwork.</li>
-        <li><strong>Wallet Address:</strong> The current owner's wallet (if applicable) is automatically linked to the artwork. This could include multiple wallets if the artwork is co-owned or fractionally owned.</li>
-        <li><strong>Additional Metadata:</strong> Any other relevant information that adds to the artwork's documentation or story.</li>
-        <li><strong>Royalties:</strong> Percentage of resale royalties set by the artist.</li>
+        <li><span class="font-semibold">Catalogue Inventory:</span> A unique identifier assigned to the artwork within the artist's personal registry. E.g. INV-0001 or similar.</li>
+        <li><span class="font-semibold">Artist Info:</span> Name of the artist and location (if applicable) / wallet address.</li>
+        <li><span class="font-semibold">Title:</span> Title of the artwork.</li>
+        <li><span class="font-semibold">Year of Creation:</span> Year the physical work was completed.</li>
+        <li><span class="font-semibold">Medium:</span> Materials used to create the physical artwork (or "various materials").</li>
+        <li><span class="font-semibold">Dimensions:</span> Size of the physical work as height x width x depth (in your preferred units).</li>
+        <li><span class="font-semibold">Edition Information:</span> Edition number and size (e.g., "3/5") or "unique" if one-of-a-kind.</li>
+        <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows collectors to understand the context of an artwork by exploring its relationship to other works by selecting series.</li>
+        <li><span class="font-semibold">Description:</span> Brief description of the physical artwork.</li>
+        <li><span class="font-semibold">Provenance:</span> Chronological record of ownership, custody, and location of the artwork.</li>
+        <li><span class="font-semibold">Exhibition History:</span> List of exhibitions where the artwork has been displayed.</li>
+        <li><span class="font-semibold">Certification Method:</span> How the artwork is linked to the ART (e.g., NFC chip, QR code, token ID inscribed).</li>
+        <li><span class="font-semibold">Condition Report:</span> Documentation of the artwork's physical condition, including notes and photos.</li>
+        <li><span class="font-semibold">Conservation History:</span> Record of any conservation or restoration work performed on the artwork.</li>
+        <li><span class="font-semibold">Bibliography:</span> List of publications, articles, or catalogs where the artwork has been featured, with details such as author, title, publication, date, and page numbers.</li>
+        <li><span class="font-semibold">Appraisals:</span> History of professional appraisals of the artwork (e.g., "Sotheby's, September 2023").</li>
+        <li><span class="font-semibold">Related Works:</span> Links to other artworks by the artist that are related to this piece.</li>
+        <li><span class="font-semibold">Notes:</span> Additional information relevant to the artwork.</li>
+        <li><span class="font-semibold">Wallet Address:</span> The current owner's wallet (if applicable) is automatically linked to the artwork. This could include multiple wallets if the artwork is co-owned or fractionally owned.</li>
+        <li><span class="font-semibold">Additional Metadata:</span> Any other relevant information that adds to the artwork's documentation or story.</li>
+        <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist.</li>
       </ol>
     </div>
+    <div class="mb-4">
+      
+    </div>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- 3. The ART Stamp - Linking Physical & Digital -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold mb-4">3. The ART Stamp – Linking Physical & Digital</h2>
@@ -102,7 +104,7 @@
       </div>
     </div>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- 4. ART Must Follow the Physical Artwork -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold mb-4">4. ART Must Follow the Physical Artwork</h2>
@@ -119,7 +121,7 @@
       maintain this link undermines the provenance record and the value of the ART system.
     </p>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- 5. Roles & Access Control -->
   <section class="mb-12">
     <h2 class="text-2xl font-bold mb-4">5. Roles & Access Control</h2>
@@ -129,7 +131,7 @@
       allowing artists to delegate specific permissions:
     </p>
 
-    <div class="mb-4">
+    <div class="bg-muted p-4 rounded-md">
       <h3 class="font-semibold mb-2">Roles</h3>
       
       <p class="mb-2"><strong>Contract Owner (Artist) [The ART Contract]</strong></p>
@@ -160,7 +162,7 @@
       </ul>
     </div>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- Why Use ARC? -->
   <section class="mb-12">
     <h2 class="text-3xl font-bold mb-6">Why Use ARC?</h2>
@@ -172,7 +174,7 @@
       <li><strong>Standards Maintained</strong> - Consistent and interoperable standards across systems.</li>
     </ul>
   </section>
-  <hr class="my-20">
+  <hr class="my-10 md:my-20" />
   <!-- Get Started -->
   <section class="mb-20">
     <h2 class="text-3xl font-bold mb-6">Get Started</h2>

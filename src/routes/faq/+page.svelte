@@ -245,7 +245,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Which blockchains does ARC support?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            ARC is designed for interoperability and currently supports <strong>Ethereum, Optimism, and Base</strong>, with future expansion planned.
+            ARC is designed for interoperability and currently supports <strong>Ethereum, Arbitrum, Optimism, and Base</strong>, with future expansion planned.
           </p>
         </AccordionContent>
       </AccordionItem>
@@ -296,8 +296,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Where can I get help?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            For support, visit our <a href="#" class="text-blue-600 hover:underline">Help Center</a>, or reach out to the ARC team via 
-            <a href="#" class="text-blue-600 hover:underline">Contact Form</a>.
+            For support, visit our <a href="https://discord.com/invite/TFkNXhhP" class="text-blue-600 hover:underline">Help Channel on Discord</a>.
           </p>
         </AccordionContent>
       </AccordionItem>
@@ -306,9 +305,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Is there a community for ARC users?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            Yes! Join our <a href="#" class="text-blue-600 hover:underline">Discord</a> / 
-            <a href="#" class="text-blue-600 hover:underline">Forum</a> / 
-            <a href="#" class="text-blue-600 hover:underline">Telegram</a> to connect with other artists, collectors, and institutions using ARC.
+            Yes! Join our <a href="https://discord.com/invite/TFkNXhhP" class="text-blue-600 hover:underline">Discord</a> to connect with other artists, collectors, and institutions using ARC.
           </p>
         </AccordionContent>
       </AccordionItem>

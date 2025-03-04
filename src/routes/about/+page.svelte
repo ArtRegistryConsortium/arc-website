@@ -13,6 +13,8 @@
       The <strong>Art Registry Consortium (ARC)</strong> is an open-source, decentralized protocol designed to transform how physical artworks are documented and authenticated. By leveraging blockchain technology, ARC provides an immutable, transparent, and artist-driven approach to provenance, ensuring that every artwork's history, ownership, and legitimacy are preserved for generations to come.
     </p>
 
+    <hr class="my-10 md:my-20" />
+
     <h3 class="text-lg md:text-xl font-bold mt-6 md:mt-8 mb-3 md:mb-4">The Problem with Traditional Art Documentation</h3>
     <p class="mb-3 md:mb-4">
       For centuries, provenance records have been scattered, fragmented, and often unreliable. Physical certificates, handwritten documentation, and centralized databases have left the art world vulnerable to forgery, misattribution, and loss of historical data. Collectors, institutions, and even artists themselves have struggled to maintain accurate and verifiable records.
@@ -41,7 +43,7 @@
     </ul>
   </section>
 
-  <hr class="my-10 md:my-20 border-muted" />
+  <hr class="my-10 md:my-20" />
 
   <section class="mb-8 md:mb-12">
     <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">How ARC Works</h2>
@@ -83,7 +85,7 @@
     </div>
   </section>
 
-  <hr class="my-10 md:my-20 border-muted" />
+  <hr class="my-10 md:my-20" />
 
   <section class="mb-8 md:mb-12">
     <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">The Art Registry Consortium: A Community-Driven Standard</h2>
@@ -99,7 +101,7 @@
     </ul>
   </section>
 
-  <hr class="my-10 md:my-20 border-muted" />
+  <hr class="my-10 md:my-20" />
 
   <section class="mb-8 md:mb-12">
     <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">A Decentralized Future for Art</h2>

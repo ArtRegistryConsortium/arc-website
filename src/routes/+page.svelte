@@ -54,7 +54,7 @@
       <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How It Works</h2>
       <div class="space-y-3 md:space-y-4 max-w-3xl mx-auto px-2">
         <p class="text-center max-w-3xl mx-auto">
-        <span class="font-semibold">1. Create Your Registry</span> - Deploy your personalized ARC contract.
+        <span class="font-semibold">1. Create Your Catalogue Raisonsé</span> - Deploy your personalized ARC contract.
       </p>
       <p class="text-center max-w-3xl mx-auto">
         <span class="font-semibold">2. Mint Your Artwork Registry Tokens (ARTs)</span> - Permanently link physical works to digital records.
