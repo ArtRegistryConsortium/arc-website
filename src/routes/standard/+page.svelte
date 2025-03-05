@@ -2,18 +2,20 @@
   import { Button } from "$lib/components/ui/button/index.js";
 </script>
 
-<div class="container mx-auto px-4 py-20 max-w-4xl">
-  <h1 class="text-4xl font-extrabold mb-6">The Standard</h1>
+<div class="container mx-auto px-4 max-w-4xl md:pb-10">
+  <section class="pt-12 md:pt-20">
+    <h1 class="text-4xl font-extrabold mb-6">The Standard</h1>
+    <p class="">
+      The Art Registry Consortium (ARC) establishes an open standard for documenting and tracking physical 
+      artworks on the blockchain. Through artist-owned smart contracts and a modular token system, ARC 
+      ensures that each artwork has a secure, standardized, and immutable record of provenance, exhibition 
+      history, and ownership.
+    </p>
+  </section>
   
-  <p class="mb-8">
-    The Art Registry Consortium (ARC) establishes an open standard for documenting and tracking physical 
-    artworks on the blockchain. Through artist-owned smart contracts and a modular token system, ARC 
-    ensures that each artwork has a secure, standardized, and immutable record of provenance, exhibition 
-    history, and ownership.
-  </p>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- 1. Artist-Owned Contracts -->
-  <section class="mb-12">
+  <section>
     <h2 class="text-2xl font-bold mb-4">1. Artist-Owned Contracts</h2>
     
     <p class="mb-4">
@@ -38,14 +40,13 @@
       </p>
     </div>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- 2. The Artwork Registry Token (ART) -->
-  <section class="mb-12">
+  <section>
     <h2 class="text-2xl font-bold mb-4">2. The Artwork Registry Token (ART)</h2>
     
     <p class="mb-4">
-      Each ART is unique, non-transferable record token to a physical artwork. It contains critical 
-      metadata, including provenance, documentation, and ownership tracking.
+      Each ART is a unique, blockchain-based record tied to a physical artwork. It contains critical metadata, ensuring traceability, authentication, and provenance tracking.
     </p>
     <div class="bg-muted p-4 rounded-md">
       <h3 class="font-semibold mb-2">ART Fields:</h3>
@@ -73,13 +74,10 @@
         <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist.</li>
       </ol>
     </div>
-    <div class="mb-4">
-      
-    </div>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- 3. The ART Stamp - Linking Physical & Digital -->
-  <section class="mb-12">
+  <section class="md:mb-12">
     <h2 class="text-2xl font-bold mb-4">3. The ART Stamp – Linking Physical & Digital</h2>
     
     <p class="mb-4">
@@ -87,26 +85,25 @@
       ensures collectors, galleries, and institutions can verify ownership on-chain.
     </p>
 
-    <div class="mb-4">
-      <h3 class="font-semibold mb-2">ART Stamp Format</h3>
-      
-      <p class="mb-4">
-        A label should include the following information: on the back of the artwork, certificate of authenticity, or a 
-        discreet location:
-      </p>
 
-      <div class="bg-muted p-4 rounded-md">
-        <p>ART ID: [Token ID]</p>
-        <p>Artist: [Artist Name or Pseudonym] / [Wallet addr.]</p>
-        <p>Title: [Artwork Title]</p>
-        <p>Year: [Year Created]</p>
-        <p>Token ID: [ART Token ID]</p>
-      </div>
+    <h3 class="font-semibold mb-2">ART Stamp Format</h3>
+    
+    <p class="mb-4">
+      A label should include the following information: on the back of the artwork or a 
+      discreet location:
+    </p>
+
+    <div class="bg-muted p-4 rounded-md">
+      <p>Artist Name</p>
+      <p>Artist Address: [0x...]</p>
+      <p>Blockchain: [Ethereum / Arbitrum / Optimism / Base, etc.]</p>
+      <p>Contract Address: [0x...]</p>
+      <p>Token ID: [ART Token ID]</p>
     </div>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- 4. ART Must Follow the Physical Artwork -->
-  <section class="mb-12">
+  <section class="md:mb-12">
     <h2 class="text-2xl font-bold mb-4">4. ART Must Follow the Physical Artwork</h2>
     
     <p class="mb-4">
@@ -121,9 +118,9 @@
       maintain this link undermines the provenance record and the value of the ART system.
     </p>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- 5. Roles & Access Control -->
-  <section class="mb-12">
+  <section class="md:mb-12">
     <h2 class="text-2xl font-bold mb-4">5. Roles & Access Control</h2>
     
     <p class="mb-4">
@@ -133,38 +130,48 @@
 
     <div class="bg-muted p-4 rounded-md">
       <h3 class="font-semibold mb-2">Roles</h3>
-      
-      <p class="mb-2"><strong>Contract Owner (Artist) [The ART Contract]</strong></p>
+      <p class="mb-2"><strong>Contract Owner (Artist) (Per ART Contract)</strong></p>
+      <p>The Contract Owner role is assigned to the artist who deploys an ART contract:</p>
       <ul class="list-disc pl-6 mb-4">
-        <li>Mint new ART</li>
-        <li>Set metadata</li>
-        <li>Transfer ownership (must meet ART criteria)</li>
-        <li>Set out royalties for any ART token in their contract</li>
+        <li>Can mint ART: Within their own ART contract</li>
+        <li>Can update ART: Within their own ART contract</li>
+        <li>Can grant/revoke roles: Within their own ART contract</li>
+        <li>Can assign a legacy protector: For their ART contract</li>
+        <li>Can manage token-specific permissions: For partial editors</li>
+        <li>Can set royalties: For their own ART contract and any ART token in their contract</li>
       </ul>
 
-      <p class="mb-2"><strong>Legacy Provider (Artist Designee) [The ART Contract]</strong></p>
+      <p class="mb-2"><strong>Legacy Protector (Per ART Contract)</strong></p>
+      <p>The Legacy Protector role is assigned to manage an ART contract when the artist passes away:</p>
       <ul class="list-disc pl-6 mb-4">
-        <li>Appointed by the artist to manage their legacy</li>
-        <li>Cannot mint new ART, but can update existing ARTs (subject to their wallet or pass away)</li>
-        <li>Transfer ownership</li>
-        <li>Can set royalties for any ART token in the contract they manage</li>
+        <li>Can mint ART: Within the assigned ART contract</li>
+        <li>Can update ART: Within the assigned ART contract</li>
+        <li>Can set royalties: For the ART contract they manage and any ART token in that contract</li>
       </ul>
 
-      <p class="mb-2"><strong>Collector (owns a specific ART contract)</strong></p>
+      <p class="mb-2"><strong>Minter (Per ART Contract)</strong></p>
+      <p>The Minter role is assigned to users who can mint new tokens:</p>
       <ul class="list-disc pl-6 mb-4">
-        <li>Transfer ownership (to another collector)</li>
-        <li>Can view ART</li>
+        <li>Can mint ART: Within the assigned ART contract</li>
+        <li>Can update ART: Within the assigned ART contract</li>
       </ul>
 
-      <p class="mb-2"><strong>Public (can query specific ART contract)</strong></p>
-      <ul class="list-disc pl-6">
-        <li>Can query ART</li>
+      <p class="mb-2"><strong>Full Editor (Per ART Contract)</strong></p>
+      <p>The Full Editor role is assigned to users who can update token metadata:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Can update ART: Within the assigned ART contract</li>
+      </ul>
+
+      <p class="mb-2"><strong>Partial Editor (Per Token)</strong></p>
+      <p>The Partial Editor role is assigned to users with limited editing capabilities:</p>
+      <ul class="list-disc pl-6 mb-4">
+        <li>Can update specific ART tokens: Only tokens they have been explicitly granted permission for</li>
       </ul>
     </div>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- Why Use ARC? -->
-  <section class="mb-12">
+  <section class="md:mb-12">
     <h2 class="text-3xl font-bold mb-6">Why Use ARC?</h2>
     
     <ul class="space-y-4">
@@ -174,9 +181,9 @@
       <li><strong>Standards Maintained</strong> - Consistent and interoperable standards across systems.</li>
     </ul>
   </section>
-  <hr class="my-10 md:my-20" />
+  <hr class="my-5 md:my-20" />
   <!-- Get Started -->
-  <section class="mb-20">
+  <section class="mb-10 md:mb-20">
     <h2 class="text-3xl font-bold mb-6">Get Started</h2>
     
     <p class="mb-6">
@@ -186,7 +193,7 @@
     </p>
 
 
-    <Button>Launch Dashboard</Button>
+    <Button>Launch the Dashboard</Button>
 
   </section>
 </div> 

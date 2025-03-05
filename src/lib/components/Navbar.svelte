@@ -23,10 +23,13 @@
   
   onMount(() => {
     document.addEventListener('click', handleClickOutside);
+    
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
   });
+
+
 </script>
 
 <nav class="fixed top-0 left-0 right-0 py-4 px-4 flex items-center border-b border-border bg-white dark:bg-[#09090b] z-10">
@@ -59,7 +62,10 @@
       </svg>
     </button>
     
-    <Button>Sign In</Button>
+    <!-- Sign In Button (does nothing) -->
+    <Button>
+      Sign in
+    </Button>
   </div>
 </nav>
 

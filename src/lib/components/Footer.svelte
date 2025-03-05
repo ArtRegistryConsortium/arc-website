@@ -18,14 +18,13 @@
         <ul class="space-y-1 md:space-y-2">
           <li><a href="/registry" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/registry'}>Registry</a></li>
           <li><a href="/standard" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/standard'}>The Standard</a></li>
-          <li><a href="/blog" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
+          <li><a href="/blogs" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
           <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/faq'}>FAQ</a></li>
-          <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/contact'}>Contact</a></li>
         </ul>
       </div>
       
       <div>
-        <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Company</h3>
+        <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Consortium</h3>
         <ul class="space-y-1 md:space-y-2">
           <li><a href="/about" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/about'}>About</a></li>
           <li><a href="/contact" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/contact'}>Contact</a></li>
@@ -38,6 +37,7 @@
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Connect</h3>
         <ul class="space-y-1 md:space-y-2">
           <li><a href="https://x.com/art_registry_c" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Twitter</a></li>
+          <li><a href="https://www.threads.net/@art_registry_c" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Threads</a></li>
           <li><a href="https://discord.gg/TFkNXhhP" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Discord</a></li>
           <li><a href="https://github.com/ArtRegistryConsortium" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">GitHub</a></li>
         </ul>

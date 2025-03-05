@@ -3,14 +3,15 @@
   import { Button } from "$lib/components/ui/button/index.js";
 </script>
 
-<div class="container mx-auto px-4 py-20 max-w-4xl">
-  <h1 class="text-4xl font-extrabold mb-6">Contact</h1>
+<div class="container mx-auto px-4 max-w-4xl md:pb-10">
   
-  <section class="mb-12">
+  
+  <section class="md:mb-20 pt-12 md:pt-20">
+    <h1 class="text-4xl font-extrabold mb-6">Contact</h1>
     <h2 class="text-2xl font-bold mb-4">Get in Touch with the Consortium</h2>
     
     <p class="mb-6">
-      The Art Registry Consortium (ARC) is a decentralized initiative, and the best way to reach us is through our official Discord community. Whether you're an artist looking to register your works, a collector verifying provenance, or a developer interested in contributing to the protocol, our community is here to help.
+      The Art Registry Consortium (ARC) is a decentralized initiative, and the best way to reach us is through our official Discord community. Whether you're an artist looking to register your works, a collector verifying provenance, or a developer interested in contributing to the standard, our community is here to help.
     </p>
 
     <h3 class="text-xl font-bold mt-8 mb-4">Join the Discussion</h3>
@@ -30,7 +31,7 @@
       For direct inquiries, partnerships, or media requests, you can also reach out through Discord, where a member of the consortium will assist you.
     </p>
 
-    <p class="mb-6">
+    <p class="mb-10">
       ARC operates as an open-source, community-driven project. Your voice helps shape the future of art documentation—join us today!
     </p>
   </section>

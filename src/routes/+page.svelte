@@ -8,7 +8,7 @@
     <div class="py-12 md:py-20">
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">A New Standard for Art Documentation</h1>
       <p class="text-base md:text-lg mb-6 md:mb-8 max-w-2xl mx-auto">ARC brings transparency, authenticity, and permanence to physical art records through blockchain technology.</p>
-      <Button>Join the Consortium</Button>
+      <Button>Launch the Dashboard</Button>
     </div>
     
   </section>
@@ -54,7 +54,7 @@
       <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How It Works</h2>
       <div class="space-y-3 md:space-y-4 max-w-3xl mx-auto px-2">
         <p class="text-center max-w-3xl mx-auto">
-        <span class="font-semibold">1. Create Your Catalogue Raisonsé</span> - Deploy your personalized ARC contract.
+        <span class="font-semibold">1. Create Your Catalogue Raisonsé (Contract)</span> - Deploy your personalized ARC contract.
       </p>
       <p class="text-center max-w-3xl mx-auto">
         <span class="font-semibold">2. Mint Your Artwork Registry Tokens (ARTs)</span> - Permanently link physical works to digital records.
@@ -74,7 +74,11 @@
         standard, including best practices for the ART Stamp.
       </p>
       <div class="text-center">
-        <Button>Explore the Standard</Button>
+        <Button>
+          <a href="/standard" class="flex items-center">
+            Explore the Standard
+          </a>
+        </Button>
       </div>
     </div>
       
@@ -108,7 +112,11 @@
           Be part of the future of art documentation.
       </p>
       <div class="text-center">
-        <Button>Join the Discussion on Discord</Button>
+        <Button>
+          <a href="https://discord.gg/TFkNXhhP" target="_blank" class="flex items-center">
+            Join the Discussion on Discord
+          </a>
+        </Button>
       </div>
     </div>
   </section>

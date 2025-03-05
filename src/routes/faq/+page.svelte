@@ -9,10 +9,11 @@
   } from "$lib/components/ui/accordion/index.js";
 </script>
 
-<div class="container mx-auto px-4 py-10 md:py-20 max-w-4xl">
-  <h1 class="text-3xl md:text-4xl font-extrabold mb-4 md:mb-6">Frequently Asked Questions</h1>
+<div class="container mx-auto px-4 max-w-4xl md:pb-10">
   
-  <section class="mb-8 md:mb-12">
+  
+  <section class="md:mb-12 pt-12 md:pt-20">
+    <h1 class="text-3xl md:text-4xl font-extrabold mb-6 md:mb-6">Frequently Asked Questions</h1>
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">General Questions</h2>
     
     <Accordion class="w-full" multiple>
@@ -40,7 +41,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Artwork Registry Token (ART)</h2>
     
     <Accordion class="w-full" multiple>
@@ -59,14 +60,27 @@
         <AccordionContent>
           <p class="text-sm md:text-base">Each ART contains critical metadata, including:</p>
           <ul class="list-disc pl-6 mt-2 space-y-1">
-            <li><strong>Catalogue Inventory</strong> (Unique identifier)</li>
-            <li><strong>Artist Info</strong> (Name + Wallet Address)</li>
-            <li><strong>Title, Year, Medium, Dimensions</strong></li>
-            <li><strong>Edition & Series Information</strong></li>
-            <li><strong>Exhibition & Sales History</strong></li>
-            <li><strong>Certification Method</strong> (QR Code, NFC, etc.)</li>
-            <li><strong>Condition Reports, Artist Statement, Bibliography</strong></li>
-            <li><strong>Ownership & Status Updates</strong></li>
+            <li><span class="font-semibold">Catalogue Inventory:</span> A unique identifier assigned to the artwork within the artist's personal registry. E.g. INV-0001 or similar.</li>
+            <li><span class="font-semibold">Artist Info:</span> Name of the artist and location (if applicable) / wallet address.</li>
+            <li><span class="font-semibold">Title:</span> Title of the artwork.</li>
+            <li><span class="font-semibold">Year of Creation:</span> Year the physical work was completed.</li>
+            <li><span class="font-semibold">Medium:</span> Materials used to create the physical artwork (or "various materials").</li>
+            <li><span class="font-semibold">Dimensions:</span> Size of the physical work as height x width x depth (in your preferred units).</li>
+            <li><span class="font-semibold">Edition Information:</span> Edition number and size (e.g., "3/5") or "unique" if one-of-a-kind.</li>
+            <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows collectors to understand the context of an artwork by exploring its relationship to other works by selecting series.</li>
+            <li><span class="font-semibold">Description:</span> Brief description of the physical artwork.</li>
+            <li><span class="font-semibold">Provenance:</span> Chronological record of ownership, custody, and location of the artwork.</li>
+            <li><span class="font-semibold">Exhibition History:</span> List of exhibitions where the artwork has been displayed.</li>
+            <li><span class="font-semibold">Certification Method:</span> How the artwork is linked to the ART (e.g., NFC chip, QR code, token ID inscribed).</li>
+            <li><span class="font-semibold">Condition Report:</span> Documentation of the artwork's physical condition, including notes and photos.</li>
+            <li><span class="font-semibold">Conservation History:</span> Record of any conservation or restoration work performed on the artwork.</li>
+            <li><span class="font-semibold">Bibliography:</span> List of publications, articles, or catalogs where the artwork has been featured, with details such as author, title, publication, date, and page numbers.</li>
+            <li><span class="font-semibold">Appraisals:</span> History of professional appraisals of the artwork (e.g., "Sotheby's, September 2023").</li>
+            <li><span class="font-semibold">Related Works:</span> Links to other artworks by the artist that are related to this piece.</li>
+            <li><span class="font-semibold">Notes:</span> Additional information relevant to the artwork.</li>
+            <li><span class="font-semibold">Wallet Address:</span> The current owner's wallet (if applicable) is automatically linked to the artwork. This could include multiple wallets if the artwork is co-owned or fractionally owned.</li>
+            <li><span class="font-semibold">Additional Metadata:</span> Any other relevant information that adds to the artwork's documentation or story.</li>
+            <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist.</li>
           </ul>
         </AccordionContent>
       </AccordionItem>
@@ -83,7 +97,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Linking ART to Physical Artworks</h2>
     
     <Accordion class="w-full" multiple>
@@ -95,8 +109,9 @@
           </p>
           <ul class="list-disc pl-6 mt-2 space-y-1">
             <li><strong>Artist Name</strong></li>
-            <li><strong>Blockchain & Smart Contract Address</strong></li>
             <li><strong>Artist Wallet Address</strong></li>
+            <li><strong>Blockchain</strong></li>
+            <li><strong>Contract Address</strong></li>
             <li><strong>Token ID</strong></li>
           </ul>
           <p class="mt-2 text-sm md:text-base">This ensures that anyone can verify the artwork's authenticity on-chain.</p>
@@ -115,7 +130,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Ownership & Transactions</h2>
     
     <Accordion class="w-full" multiple>
@@ -149,7 +164,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Roles & Access Control</h2>
     
     <Accordion class="w-full" multiple>
@@ -190,7 +205,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">ARC's Administrative Role</h2>
     
     <Accordion class="w-full" multiple>
@@ -218,7 +233,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Getting Started</h2>
     
     <Accordion class="w-full" multiple>
@@ -252,7 +267,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Technical & Security</h2>
     
     <Accordion class="w-full" multiple>
@@ -288,7 +303,7 @@
     </Accordion>
   </section>
   
-  <section class="mb-8 md:mb-12">
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Support & Contact</h2>
     
     <Accordion class="w-full" multiple>
