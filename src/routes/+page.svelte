@@ -7,7 +7,7 @@
   <!-- Hero Section with Gradient Background -->
   <section class="py-16 md:py-24 bg-muted/30 dark:bg-muted/10 border-y border-muted relative">
     <div class="absolute inset-0  to-accent/20 dark:from-primary/10 dark:to-accent/30 "></div>
-    <div class="container mx-auto px-4 relative py-16 md:py-24 ">
+    <div class="container mx-auto px-4 relative py-10 md:py-24 ">
       <div class=" mx-auto text-center">
         <h1 class="text-4xl sm:text-4xl md:text-6xl font-extrabold mb-6 bg-clip-text leading-tight text-transparent bg-gradient-to-r from-primary to-primary/80 dark:from-primary dark:to-primary/90">
           A New Standard for Art Documentation

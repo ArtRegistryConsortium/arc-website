@@ -35,7 +35,7 @@
 <nav class="fixed top-0 left-0 right-0 py-3 md:py-4 px-4 md:px-6 flex items-center border-b border-border bg-white dark:bg-[#09090b] backdrop-blur-sm z-10 transition-all duration-200">
   <div class="font-extrabold flex-1 dark:text-white">
     <a href="/" class="hover:text-primary transition-colors duration-200 flex items-center">
-      <span class="text-primary mr-1">Art</span> Registry Consortium
+      Art Registry Consortium
     </a>
   </div>
   
