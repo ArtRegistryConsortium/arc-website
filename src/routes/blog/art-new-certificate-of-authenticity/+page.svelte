@@ -15,7 +15,7 @@
   });
 </script>
 
-<div class="container mx-auto px-4 max-w-4xl md:pb-10">
+<div class="container mx-auto px-4 max-w-4xl pb-8 md:pb-10">
   <article class="md:mb-12 pt-12 md:pt-20">
     <div class="mb-10 border-b border-border pb-6">
       <div class="flex items-center mb-4 text-sm text-muted-foreground">
