@@ -32,24 +32,63 @@
 
 </script>
 
-<nav class="fixed top-0 left-0 right-0 py-4 px-4 flex items-center border-b border-border bg-white dark:bg-[#09090b] z-10">
+<nav class="fixed top-0 left-0 right-0 py-3 md:py-4 px-4 md:px-6 flex items-center border-b border-border bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-sm z-10 transition-all duration-200">
   <div class="font-extrabold flex-1 dark:text-white">
-    <a href="/" class="hover:text-gray-600 dark:hover:text-gray-300">Art Registry Consortium</a>
+    <a href="/" class="hover:text-primary transition-colors duration-200 flex items-center">
+      <span class="text-primary mr-1">ARC</span> Registry Consortium
+    </a>
   </div>
   
   <!-- Desktop Navigation -->
-  <div class="hidden md:flex space-x-4 lg:space-x-8 flex-1 justify-center">
-    <a href="/registry" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
-    <a href="/standard" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
-    <a href="/about" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
-    <a href="/faq" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
-    <a href="/contact" class="whitespace-nowrap hover:text-gray-600 dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
+  <div class="hidden md:flex space-x-1 lg:space-x-2 flex-1 justify-center">
+    <a 
+      href="/registry" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname === '/registry'}
+    >
+      Registry
+    </a>
+    <a 
+      href="/standard" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname === '/standard'}
+    >
+      The Standard
+    </a>
+    <a 
+      href="/blog" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname.startsWith('/blog')}
+    >
+      Blog
+    </a>
+    <a 
+      href="/about" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname === '/about'}
+    >
+      About
+    </a>
+    <a 
+      href="/faq" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname === '/faq'}
+    >
+      FAQ
+    </a>
+    <a 
+      href="/contact" 
+      class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white" 
+      class:active={$page.url.pathname === '/contact'}
+    >
+      Contact
+    </a>
   </div>
   
   <div class="flex-1 flex justify-end items-center space-x-4">
     <!-- Mobile Menu Button -->
     <button 
-      class="md:hidden mobile-menu-button p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none" 
+      class="md:hidden mobile-menu-button p-2 rounded-md hover:bg-muted transition-colors duration-200 focus:outline-none" 
       on:click={toggleMobileMenu}
       aria-label="Toggle mobile menu"
     >
@@ -62,29 +101,80 @@
       </svg>
     </button>
     
-    <!-- Sign In Button (does nothing) -->
-    <Button>
-      Sign in
+    <!-- Sign In Button -->
+    <Button variant="default" class="shadow-sm">
+      <a href="/work-in-progress" class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+        </svg>
+        Sign in
+      </a>
     </Button>
   </div>
 </nav>
 
 <!-- Mobile Menu Dropdown -->
 {#if mobileMenuOpen}
-  <div class="md:hidden fixed top-16 left-0 right-0 bg-white dark:bg-[#09090b] border-b border-border z-10 mobile-menu shadow-lg">
-    <div class="flex flex-col py-4 px-4 space-y-4">
-      <a href="/registry" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/registry'}>Registry</a>
-      <a href="/standard" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/standard'}>The Standard</a>
-      <a href="/about" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/about'}>About</a>
-      <a href="/faq" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/faq'}>FAQ</a>
-      <a href="/contact" on:click={closeMobileMenu} class="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md dark:text-gray-300 dark:hover:text-white" class:active={$page.url.pathname === '/contact'}>Contact</a>
+  <div class="md:hidden fixed top-16 left-0 right-0 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-sm border-b border-border z-10 mobile-menu shadow-lg">
+    <div class="flex flex-col py-4 px-4 space-y-1">
+      <a 
+        href="/registry" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname === '/registry'}
+      >
+        Registry
+      </a>
+      <a 
+        href="/standard" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname === '/standard'}
+      >
+        The Standard
+      </a>
+      <a 
+        href="/blog" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname.startsWith('/blog')}
+      >
+        Blog
+      </a>
+      <a 
+        href="/about" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname === '/about'}
+      >
+        About
+      </a>
+      <a 
+        href="/faq" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname === '/faq'}
+      >
+        FAQ
+      </a>
+      <a 
+        href="/contact" 
+        on:click={closeMobileMenu} 
+        class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200" 
+        class:active={$page.url.pathname === '/contact'}
+      >
+        Contact
+      </a>
     </div>
   </div>
 {/if} 
 
 <style>
   a.active {
+    color: hsl(var(--primary));
     text-decoration: underline;
-    text-underline-offset: 4px;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+    font-weight: 500;
   }
 </style> 

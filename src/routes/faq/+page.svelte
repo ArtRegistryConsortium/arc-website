@@ -13,7 +13,7 @@
   
   
   <section class="md:mb-12 pt-12 md:pt-20">
-    <h1 class="text-3xl md:text-4xl font-extrabold mb-6 md:mb-6">Frequently Asked Questions</h1>
+    <h1 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">Frequently Asked Questions</h1>
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">General Questions</h2>
     
     <Accordion class="w-full" multiple>
@@ -89,7 +89,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Can an ART be updated after it is created?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            Yes, certain fields such as <strong>Exhibition History, Condition Reports, Sales Information, and Notes</strong> can be 
+            Yes, certain fields such as <strong>Exhibition History, Provenance, Condition Reports, Sales Information, and Notes</strong> can be 
             updated post-minting by authorized roles.
           </p>
         </AccordionContent>
@@ -177,7 +177,7 @@
             <li><strong>Contract Owner (Artist):</strong> Can mint and update ARTs.</li>
             <li><strong>Minter (Assigned Role):</strong> Can mint and update ARTs.</li>
             <li><strong>Full Editor (Assigned Role):</strong> Can update ARTs.</li>
-            <li><strong>Partial Editor (Assigned Role):</strong> Can update specific ART fields.</li>
+            <li><strong>Partial Editor (Assigned Role):</strong> Can update specific ARTs.</li>
           </ul>
         </AccordionContent>
       </AccordionItem>
@@ -213,7 +213,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Does ARC have control over all contracts?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            Yes, ARC retains full administrative power over all contracts, but this is for <strong>support purposes only</strong>. 
+            For now, yes, ARC retains full administrative power over all contracts, but this is for <strong>support purposes only</strong>. 
             The ARC wallet is controlled by a <strong>multisig mechanism</strong>, requiring multiple authorized signatures to execute 
             any administrative action.
           </p>
@@ -295,8 +295,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Can an ART be burned?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            An ART can only be burned if the artist includes this functionality in their contract. However, burning an ART would sever 
-            its link to the physical artwork.
+            Theoretically, yes. However, for the integrity of the system, you should not burn ART tokens.
           </p>
         </AccordionContent>
       </AccordionItem>

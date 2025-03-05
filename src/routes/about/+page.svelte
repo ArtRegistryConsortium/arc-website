@@ -5,7 +5,7 @@
 
 <div class="container mx-auto px-4 max-w-4xl md:pb-10">
 <section class="md:mb-12 pt-12 md:pt-20">
-    <h1 class="text-3xl md:text-4xl font-extrabold mb-4 md:mb-6">About ARC</h1>
+    <h1 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">About ARC</h1>
     <h2 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">A New Standard for Art Provenance</h2>
     <p class="mb-4 md:mb-6">
       The <strong>Art Registry Consortium (ARC)</strong> is an open-source, decentralized standard designed to transform how physical artworks are documented and authenticated. By leveraging blockchain technology, ARC provides an immutable, transparent, and artist-driven approach to provenance, ensuring that every artwork's history, ownership, and legitimacy are preserved for generations to come.
@@ -112,6 +112,10 @@
     </p>
 
     <p class="text-lg md:text-xl font-bold mb-4 md:mb-6">Join ARC today and be part of the future of art documentation.</p>
-    <Button variant="default" class="px-4 md:px-6 py-2 md:py-3">Launch the Dashboard</Button>
+    <Button variant="default" class="px-4 md:px-6 py-2 md:py-3">
+      <a href="/work-in-progress" class="flex items-center">
+        Launch the Dashboard
+      </a>
+    </Button>
   </section>
 </div> 

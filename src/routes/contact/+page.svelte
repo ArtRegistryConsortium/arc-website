@@ -7,7 +7,7 @@
   
   
   <section class="md:mb-20 pt-12 md:pt-20">
-    <h1 class="text-4xl font-extrabold mb-6">Contact</h1>
+    <h1 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">Contact</h1>
     <h2 class="text-2xl font-bold mb-4">Get in Touch with the Consortium</h2>
     
     <p class="mb-6">

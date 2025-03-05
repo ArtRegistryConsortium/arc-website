@@ -8,7 +8,11 @@
     <div class="py-12 md:py-20">
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">A New Standard for Art Documentation</h1>
       <p class="text-base md:text-lg mb-6 md:mb-8 max-w-2xl mx-auto">ARC brings transparency, authenticity, and permanence to physical art records through blockchain technology.</p>
-      <Button>Launch the Dashboard</Button>
+      <Button>
+        <a href="/work-in-progress" class="flex items-center">
+          Join the Consortium
+        </a>
+      </Button>
     </div>
     
   </section>

@@ -18,7 +18,7 @@
         <ul class="space-y-1 md:space-y-2">
           <li><a href="/registry" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/registry'}>Registry</a></li>
           <li><a href="/standard" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/standard'}>The Standard</a></li>
-          <li><a href="/blogs" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
+          <li><a href="/blog" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
           <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/faq'}>FAQ</a></li>
         </ul>
       </div>
