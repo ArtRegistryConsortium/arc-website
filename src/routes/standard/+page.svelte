@@ -34,9 +34,7 @@
     <h2 class="text-2xl font-bold mb-4">1. Artist-Owned Contracts</h2>
     
     <p class="mb-4">
-      Each artist deploys their own ARC contract, giving them full control over their catalog and related ARTs. 
-      Artists can update metadata, transfer ownership, and/or permanently retire existing works by using artist 
-      dashboard and verify their works.
+      Each artist deploys their own ARC contract, giving them full control over their catalog and minted ARTs. These contracts follow the ARC standard, ensuring consistency while allowing flexibility in how artists document and verify their works.
     </p>
 
     <div class="bg-muted p-8 rounded-md mb-4">
@@ -48,10 +46,7 @@
     <div class="">
       <h3 class="font-semibold mb-2">Registering Existing Contracts</h3>
       <p>
-        Artists who have already deployed their own smart contract(s) (e.g., through Manifold) can easily map 
-        their existing contract to the ARC registry. This allows artists to maintain their existing contracts while 
-        ensuring their artworks benefit from the ARC standard and ecosystem (e.g., working with certified 
-        galleries).
+        Artists who have already deployed their own smart contracts (e.g., through Manifold) can submit their contract information to ARC for registration. This allows their contract to be included in the ARC registry, ensuring their artworks benefit from the ARC standard while maintaining their existing smart contract structure.
       </p>
     </div>
   </section>
