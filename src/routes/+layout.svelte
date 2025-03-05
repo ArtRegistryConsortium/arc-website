@@ -19,7 +19,7 @@
 
 <div class="min-h-screen flex flex-col">
 	<Navbar />
-	<main class="flex-grow pt-16 md:pt-20">
+	<main class="flex-grow pt-16 md:pt-19">
 		{@render children()}
 	</main>
 	<Footer />
