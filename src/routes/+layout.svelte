@@ -2,6 +2,8 @@
 	import '../app.css';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit'
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 	import { onMount } from 'svelte';
 	
 	// Import the theme store to initialize it
@@ -15,6 +17,9 @@
 		// Force a theme update on mount
 		themeStore.update(theme => theme);
 	});
+
+	injectSpeedInsights();
+	injectAnalytics();
 </script>
 
 <div class="min-h-screen flex flex-col">
@@ -23,4 +28,5 @@
 		{@render children()}
 	</main>
 	<Footer />
+	
 </div>
