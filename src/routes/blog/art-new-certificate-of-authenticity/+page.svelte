@@ -19,7 +19,7 @@
   <article class="md:mb-12 pt-12 md:pt-20">
     <div class="mb-10 border-b border-border pb-6">
       <div class="flex items-center mb-4 text-sm text-muted-foreground">
-        <span class="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full">May 15, 2023</span>
+        <span class="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full">May 15, 2025</span>
         <span class="mx-2">•</span>
         <span>ARC Team</span>
       </div>

@@ -8,7 +8,7 @@
       title: "ART: The New Certificate of Authenticity / Digital COA",
       slug: "art-new-certificate-of-authenticity",
       excerpt: "For centuries, the Certificate of Authenticity (COA) has been the cornerstone of proving an artwork's legitimacy. But as the art world grows increasingly digital and global, this antiquated system is proving insufficient. Enter ART (Artwork Registry Token)—a blockchain-based evolution of the COA.",
-      date: "May 15, 2023",
+      date: "May 15, 2025",
       author: "ARC Team"
     },
     {
@@ -16,7 +16,7 @@
       title: "The Problem with Art Documentation: Closed, Confusing, and Exclusive",
       slug: "problem-with-art-documentation",
       excerpt: "Art documentation has long been a fractured, opaque, and often inaccessible system. In a world where provenance determines value, credibility, and authenticity, the art world remains burdened by outdated methods that favor exclusivity over transparency.",
-      date: "May 5, 2023",
+      date: "May 5, 2025",
       author: "ARC Team"
     }
     // More blogs can be added here in the future

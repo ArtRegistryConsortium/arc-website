@@ -28,5 +28,4 @@
 		{@render children()}
 	</main>
 	<Footer />
-	
 </div>
