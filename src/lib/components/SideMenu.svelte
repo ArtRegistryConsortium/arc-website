@@ -49,12 +49,12 @@
 </script>
 
 <div class="side-menu hidden 2xl:block">
-  <nav class="fixed top-[253px] left-8 transform -translate-y-1/4 bg-background border border-border rounded-lg shadow-sm p-5 w-72">
+  <nav class="fixed top-[228px] left-8 transform -translate-y-1/4 bg-background border border-border rounded-lg shadow-sm p-5 w-72">
     <ul class="space-y-3">
       {#each sections as section}
         <li>
           <button
-            class="w-full text-left px-4 py-3 rounded-md text-base transition-colors hover:bg-muted {activeSection === section.id ? 'bg-muted font-medium' : ''}"
+            class="w-full text-left px-4 py-1 rounded-md text-base transition-colors hover:bg-muted {activeSection === section.id ? 'bg-muted font-medium' : ''}"
             on:click={() => scrollToSection(section.id)}
           >
             {section.title}
