@@ -75,13 +75,6 @@
       <p class="mb-2">"ARC / Artist Name" (e.g., "ARC / Banksy")</p>
       <p>By maintaining individual contracts, artists retain sovereignty over their body of work while ensuring interoperability across the ARC ecosystem.</p>
     </div>
-
-    <div class="">
-      <h3 class="font-semibold mb-2">Registering Existing Contracts</h3>
-      <p>
-        Artists who have already deployed their own smart contracts (e.g., through Manifold) can submit their contract information to ARC for registration. This allows their contract to be included in the ARC registry, ensuring their artworks benefit from the ARC standard while maintaining their existing smart contract structure.
-      </p>
-    </div>
   </section>
   <hr class="my-5 md:my-20" />
   <!-- 3. The Artwork Registry Token (ART) -->
