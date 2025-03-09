@@ -42,6 +42,71 @@
   </section>
   
   <section class="md:mb-12">
+    <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Identity Management</h2>
+    
+    <Accordion class="w-full" multiple>
+      <AccordionItem value="what-is-identity">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">What is an Identity in the ARC system?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">
+            An <strong>Identity</strong> in the ARC system is a blockchain-verified profile that represents a participant in the art ecosystem. Each identity has a unique ID and is associated with a wallet address, ensuring proper authentication and authorization throughout the system.
+          </p>
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="identity-types">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">What types of Identities exist in ARC?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">ARC supports four types of identities:</p>
+          <ul class="list-disc pl-6 mt-2 space-y-1">
+            <li><strong>Artist (Type 0):</strong> Creators who deploy their own ART Contracts and mint ARTs.</li>
+            <li><strong>Gallery (Type 1):</strong> Entities that represent artists and facilitate art sales.</li>
+            <li><strong>Institution (Type 2):</strong> Museums, foundations, and other organizations that exhibit, collect, or preserve art.</li>
+            <li><strong>Collector (Type 3):</strong> Individuals or entities who own artworks and their corresponding ARTs.</li>
+          </ul>
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="identity-info">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">What information is stored in an Identity?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">Each Identity contains the following information:</p>
+          <ul class="list-disc pl-6 mt-2 space-y-1">
+            <li><strong>Unique ID:</strong> A unique identifier for the identity.</li>
+            <li><strong>Wallet Address:</strong> The blockchain address associated with the identity.</li>
+            <li><strong>Type:</strong> Artist, Gallery, Institution, or Collector.</li>
+            <li><strong>Name:</strong> Full name or alias of the identity.</li>
+            <li><strong>Description:</strong> Brief description of the identity.</li>
+            <li><strong>Image:</strong> Profile image stored on Arweave.</li>
+            <li><strong>Links:</strong> Website or social media URLs.</li>
+            <li><strong>Tags:</strong> Keywords associated with the identity.</li>
+            <li><strong>Artist-specific:</strong> Date of birth, date of death (if applicable), and location.</li>
+            <li><strong>Gallery/Institution-specific:</strong> Physical addresses.</li>
+          </ul>
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="update-identity">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">Can I update my Identity information?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">
+            Yes, you can update your Identity information at any time. This includes your name, description, image, links, tags, and other relevant details. The update will be recorded on the blockchain, maintaining a history of changes.
+          </p>
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="identity-custodian">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">What is a Custodian in the Identity system?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">
+            A <strong>Custodian</strong> is an Identity that has been granted permission to manage another Identity. This is particularly useful for artists who want to delegate management of their Identity and ART Contract to a gallery or representative. Custodians can update the Identity information, mint ARTs, and perform other actions on behalf of the Identity they manage.
+          </p>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  </section>
+  
+  <section class="md:mb-12">
     <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Artwork Registry Token (ART)</h2>
     
     <Accordion class="w-full" multiple>
@@ -60,27 +125,27 @@
         <AccordionContent>
           <p class="text-sm md:text-base">Each ART contains critical metadata, including:</p>
           <ul class="list-disc pl-6 mt-2 space-y-1">
-            <li><span class="font-semibold">Catalogue Inventory:</span> A unique identifier assigned to the artwork within the artist's personal registry. E.g. INV-0001 or similar.</li>
-            <li><span class="font-semibold">Artist Info:</span> Name of the artist and location (if applicable) / wallet address.</li>
-            <li><span class="font-semibold">Title:</span> Title of the artwork.</li>
-            <li><span class="font-semibold">Year of Creation:</span> Year the physical work was completed.</li>
-            <li><span class="font-semibold">Medium:</span> Materials used to create the physical artwork (or "various materials").</li>
-            <li><span class="font-semibold">Dimensions:</span> Size of the physical work as height x width x depth (in your preferred units).</li>
-            <li><span class="font-semibold">Edition Information:</span> Edition number and size (e.g., "3/5") or "unique" if one-of-a-kind.</li>
-            <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows collectors to understand the context of an artwork by exploring its relationship to other works by selecting series.</li>
-            <li><span class="font-semibold">Description:</span> Brief description of the physical artwork.</li>
-            <li><span class="font-semibold">Provenance:</span> Chronological record of ownership, custody, and location of the artwork.</li>
-            <li><span class="font-semibold">Exhibition History:</span> List of exhibitions where the artwork has been displayed.</li>
+            <li><span class="font-semibold">Artist Identity ID:</span> The unique identifier linking to the artist's identity in the Identity Contract.</li>
+            <li><span class="font-semibold">Title:</span> The name of the artwork.</li>
+            <li><span class="font-semibold">Description:</span> A detailed description of the artwork, its context, and significance.</li>
+            <li><span class="font-semibold">Year of Creation:</span> The year the artwork was completed.</li>
+            <li><span class="font-semibold">Medium:</span> Materials used to create the artwork (e.g., "oil on canvas," "bronze sculpture").</li>
+            <li><span class="font-semibold">Dimensions:</span> Size of the artwork, listed as height x width x depth (in cm or inches).</li>
+            <li><span class="font-semibold">Edition:</span> If the artwork is part of an edition, include the edition number and total editions (e.g., "1/10").</li>
+            <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work.</li>
+            <li><span class="font-semibold">Catalogue Inventory:</span> A unique identifier assigned to the artwork within the artist's personal registry (e.g., ART-2024-001).</li>
+            <li><span class="font-semibold">Image:</span> A high-resolution image or scan of the artwork stored on Arweave.</li>
+            <li><span class="font-semibold">Sales Information:</span> JSON string containing price, buyer address, and date of sale transactions.</li>
             <li><span class="font-semibold">Certification Method:</span> How the artwork is linked to the ART (e.g., NFC chip, QR code, token ID inscribed).</li>
-            <li><span class="font-semibold">Condition Report:</span> Documentation of the artwork's physical condition, including notes and photos.</li>
-            <li><span class="font-semibold">Conservation History:</span> Record of any conservation or restoration work performed on the artwork.</li>
-            <li><span class="font-semibold">Bibliography:</span> List of publications, articles, or catalogs where the artwork has been featured, with details such as author, title, publication, date, and page numbers.</li>
-            <li><span class="font-semibold">Appraisals:</span> History of professional appraisals of the artwork (e.g., "Sotheby's, September 2023").</li>
-            <li><span class="font-semibold">Related Works:</span> Links to other artworks by the artist that are related to this piece.</li>
-            <li><span class="font-semibold">Notes:</span> Additional information relevant to the artwork.</li>
-            <li><span class="font-semibold">Wallet Address:</span> The current owner's wallet (if applicable) is automatically linked to the artwork. This could include multiple wallets if the artwork is co-owned or fractionally owned.</li>
-            <li><span class="font-semibold">Additional Metadata:</span> Any other relevant information that adds to the artwork's documentation or story.</li>
-            <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist.</li>
+            <li><span class="font-semibold">Exhibition History:</span> JSON string containing an array of exhibitions with name, date, and location.</li>
+            <li><span class="font-semibold">Condition Reports:</span> JSON string containing an array of reports with date and description of the artwork's condition.</li>
+            <li><span class="font-semibold">Artist Statement:</span> A brief description or intention behind the artwork, written by the artist.</li>
+            <li><span class="font-semibold">Bibliography:</span> JSON string containing an array of references with title, author, and page.</li>
+            <li><span class="font-semibold">Keywords:</span> An array of themes, styles, or movements related to the artwork.</li>
+            <li><span class="font-semibold">Location / Collection:</span> JSON string containing location and collection information where the artwork resides.</li>
+            <li><span class="font-semibold">Status:</span> Current status of the artwork (e.g., Available, Not Available, On Loan).</li>
+            <li><span class="font-semibold">Note:</span> Additional information relevant to the artwork that doesn't fit in other fields.</li>
+            <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist (in basis points, e.g., 1000 = 10%).</li>
           </ul>
         </AccordionContent>
       </AccordionItem>
@@ -171,13 +236,15 @@
       <AccordionItem value="different-roles">
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">What are the different roles in ARC contracts?</AccordionTrigger>
         <AccordionContent>
-          <p class="text-sm md:text-base">ARC contracts allow for delegated access through the following roles:</p>
+          <p class="text-sm md:text-base">ARC contracts implement role-based access control tied to Identities (via Identity ID), not wallet addresses:</p>
           <ul class="list-disc pl-6 mt-2 space-y-1">
-            <li><strong>Full Admin (ARC Team):</strong> Can upgrade contracts, mint ARTs, modify all tokens, assign roles, and transfer ARTs.</li>
-            <li><strong>Contract Owner (Artist):</strong> Can mint and update ARTs.</li>
-            <li><strong>Minter (Assigned Role):</strong> Can mint and update ARTs.</li>
-            <li><strong>Full Editor (Assigned Role):</strong> Can update ARTs.</li>
-            <li><strong>Partial Editor (Assigned Role):</strong> Can update specific ARTs.</li>
+            <li><strong>Full Admin (ARC Team):</strong> Can add/remove other Full Admins, upgrade contracts, modify Identity Contract storage, add/remove roles on any contract, mint/update/transfer ART on any contract, and set royalties on any ART or ART Contract.</li>
+            <li><strong>Art Contract Owner (Artist):</strong> Can transfer ownership of their ART Contract to another Identity ID, grant/remove roles, and mint/update ART and set royalties in their ART Contract.</li>
+            <li><strong>Custodian:</strong> Can update their assigned Identity or ART Contract, mint/update ART and set royalties in their assigned ART Contract, and assign roles to others.</li>
+            <li><strong>Minter:</strong> Can mint and update ART in their assigned ART Contract (no royalty control).</li>
+            <li><strong>Full Editor:</strong> Can update all ART in their assigned ART Contract (no royalty control).</li>
+            <li><strong>Partial Editor:</strong> Can update specific ART tokens they are assigned to (no royalty control).</li>
+            <li><strong>Everyone:</strong> Can update their own Identity and own/transfer ART tokens they own.</li>
           </ul>
         </AccordionContent>
       </AccordionItem>

@@ -34,8 +34,8 @@
         <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10">Introduction to ARC</h2>
         <p class="text-lg text-center leading-relaxed text-muted-foreground dark:text-gray-300">
           The Art Registry Consortium (ARC) is an open standard designed to document, verify, and manage the 
-          provenance of physical artworks on the blockchain. Artists maintain control of their catalogues, ensuring 
-          their legacy remains immutable.
+          provenance of physical artworks on the blockchain. Through robust identity management, artists maintain control of their catalogues, ensuring 
+          their legacy remains immutable while all participants in the art ecosystem are properly authenticated.
         </p>
       </div>
     </div>
@@ -66,17 +66,33 @@
         <!-- Feature 3 -->
         <div class="bg-background dark:bg-background/5 p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-border/50">
           <div class="flex items-start mb-4">
-            <h3 class="text-xl font-semibold">Evolving Documentation</h3>
+            <h3 class="text-xl font-semibold">Identity Management</h3>
           </div>
-          <p class="text-muted-foreground dark:text-gray-300">Update exhibition history, bibliographies, and ownership over time while maintaining a verifiable record.</p>
+          <p class="text-muted-foreground dark:text-gray-300">Robust identity system for artists, galleries, institutions, and collectors with role-based access control.</p>
         </div>
         
         <!-- Feature 4 -->
         <div class="bg-background dark:bg-background/5 p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-border/50">
           <div class="flex items-start mb-4">
+            <h3 class="text-xl font-semibold">Evolving Documentation</h3>
+          </div>
+          <p class="text-muted-foreground dark:text-gray-300">Update exhibition history, bibliographies, and ownership over time while maintaining a verifiable record.</p>
+        </div>
+        
+        <!-- Feature 5 -->
+        <div class="bg-background dark:bg-background/5 p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-border/50">
+          <div class="flex items-start mb-4">
             <h3 class="text-xl font-semibold">Gallery & Collector Tools</h3>
           </div>
           <p class="text-muted-foreground dark:text-gray-300">Verify authenticity and track provenance with ease using our specialized tools for the art market.</p>
+        </div>
+        
+        <!-- Feature 6 -->
+        <div class="bg-background dark:bg-background/5 p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-border/50">
+          <div class="flex items-start mb-4">
+            <h3 class="text-xl font-semibold">Royalty Management</h3>
+          </div>
+          <p class="text-muted-foreground dark:text-gray-300">Built-in support for artist royalties on secondary sales with EIP-2981 compliance, ensuring artists benefit from future transactions.</p>
         </div>
       </div>
     </div>
@@ -94,8 +110,8 @@
             <div class="flex-shrink-0 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">1</div>
             <div class="hidden md:block w-0.5 h-full bg-border absolute left-5 top-10 -z-10"></div>
             <div class="md:ml-8 mt-4 md:mt-0">
-              <h3 class="text-xl font-semibold mb-2">Create Your Catalogue Raisonsé (Contract)</h3>
-              <p class="text-muted-foreground dark:text-gray-300">Deploy your personalized ARC contract to establish your digital catalogue raisonné on the blockchain.</p>
+              <h3 class="text-xl font-semibold mb-2">Create Your Identity</h3>
+              <p class="text-muted-foreground dark:text-gray-300">Register your identity in the ARC system, establishing your profile as an artist, gallery, institution, or collector.</p>
             </div>
           </div>
           
@@ -104,14 +120,24 @@
             <div class="flex-shrink-0 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">2</div>
             <div class="hidden md:block w-0.5 h-full bg-border absolute left-5 top-10 -z-10"></div>
             <div class="md:ml-8 mt-4 md:mt-0">
+              <h3 class="text-xl font-semibold mb-2">Deploy Your Catalogue Raisonné (Contract)</h3>
+              <p class="text-muted-foreground dark:text-gray-300">As an artist, deploy your personalized ARC contract to establish your digital catalogue raisonné on the blockchain.</p>
+            </div>
+          </div>
+          
+          <!-- Step 3 -->
+          <div class="flex flex-col md:flex-row items-start mb-12 relative">
+            <div class="flex-shrink-0 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">3</div>
+            <div class="hidden md:block w-0.5 h-full bg-border absolute left-5 top-10 -z-10"></div>
+            <div class="md:ml-8 mt-4 md:mt-0">
               <h3 class="text-xl font-semibold mb-2">Mint Your Artwork Registry Tokens (ARTs)</h3>
               <p class="text-muted-foreground dark:text-gray-300">Permanently link physical works to digital records, creating a verifiable connection between the physical and digital worlds.</p>
             </div>
           </div>
           
-          <!-- Step 3 -->
+          <!-- Step 4 -->
           <div class="flex flex-col md:flex-row items-start relative">
-            <div class="flex-shrink-0 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">3</div>
+            <div class="flex-shrink-0 bg-primary text-primary-foreground w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">4</div>
             <div class="md:ml-8 mt-4 md:mt-0">
               <h3 class="text-xl font-semibold mb-2">Evolve & Verify</h3>
               <p class="text-muted-foreground dark:text-gray-300">Update documentation, verify authenticity, and track provenance throughout the artwork's lifecycle.</p>
