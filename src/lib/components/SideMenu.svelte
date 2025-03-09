@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   
   export let sections: { id: string; title: string }[] = [];
-  export let offset: number = 149; // Offset for scrolling to account for fixed headers
+  export let offset: number = 159; // Offset for scrolling to account for fixed headers
   
   let activeSection: string = '';
   let mounted = false;
@@ -49,7 +49,7 @@
 </script>
 
 <div class="side-menu hidden 2xl:block">
-  <nav class="fixed top-[265px] left-8 transform -translate-y-1/4 bg-background border border-border rounded-lg shadow-sm p-5 w-72">
+  <nav class="fixed top-[253px] left-8 transform -translate-y-1/4 bg-background border border-border rounded-lg shadow-sm p-5 w-72">
     <ul class="space-y-3">
       {#each sections as section}
         <li>
