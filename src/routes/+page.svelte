@@ -34,8 +34,7 @@
         <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10">Introduction to ARC</h2>
         <p class="text-lg text-center leading-relaxed text-muted-foreground dark:text-gray-300">
           The Art Registry Consortium (ARC) is an open standard designed to document, verify, and manage the 
-          provenance of physical artworks on the blockchain. Through robust identity management, artists maintain control of their catalogues, ensuring 
-          their legacy remains immutable while all participants in the art ecosystem are properly authenticated.
+          provenance of physical artworks on the blockchain.
         </p>
       </div>
     </div>
