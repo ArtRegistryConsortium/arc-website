@@ -1,5 +1,4 @@
 <script lang="ts" module>
-	import type { WithElementRef } from "bits-ui";
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
 	import { type VariantProps, tv } from "tailwind-variants";
 
@@ -32,15 +31,22 @@
 	export type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
 	export type ButtonSize = VariantProps<typeof buttonVariants>["size"];
 
-	export type ButtonProps = WithElementRef<HTMLButtonAttributes> &
-		WithElementRef<HTMLAnchorAttributes> & {
-			variant?: ButtonVariant;
-			size?: ButtonSize;
-		};
+	// Define ButtonProps with ref property
+	export type ButtonProps = HTMLButtonAttributes & HTMLAnchorAttributes & {
+		variant?: ButtonVariant;
+		size?: ButtonSize;
+		ref?: HTMLButtonElement | HTMLAnchorElement | null;
+	};
 </script>
 
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
+
+	// Define event types for proper forwarding
+	type $$Events = {
+		click: CustomEvent<MouseEvent>;
+		[k: string]: CustomEvent<any>;
+	};
 
 	let {
 		class: className,
