@@ -65,11 +65,11 @@ export type Database = {
           image: string | null
           keywords: string[] | null
           location_collection: Json | null
+          manual_sales_info: Json | null
           medium: string
           note: string | null
           owner_wallet: string
           royalties: number | null
-          sales_info: Json | null
           series: string | null
           status: string
           title: string
@@ -93,11 +93,11 @@ export type Database = {
           image?: string | null
           keywords?: string[] | null
           location_collection?: Json | null
+          manual_sales_info?: Json | null
           medium: string
           note?: string | null
           owner_wallet: string
           royalties?: number | null
-          sales_info?: Json | null
           series?: string | null
           status: string
           title: string
@@ -121,11 +121,11 @@ export type Database = {
           image?: string | null
           keywords?: string[] | null
           location_collection?: Json | null
+          manual_sales_info?: Json | null
           medium?: string
           note?: string | null
           owner_wallet?: string
           royalties?: number | null
-          sales_info?: Json | null
           series?: string | null
           status?: string
           title?: string
