@@ -23,6 +23,9 @@
   // Current path
   let currentPath = '';
   
+  // Track if user just disconnected to prevent redirect loop
+  let justDisconnected = false;
+  
   onMount(() => {
     // Get current path
     if (typeof window !== 'undefined') {
@@ -63,6 +66,9 @@
   // Function to handle wallet disconnection
   async function handleDisconnect() {
     try {
+      // Set flag to prevent redirect to verify page
+      justDisconnected = true;
+      
       // First clear the auth session
       clearSession();
       
@@ -74,8 +80,14 @@
       if (currentPath !== '/') {
         goto('/');
       }
+      
+      // Reset flag after a short delay
+      setTimeout(() => {
+        justDisconnected = false;
+      }, 1000);
     } catch (error) {
       console.error("Failed to disconnect wallet:", error);
+      justDisconnected = false;
     }
   }
 
@@ -135,7 +147,8 @@
   });
   
   // Watch for wallet connection and redirect if needed
-  $: if ($web3Store.isConnected && !isVerified) {
+  // Only redirect if not just disconnected and not already on verify-wallet page
+  $: if ($web3Store.isConnected && !isVerified && !justDisconnected && currentPath !== '/verify-wallet') {
     goto('/verify-wallet');
   }
 </script>
@@ -175,32 +188,32 @@
     </Button>
     
     {#if showPopup}
-      <div class="wallet-popup absolute right-0 mt-2 w-64 bg-[#09090b] rounded-md shadow-lg z-50 border border-border overflow-hidden">
+      <div class="wallet-popup absolute right-0 mt-2 w-64 bg-background rounded-md shadow-lg z-50 border border-border overflow-hidden">
         <div class="p-4">
-          <h3 class="text-sm font-medium text-white mb-3">Connect Wallet</h3>
+          <h3 class="text-sm font-medium text-foreground mb-3">Connect Wallet</h3>
           <div class="space-y-2">
             <button 
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] transition-colors text-white"
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent transition-colors text-foreground"
               on:click={connectMetamask}
             >
               <div class="flex items-center">
                 <img src="/images/metamask-logo.png" alt="MetaMask" class="h-6 w-6 mr-2 object-contain" />
                 <span class="text-sm font-medium">MetaMask</span>
               </div>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
             
             <button 
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] transition-colors text-white"
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent transition-colors text-foreground"
               on:click={connectWalletConnect}
             >
               <div class="flex items-center">
                 <img src="/images/walletconnect-logo.png" alt="WalletConnect" class="h-6 w-6 mr-2 object-contain" />
                 <span class="text-sm font-medium">WalletConnect</span>
               </div>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>

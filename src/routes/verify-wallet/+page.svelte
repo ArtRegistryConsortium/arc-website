@@ -64,6 +64,9 @@ onMount(() => {
     // If wallet was connected but is now disconnected, reset local state
     if (wasConnected && !isConnected) {
       resetLocalState();
+      
+      // Redirect to homepage when disconnected
+      goto('/');
     }
     
     // If we're initializing and not connected, show wallet options
@@ -88,7 +91,7 @@ onMount(() => {
     if (isVerified && !isRedirecting) {
       isRedirecting = true;
       setTimeout(() => {
-        goto('/');
+        window.location.href = '/';
       }, 2000);
     }
     
@@ -96,7 +99,7 @@ onMount(() => {
     if (isVerified && !isRedirecting && !isInitializing) {
       isRedirecting = true;
       setTimeout(() => {
-        goto('/');
+        window.location.href = '/';
       }, 500);
     }
   });
@@ -151,8 +154,8 @@ async function disconnectWallet() {
     // Reset local state
     resetLocalState();
     
-    // Redirect to homepage
-    goto('/');
+    // Use window.location for a hard redirect to ensure it works
+    window.location.href = '/';
   } catch (error) {
     console.error("Failed to disconnect wallet:", error);
   }
@@ -199,7 +202,8 @@ async function signAndVerify() {
 
 // Function to close the page
 function closePage() {
-  goto('/');
+  // Use window.location for a hard redirect to ensure it works
+  window.location.href = '/';
 }
 </script>
 
@@ -207,45 +211,47 @@ function closePage() {
   <title>Verify Your Wallet</title>
 </svelte:head>
 
-<div class="fixed inset-0 bg-[#09090b] flex flex-col items-center justify-center p-4">
+<div class="fixed inset-0 bg-background flex flex-col items-center justify-center p-4">
   <!-- Close button -->
   <Button 
-    variant="ghost" 
-    class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+    variant="outline" 
+    size="icon"
+    class="absolute top-4 right-4 rounded-full border-border hover:bg-accent hover:text-accent-foreground transition-colors"
     on:click={closePage}
+    aria-label="Close"
   >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   </Button>
   
-  <div class="max-w-md w-full mx-auto text-center">
-    <h1 class="text-3xl font-bold text-white mb-8">Verify Your Wallet</h1>
+  <div class="max-w-xl w-full mx-auto text-center">
+    <h1 class="text-3xl font-bold text-foreground mb-8">Verify Your Wallet</h1>
     
     {#if isVerified}
-      <div class="bg-green-900/20 p-6 rounded-lg border border-green-500/30 mb-6">
+      <div class="bg-green-500/20 p-6 rounded-lg border border-green-500/50 mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
-        <p class="text-white mb-2">Wallet successfully verified!</p>
-        <p class="text-gray-400 text-sm">Redirecting you back...</p>
+        <p class="text-foreground mb-2">Wallet successfully verified!</p>
+        <p class="text-muted-foreground text-sm">Redirecting you back...</p>
       </div>
     {:else if isConnected}
       {#if isVerifying}
         <div class="mb-6">
-          <div class="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p class="text-white">Verifying your wallet...</p>
+          <div class="animate-spin h-12 w-12 border-4 border-foreground border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p class="text-foreground">Verifying your wallet...</p>
         </div>
       {:else}
-        <p class="text-white mb-6">Sign a message to confirm ownership. This won't cost gas.</p>
+        <p class="text-foreground mb-6">Sign a message to confirm ownership. This won't cost gas.</p>
         
-        <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700 mb-6 text-left">
-          <p class="text-gray-400 mb-2 text-sm">Wallet Address:</p>
-          <p class="text-white font-mono mb-4">{walletAddress ? truncateAddress(walletAddress) : ''}</p>
+        <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6 text-left">
+          <p class="text-muted-foreground mb-2 text-sm">Wallet Address:</p>
+          <p class="text-foreground font-mono mb-4">{walletAddress ? truncateAddress(walletAddress) : ''}</p>
           
           {#if verificationMessage}
-            <p class="text-gray-400 mb-2 text-sm">Verification Message:</p>
-            <pre class="bg-gray-900 p-3 rounded text-white text-sm font-mono overflow-x-auto">{verificationMessage.split('\n').slice(0, 1).join('\n')}</pre>
+            <p class="text-muted-foreground mb-2 text-sm">Verification Message:</p>
+            <pre class="bg-muted p-3 rounded text-foreground text-sm font-mono overflow-x-auto">{verificationMessage.split('\n').slice(0, 1).join('\n')}</pre>
           {/if}
         </div>
         
@@ -259,7 +265,7 @@ function closePage() {
         
         <Button 
           variant="ghost"
-          class="mt-4 text-gray-400 hover:text-white text-sm"
+          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
           on:click={disconnectWallet}
         >
           Disconnect Wallet
@@ -267,39 +273,39 @@ function closePage() {
       {/if}
     {:else if isInitializing}
       <div class="mb-6">
-        <div class="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-white">Initializing wallet connection...</p>
+        <div class="animate-spin h-12 w-12 border-4 border-foreground border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-foreground">Initializing wallet connection...</p>
       </div>
     {:else}
-      <p class="text-white mb-6">Connect your wallet to verify ownership</p>
+      <p class="text-foreground mb-6">Connect your wallet to verify ownership</p>
       
       {#if showWalletOptions}
-        <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700 mb-6">
+        <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6">
           <div class="space-y-3">
             <Button 
               variant="ghost"
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] text-white"
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
               on:click={() => connectWallet('injected')}
             >
               <div class="flex items-center">
                 <img src="/images/metamask-logo.png" alt="MetaMask" class="h-6 w-6 mr-2 object-contain" />
                 <span class="text-sm font-medium">MetaMask</span>
               </div>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </Button>
             
             <Button 
               variant="ghost"
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] text-white"
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
               on:click={() => connectWallet('walletconnect')}
             >
               <div class="flex items-center">
                 <img src="/images/walletconnect-logo.png" alt="WalletConnect" class="h-6 w-6 mr-2 object-contain" />
                 <span class="text-sm font-medium">WalletConnect</span>
               </div>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </Button>

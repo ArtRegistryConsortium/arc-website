@@ -10,7 +10,7 @@
 	// Import the theme store to initialize it
 	import { themeStore } from '$lib/stores/theme';
 	
-	let { children } = $props();
+	let { children, data } = $props();
 	
 	// This import is needed to initialize the theme
 	// The store subscription will handle the theme changes
@@ -24,11 +24,17 @@
 </script>
 
 <Web3Provider>
-	<div class="min-h-screen flex flex-col">
-		<Navbar />
-		<main class="flex-grow pt-16 md:pt-19">
+	{#if data?.skipLayout}
+		<div class="min-h-screen">
 			{@render children()}
-		</main>
-		<Footer />
-	</div>
+		</div>
+	{:else}
+		<div class="min-h-screen flex flex-col">
+			<Navbar />
+			<main class="flex-grow pt-16 md:pt-19">
+				{@render children()}
+			</main>
+			<Footer />
+		</div>
+	{/if}
 </Web3Provider>
