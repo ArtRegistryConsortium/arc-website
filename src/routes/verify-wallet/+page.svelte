@@ -11,7 +11,7 @@ import {
   verifyWalletSignature,
   clearSession
 } from '$lib/stores/walletAuth';
-import { connect, disconnect } from 'wagmi/actions';
+import { connect, disconnect, reconnect } from 'wagmi/actions';
 import { injected, walletConnect } from 'wagmi/connectors';
 import { config } from '$lib/web3/config';
 import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
@@ -26,6 +26,7 @@ let showWalletOptions = false;
 let verificationMessage = '';
 let isRedirecting = false;
 let messageReady = false;
+let isInitializing = true;
 
 // Subscribe to stores
 let isConnected = false;
@@ -45,8 +46,8 @@ function resetLocalState() {
 }
 
 onMount(() => {
-  // Check for existing session
-  checkExistingSession();
+  // Initialize wallet connection
+  initializeWallet();
   
   // Subscribe to web3Store
   unsubscribeWeb3 = web3Store.subscribe(state => {
@@ -64,6 +65,18 @@ onMount(() => {
     if (wasConnected && !isConnected) {
       resetLocalState();
     }
+    
+    // If we're initializing and not connected, show wallet options
+    if (isInitializing && !isConnected) {
+      showWalletOptions = true;
+      isInitializing = false;
+    }
+    
+    // If we're initializing and connected, hide wallet options
+    if (isInitializing && isConnected) {
+      showWalletOptions = false;
+      isInitializing = false;
+    }
   });
   
   // Subscribe to walletAuthStore
@@ -78,6 +91,14 @@ onMount(() => {
         goto('/');
       }, 2000);
     }
+    
+    // If we're verified and on the verify page, redirect to home
+    if (isVerified && !isRedirecting && !isInitializing) {
+      isRedirecting = true;
+      setTimeout(() => {
+        goto('/');
+      }, 500);
+    }
   });
   
   return () => {
@@ -85,6 +106,19 @@ onMount(() => {
     if (unsubscribeAuth) unsubscribeAuth();
   };
 });
+
+// Initialize wallet connection
+async function initializeWallet() {
+  // Check for existing session
+  checkExistingSession();
+  
+  // Try to reconnect to the previously connected wallet
+  try {
+    await reconnect(config);
+  } catch (error) {
+    console.error('Failed to reconnect wallet:', error);
+  }
+}
 
 // Function to toggle wallet options
 function toggleWalletOptions() {
@@ -231,6 +265,11 @@ function closePage() {
           Disconnect Wallet
         </Button>
       {/if}
+    {:else if isInitializing}
+      <div class="mb-6">
+        <div class="animate-spin h-12 w-12 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-white">Initializing wallet connection...</p>
+      </div>
     {:else}
       <p class="text-white mb-6">Connect your wallet to verify ownership</p>
       

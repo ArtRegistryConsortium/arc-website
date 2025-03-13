@@ -3,15 +3,16 @@
   import { createWeb3Modal } from '@web3modal/wagmi';
   import { config } from '$lib/web3/config';
   import { setConnected, setDisconnected, setConnecting, setError } from '$lib/stores/web3';
-  import { watchAccount } from 'wagmi/actions';
+  import { watchAccount, reconnect } from 'wagmi/actions';
   import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
+  import { checkExistingSession } from '$lib/stores/walletAuth';
 
   // Get WalletConnect project ID from environment variable
   const projectId = PUBLIC_WALLETCONNECT_ID || '';
 
   let unwatch: (() => void) | undefined;
 
-  onMount(() => {
+  onMount(async () => {
     // Initialize Web3Modal
     createWeb3Modal({
       wagmiConfig: config,
@@ -22,6 +23,16 @@
         '--w3m-border-radius-master': '0.5rem'
       }
     });
+
+    // Try to reconnect to the previously connected wallet
+    try {
+      await reconnect(config);
+      
+      // Also check for existing auth session
+      checkExistingSession();
+    } catch (error) {
+      console.error('Failed to reconnect wallet:', error);
+    }
 
     // Watch for account changes
     unwatch = watchAccount(config, {

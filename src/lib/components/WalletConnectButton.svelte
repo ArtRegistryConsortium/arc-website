@@ -69,8 +69,9 @@
       // Then disconnect the wallet
       await disconnect(config);
       
-      // If we're on the verify-wallet page, redirect to homepage
-      if (currentPath === '/verify-wallet') {
+      // Always redirect to homepage after disconnecting
+      // Only avoid redirect if we're already on the homepage
+      if (currentPath !== '/') {
         goto('/');
       }
     } catch (error) {
