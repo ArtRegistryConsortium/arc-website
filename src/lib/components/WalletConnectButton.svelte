@@ -6,23 +6,31 @@
   import { config } from "$lib/web3/config";
   import { truncateAddress } from "$lib/utils/web3";
   import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
+  import { onMount, onDestroy } from 'svelte';
 
   // Get WalletConnect project ID from environment variable
   const projectId = PUBLIC_WALLETCONNECT_ID || '';
 
-  // Function to handle wallet connection
-  async function handleConnect() {
+  // State for popup visibility
+  let showPopup = false;
+
+  // Function to handle MetaMask connection
+  async function connectMetamask() {
     try {
-      // First try injected connector (MetaMask, etc.)
       await connect(config, { connector: injected() });
+      showPopup = false;
     } catch (error) {
-      console.error("Failed to connect with injected wallet:", error);
-      try {
-        // Fall back to WalletConnect
-        await connect(config, { connector: walletConnect({ projectId }) });
-      } catch (walletConnectError) {
-        console.error("Failed to connect with WalletConnect:", walletConnectError);
-      }
+      console.error("Failed to connect with MetaMask:", error);
+    }
+  }
+
+  // Function to handle WalletConnect connection
+  async function connectWalletConnect() {
+    try {
+      await connect(config, { connector: walletConnect({ projectId }) });
+      showPopup = false;
+    } catch (error) {
+      console.error("Failed to connect with WalletConnect:", error);
     }
   }
 
@@ -34,10 +42,37 @@
       console.error("Failed to disconnect wallet:", error);
     }
   }
+
+  // Toggle popup visibility
+  function togglePopup() {
+    showPopup = !showPopup;
+  }
+
+  // Close popup when clicking outside
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (showPopup && !target.closest('.wallet-popup') && !target.closest('.connect-button')) {
+      showPopup = false;
+    }
+  }
+
+  // Add event listener for outside clicks
+  let clickOutsideHandler: ((event: MouseEvent) => void) | undefined;
+  
+  onMount(() => {
+    clickOutsideHandler = (event: MouseEvent) => handleClickOutside(event);
+    document.addEventListener('click', clickOutsideHandler);
+  });
+  
+  onDestroy(() => {
+    if (clickOutsideHandler) {
+      document.removeEventListener('click', clickOutsideHandler);
+    }
+  });
 </script>
 
 {#if $web3Store.isConnected}
-  <Button variant="default" class="shadow-sm" onclick={handleDisconnect}>
+  <Button variant="default" class="shadow-sm" on:click={handleDisconnect}>
     <div class="flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -60,12 +95,66 @@
     </div>
   </Button>
 {:else}
-  <Button variant="default" class="shadow-sm" onclick={handleConnect}>
-    <div class="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-      </svg>
-      Connect Wallet
-    </div>
-  </Button>
-{/if} 
+  <div class="relative">
+    <Button variant="default" class="shadow-sm connect-button" on:click={togglePopup}>
+      <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+        </svg>
+        Connect Wallet
+      </div>
+    </Button>
+    
+    {#if showPopup}
+      <div class="wallet-popup absolute right-0 mt-2 w-64 bg-[#09090b] rounded-md shadow-lg z-50 border border-border overflow-hidden">
+        <div class="p-4">
+          <h3 class="text-sm font-medium text-white mb-3">Connect Wallet</h3>
+          <div class="space-y-2">
+            <button 
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] transition-colors text-white"
+              on:click={connectMetamask}
+            >
+              <div class="flex items-center">
+                <img src="/images/metamask-logo.png" alt="MetaMask" class="h-6 w-6 mr-2 object-contain" />
+                <span class="text-sm font-medium">MetaMask</span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            
+            <button 
+              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-[#1a1a1a] transition-colors text-white"
+              on:click={connectWalletConnect}
+            >
+              <div class="flex items-center">
+                <img src="/images/walletconnect-logo.png" alt="WalletConnect" class="h-6 w-6 mr-2 object-contain" />
+                <span class="text-sm font-medium">WalletConnect</span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+  </div>
+{/if}
+
+<style>
+  .wallet-popup {
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style> 

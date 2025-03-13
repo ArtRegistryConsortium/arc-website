@@ -44,8 +44,8 @@
 
 	// Define event types for proper forwarding
 	type $$Events = {
-		click: CustomEvent<MouseEvent>;
-		[k: string]: CustomEvent<any>;
+		click: MouseEvent;
+		[k: string]: any;
 	};
 
 	let {
@@ -66,6 +66,7 @@
 		class={cn(buttonVariants({ variant, size }), className)}
 		{href}
 		{...restProps}
+		on:click
 	>
 		{@render children?.()}
 	</a>
@@ -75,6 +76,7 @@
 		class={cn(buttonVariants({ variant, size }), className)}
 		{type}
 		{...restProps}
+		on:click
 	>
 		{@render children?.()}
 	</button>
