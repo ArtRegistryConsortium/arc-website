@@ -1,24 +1,45 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import { web3Store } from "$lib/stores/web3";
+  import { walletAuthStore, checkExistingSession, clearSession } from "$lib/stores/walletAuth";
   import { disconnect, connect } from "wagmi/actions";
   import { injected, walletConnect } from "wagmi/connectors";
   import { config } from "$lib/web3/config";
   import { truncateAddress } from "$lib/utils/web3";
   import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
   import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
 
   // Get WalletConnect project ID from environment variable
   const projectId = PUBLIC_WALLETCONNECT_ID || '';
 
   // State for popup visibility
   let showPopup = false;
+  
+  // Auth state
+  let isVerified = false;
+  let unsubscribeAuth: (() => void) | undefined;
+  
+  // Current path
+  let currentPath = '';
+  
+  onMount(() => {
+    // Get current path
+    if (typeof window !== 'undefined') {
+      currentPath = window.location.pathname;
+    }
+  });
 
   // Function to handle MetaMask connection
   async function connectMetamask() {
     try {
       await connect(config, { connector: injected() });
       showPopup = false;
+      
+      // Check if the wallet is verified, if not redirect to verify page
+      if (!isVerified) {
+        goto('/verify-wallet');
+      }
     } catch (error) {
       console.error("Failed to connect with MetaMask:", error);
     }
@@ -29,6 +50,11 @@
     try {
       await connect(config, { connector: walletConnect({ projectId }) });
       showPopup = false;
+      
+      // Check if the wallet is verified, if not redirect to verify page
+      if (!isVerified) {
+        goto('/verify-wallet');
+      }
     } catch (error) {
       console.error("Failed to connect with WalletConnect:", error);
     }
@@ -37,7 +63,16 @@
   // Function to handle wallet disconnection
   async function handleDisconnect() {
     try {
+      // First clear the auth session
+      clearSession();
+      
+      // Then disconnect the wallet
       await disconnect(config);
+      
+      // If we're on the verify-wallet page, redirect to homepage
+      if (currentPath === '/verify-wallet') {
+        goto('/');
+      }
     } catch (error) {
       console.error("Failed to disconnect wallet:", error);
     }
@@ -60,15 +95,48 @@
   let clickOutsideHandler: ((event: MouseEvent) => void) | undefined;
   
   onMount(() => {
+    // Check for existing session
+    checkExistingSession();
+    
+    // Subscribe to auth store
+    unsubscribeAuth = walletAuthStore.subscribe(state => {
+      isVerified = state.isVerified;
+    });
+    
     clickOutsideHandler = (event: MouseEvent) => handleClickOutside(event);
     document.addEventListener('click', clickOutsideHandler);
+    
+    // Update current path when it changes
+    if (typeof window !== 'undefined') {
+      currentPath = window.location.pathname;
+      
+      // Listen for path changes
+      const handleLocationChange = () => {
+        currentPath = window.location.pathname;
+      };
+      
+      window.addEventListener('popstate', handleLocationChange);
+      
+      return () => {
+        window.removeEventListener('popstate', handleLocationChange);
+      };
+    }
   });
   
   onDestroy(() => {
     if (clickOutsideHandler) {
       document.removeEventListener('click', clickOutsideHandler);
     }
+    
+    if (unsubscribeAuth) {
+      unsubscribeAuth();
+    }
   });
+  
+  // Watch for wallet connection and redirect if needed
+  $: if ($web3Store.isConnected && !isVerified) {
+    goto('/verify-wallet');
+  }
 </script>
 
 {#if $web3Store.isConnected}
