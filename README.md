@@ -14,7 +14,7 @@ Key features include:
 
 ## Development
 
-This project is built with Svelte and uses TailwindCSS for styling.
+This project is built with Svelte and uses TailwindCSS for styling. It also integrates with Supabase for database functionality and Web3 for wallet connections.
 
 ### Setup
 
@@ -38,6 +38,93 @@ npm run build
 # Preview the production build
 npm run preview
 ```
+
+## Supabase Integration
+
+This project uses Supabase for database functionality.
+
+### Prerequisites
+
+1. A Supabase account and project
+2. The Supabase URL and anon key for your project
+
+### Setup Steps
+
+1. Create a Supabase project if you haven't already
+2. Set up the required tables in your Supabase database
+
+#### Required Tables
+
+##### Wallets Table
+
+You need to create the `wallets` table in your Supabase database with the following schema:
+
+```sql
+CREATE TABLE wallets (
+  wallet_address TEXT PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  fee_paid BOOLEAN DEFAULT FALSE,
+  setup_completed BOOLEAN DEFAULT FALSE,
+  setup_step INTEGER DEFAULT 0
+);
+
+-- Enable RLS (Row Level Security)
+ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow anonymous users to insert
+CREATE POLICY "Allow anonymous insert" ON wallets
+  FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+-- Create policy to allow users to read their own wallet data
+CREATE POLICY "Allow users to read their own wallet data" ON wallets
+  FOR SELECT
+  TO anon
+  USING (true);
+
+-- Create policy to allow users to update their own wallet data
+CREATE POLICY "Allow users to update their own wallet data" ON wallets
+  FOR UPDATE
+  TO anon
+  USING (true);
+```
+
+#### Environment Variables
+
+Update your `.env` file with the following variables:
+
+```
+PUBLIC_SUPABASE_URL=your_supabase_url
+PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Replace `your_supabase_url` and `your_supabase_anon_key` with the actual values from your Supabase project.
+
+### How It Works
+
+When a user connects their wallet and signs the verification message, the system will:
+
+1. Check if a wallet entry exists in the Supabase database
+2. If not, create a new entry with:
+   - `fee_paid` set to `false`
+   - `setup_completed` set to `false`
+   - `setup_step` set to `0`
+3. If the wallet entry already exists, update the `last_login` timestamp
+
+This integration ensures that all connected wallets are tracked in the database, allowing for features like:
+- Tracking user onboarding progress
+- Managing fee payment status
+- Storing user preferences and settings
+
+### Testing
+
+To test the integration:
+1. Connect your wallet to the website
+2. Sign the verification message
+3. Check the Supabase database to confirm that a wallet entry was created
 
 ## Contributing
 

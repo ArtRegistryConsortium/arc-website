@@ -2,6 +2,8 @@ import { writable } from 'svelte/store';
 import type { Address } from 'viem';
 import { signMessage } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
+import { ensureWalletExists } from '$lib/services/walletService';
+import { testSupabaseConnection } from '$lib/supabase/client';
 
 // Define the authentication state interface
 interface WalletAuthState {
@@ -61,6 +63,25 @@ export function checkExistingSession(): boolean {
   }));
 
   console.log('Valid session found for address:', sessionAddress);
+
+  // Check if wallet exists in Supabase and create it if it doesn't
+  // We're doing this asynchronously and not waiting for the result
+  // because checkExistingSession is a synchronous function
+  if (sessionAddress) {
+    const address = sessionAddress as Address;
+    ensureWalletExists(address)
+      .then(success => {
+        if (success) {
+          console.log('Wallet entry confirmed or updated in Supabase during session check');
+        } else {
+          console.warn('Failed to confirm or update wallet entry in Supabase during session check');
+        }
+      })
+      .catch(error => {
+        console.error('Error interacting with Supabase during session check:', error);
+      });
+  }
+
   return true;
 }
 
@@ -118,6 +139,32 @@ export async function verifyWalletSignature(address: Address, signature: string,
     localStorage.setItem('wallet_verified', 'true');
 
     console.log('Wallet verification successful, session created for:', address);
+
+    // Check if wallet exists in Supabase and create it if it doesn't
+    try {
+      console.log('Starting Supabase wallet check/creation for address:', address);
+
+      // Test Supabase connection first
+      const connectionTest = await testSupabaseConnection();
+      console.log('Supabase connection test result:', connectionTest ? 'Success' : 'Failed');
+
+      // Ensure the wallet entry exists
+      console.log('Calling ensureWalletExists...');
+      const walletCreated = await ensureWalletExists(address);
+
+      if (walletCreated) {
+        console.log('Wallet entry created or updated in Supabase for:', address);
+      } else {
+        console.warn('Failed to create or update wallet entry in Supabase for:', address);
+      }
+    } catch (dbError) {
+      console.error('Error interacting with Supabase:', dbError);
+      if (dbError instanceof Error) {
+        console.error('Error message:', dbError.message);
+        console.error('Error stack:', dbError.stack);
+      }
+      // Continue with local authentication even if Supabase interaction fails
+    }
 
     // Update the store
     walletAuthStore.update(state => ({
