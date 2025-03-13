@@ -226,11 +226,14 @@ export type Database = {
           description: string | null
           dob: number | null
           dod: number | null
+          exhibition_history: Json | null
           id: number
           identity_image: string | null
           links: string[] | null
           location: string | null
           name: string
+          represented_artists: Json | null
+          represented_by: Json | null
           tags: string[] | null
           type: string
           updated_at: string | null
@@ -242,11 +245,14 @@ export type Database = {
           description?: string | null
           dob?: number | null
           dod?: number | null
+          exhibition_history?: Json | null
           id: number
           identity_image?: string | null
           links?: string[] | null
           location?: string | null
           name: string
+          represented_artists?: Json | null
+          represented_by?: Json | null
           tags?: string[] | null
           type: string
           updated_at?: string | null
@@ -258,11 +264,14 @@ export type Database = {
           description?: string | null
           dob?: number | null
           dod?: number | null
+          exhibition_history?: Json | null
           id?: number
           identity_image?: string | null
           links?: string[] | null
           location?: string | null
           name?: string
+          represented_artists?: Json | null
+          represented_by?: Json | null
           tags?: string[] | null
           type?: string
           updated_at?: string | null
