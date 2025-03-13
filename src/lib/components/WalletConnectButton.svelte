@@ -15,17 +15,17 @@
 
   // State for popup visibility
   let showPopup = false;
-  
+
   // Auth state
   let isVerified = false;
   let unsubscribeAuth: (() => void) | undefined;
-  
+
   // Current path
   let currentPath = '';
-  
+
   // Track if user just disconnected to prevent redirect loop
   let justDisconnected = false;
-  
+
   onMount(() => {
     // Get current path
     if (typeof window !== 'undefined') {
@@ -38,7 +38,7 @@
     try {
       await connect(config, { connector: injected() });
       showPopup = false;
-      
+
       // Check if the wallet is verified, if not redirect to verify page
       if (!isVerified) {
         goto('/verify-wallet');
@@ -53,7 +53,7 @@
     try {
       await connect(config, { connector: walletConnect({ projectId }) });
       showPopup = false;
-      
+
       // Check if the wallet is verified, if not redirect to verify page
       if (!isVerified) {
         goto('/verify-wallet');
@@ -68,19 +68,19 @@
     try {
       // Set flag to prevent redirect to verify page
       justDisconnected = true;
-      
+
       // First clear the auth session
       clearSession();
-      
+
       // Then disconnect the wallet
       await disconnect(config);
-      
+
       // Always redirect to homepage after disconnecting
       // Only avoid redirect if we're already on the homepage
       if (currentPath !== '/') {
         goto('/');
       }
-      
+
       // Reset flag after a short delay
       setTimeout(() => {
         justDisconnected = false;
@@ -106,46 +106,60 @@
 
   // Add event listener for outside clicks
   let clickOutsideHandler: ((event: MouseEvent) => void) | undefined;
-  
+
   onMount(() => {
     // Check for existing session
-    checkExistingSession();
-    
+    const hasValidSession = checkExistingSession();
+
     // Subscribe to auth store
     unsubscribeAuth = walletAuthStore.subscribe(state => {
       isVerified = state.isVerified;
     });
-    
+
+    // Set up click outside handler
     clickOutsideHandler = (event: MouseEvent) => handleClickOutside(event);
     document.addEventListener('click', clickOutsideHandler);
-    
+
     // Update current path when it changes
     if (typeof window !== 'undefined') {
       currentPath = window.location.pathname;
-      
+
+      // Check if we have a verified wallet flag in localStorage
+      const isWalletVerified = localStorage.getItem('wallet_verified') === 'true';
+
+      // If we have a valid session and the wallet is verified, but the isVerified state is false,
+      // this might be due to the store not being updated yet, so we'll force an update
+      if (hasValidSession && isWalletVerified && !isVerified) {
+        console.log('Forcing wallet verification state update');
+        walletAuthStore.update(state => ({
+          ...state,
+          isVerified: true
+        }));
+      }
+
       // Listen for path changes
       const handleLocationChange = () => {
         currentPath = window.location.pathname;
       };
-      
+
       window.addEventListener('popstate', handleLocationChange);
-      
+
       return () => {
         window.removeEventListener('popstate', handleLocationChange);
       };
     }
   });
-  
+
   onDestroy(() => {
     if (clickOutsideHandler) {
       document.removeEventListener('click', clickOutsideHandler);
     }
-    
+
     if (unsubscribeAuth) {
       unsubscribeAuth();
     }
   });
-  
+
   // Watch for wallet connection and redirect if needed
   // Only redirect if not just disconnected and not already on verify-wallet page
   $: if ($web3Store.isConnected && !isVerified && !justDisconnected && currentPath !== '/verify-wallet') {
@@ -186,13 +200,13 @@
         Connect Wallet
       </div>
     </Button>
-    
+
     {#if showPopup}
       <div class="wallet-popup absolute right-0 mt-2 w-64 bg-background rounded-md shadow-lg z-50 border border-border overflow-hidden">
         <div class="p-4">
           <h3 class="text-sm font-medium text-foreground mb-3">Connect Wallet</h3>
           <div class="space-y-2">
-            <button 
+            <button
               class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent transition-colors text-foreground"
               on:click={connectMetamask}
             >
@@ -204,8 +218,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            
-            <button 
+
+            <button
               class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent transition-colors text-foreground"
               on:click={connectWalletConnect}
             >
@@ -228,7 +242,7 @@
   .wallet-popup {
     animation: fadeIn 0.2s ease-out;
   }
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -239,4 +253,4 @@
       transform: translateY(0);
     }
   }
-</style> 
+</style>

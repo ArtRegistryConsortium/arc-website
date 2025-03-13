@@ -18,7 +18,10 @@ export const config = createConfig({
     [sepolia.id]: http(),
   },
   connectors: [
-    injected(),
+    injected({
+      // Enable auto-connection for injected connectors
+      shimDisconnect: true
+    }),
     walletConnect({
       projectId,
       showQrModal: true,
@@ -29,5 +32,7 @@ export const config = createConfig({
         icons: ['https://artregistryconsortium.org/favicon.ico'] // Replace with your actual icon
       }
     })
-  ]
-}); 
+  ],
+  // Disable SSR for client-side only functionality
+  ssr: false
+});

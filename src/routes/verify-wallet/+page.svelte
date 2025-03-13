@@ -3,11 +3,11 @@ import { Button } from "$lib/components/ui/button/index.js";
 import { onMount, onDestroy } from 'svelte';
 import { goto } from '$app/navigation';
 import { web3Store } from '$lib/stores/web3';
-import { 
-  walletAuthStore, 
-  checkExistingSession, 
-  createVerificationSession, 
-  signWalletMessage, 
+import {
+  walletAuthStore,
+  checkExistingSession,
+  createVerificationSession,
+  signWalletMessage,
   verifyWalletSignature,
   clearSession
 } from '$lib/stores/walletAuth';
@@ -48,45 +48,45 @@ function resetLocalState() {
 onMount(() => {
   // Initialize wallet connection
   initializeWallet();
-  
+
   // Subscribe to web3Store
   unsubscribeWeb3 = web3Store.subscribe(state => {
     const wasConnected = isConnected;
     isConnected = state.isConnected;
     walletAddress = state.address;
-    
+
     // If wallet is connected but not verified, prepare verification message
     // but don't automatically start the verification process
     if (isConnected && walletAddress && !isVerified && !isVerifying && !messageReady) {
       prepareVerificationMessage();
     }
-    
+
     // If wallet was connected but is now disconnected, reset local state
     if (wasConnected && !isConnected) {
       resetLocalState();
-      
+
       // Redirect to homepage when disconnected
       goto('/');
     }
-    
+
     // If we're initializing and not connected, show wallet options
     if (isInitializing && !isConnected) {
       showWalletOptions = true;
       isInitializing = false;
     }
-    
+
     // If we're initializing and connected, hide wallet options
     if (isInitializing && isConnected) {
       showWalletOptions = false;
       isInitializing = false;
     }
   });
-  
+
   // Subscribe to walletAuthStore
   unsubscribeAuth = walletAuthStore.subscribe(state => {
     isVerified = state.isVerified;
     isVerifying = state.isVerifying;
-    
+
     // If verification is complete, redirect after a short delay
     if (isVerified && !isRedirecting) {
       isRedirecting = true;
@@ -94,7 +94,7 @@ onMount(() => {
         window.location.href = '/';
       }, 2000);
     }
-    
+
     // If we're verified and on the verify page, redirect to home
     if (isVerified && !isRedirecting && !isInitializing) {
       isRedirecting = true;
@@ -103,7 +103,7 @@ onMount(() => {
       }, 500);
     }
   });
-  
+
   return () => {
     if (unsubscribeWeb3) unsubscribeWeb3();
     if (unsubscribeAuth) unsubscribeAuth();
@@ -113,11 +113,25 @@ onMount(() => {
 // Initialize wallet connection
 async function initializeWallet() {
   // Check for existing session
-  checkExistingSession();
-  
+  const hasValidSession = checkExistingSession();
+  console.log('Existing session checked on verify page:', hasValidSession);
+
   // Try to reconnect to the previously connected wallet
   try {
     await reconnect(config);
+
+    // Check if we have a verified wallet flag in localStorage
+    const isWalletVerified = localStorage.getItem('wallet_verified') === 'true';
+
+    // If we have a valid session and the wallet is verified, but the isVerified state is false,
+    // this might be due to the store not being updated yet, so we'll force an update
+    if (hasValidSession && isWalletVerified && !isVerified) {
+      console.log('Forcing wallet verification state update on verify page');
+      walletAuthStore.update(state => ({
+        ...state,
+        isVerified: true
+      }));
+    }
   } catch (error) {
     console.error('Failed to reconnect wallet:', error);
   }
@@ -147,13 +161,13 @@ async function disconnectWallet() {
   try {
     // First clear the auth session
     clearSession();
-    
+
     // Then disconnect the wallet
     await disconnect(config);
-    
+
     // Reset local state
     resetLocalState();
-    
+
     // Use window.location for a hard redirect to ensure it works
     window.location.href = '/';
   } catch (error) {
@@ -164,11 +178,11 @@ async function disconnectWallet() {
 // Function to prepare verification message without starting verification
 async function prepareVerificationMessage() {
   if (!walletAddress) return;
-  
+
   try {
     // Create a verification session and get a nonce
     const nonce = await createVerificationSession(walletAddress);
-    
+
     // Create a message to sign
     verificationMessage = `Sign this message to verify your wallet ownership.\n\nWallet: ${walletAddress}\nNonce: ${nonce}\n\nThis won't cost any gas.`;
     messageReady = true;
@@ -180,16 +194,16 @@ async function prepareVerificationMessage() {
 // Function to sign message and verify
 async function signAndVerify() {
   if (!walletAddress || !verificationMessage) return;
-  
+
   try {
     // Sign the message
     const signature = await signWalletMessage(walletAddress, verificationMessage);
-    
+
     if (signature) {
       // Extract nonce from the message
       const nonceMatch = verificationMessage.match(/Nonce: (.*)\n/);
       const nonce = nonceMatch ? nonceMatch[1] : '';
-      
+
       if (nonce) {
         // Verify the signature
         await verifyWalletSignature(walletAddress, signature, nonce);
@@ -200,10 +214,30 @@ async function signAndVerify() {
   }
 }
 
-// Function to close the page
-function closePage() {
-  // Use window.location for a hard redirect to ensure it works
-  window.location.href = '/';
+// Function to close the page and disconnect wallet
+async function closePage() {
+  try {
+    // If wallet is connected, disconnect it
+    if (isConnected) {
+      // First clear the auth session
+      clearSession();
+
+      // Then disconnect the wallet
+      await disconnect(config);
+
+      // Reset local state
+      resetLocalState();
+
+      console.log('Wallet disconnected when closing verify page');
+    }
+
+    // Use window.location for a hard redirect to ensure it works
+    window.location.href = '/';
+  } catch (error) {
+    console.error('Error when closing verify page:', error);
+    // Still redirect even if there's an error
+    window.location.href = '/';
+  }
 }
 </script>
 
@@ -213,21 +247,21 @@ function closePage() {
 
 <div class="fixed inset-0 bg-background flex flex-col items-center justify-center p-4">
   <!-- Close button -->
-  <Button 
-    variant="outline" 
+  <Button
+    variant="outline"
     size="icon"
     class="absolute top-4 right-4 rounded-full border-border hover:bg-accent hover:text-accent-foreground transition-colors"
-    on:click={closePage}
+    on:click={() => closePage()}
     aria-label="Close"
   >
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
       <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   </Button>
-  
+
   <div class="max-w-xl w-full mx-auto text-center">
     <h1 class="text-3xl font-bold text-foreground mb-8">Verify Your Wallet</h1>
-    
+
     {#if isVerified}
       <div class="bg-green-500/20 p-6 rounded-lg border border-green-500/50 mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,26 +278,26 @@ function closePage() {
         </div>
       {:else}
         <p class="text-foreground mb-6">Sign a message to confirm ownership. This won't cost gas.</p>
-        
+
         <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6 text-left">
           <p class="text-muted-foreground mb-2 text-sm">Wallet Address:</p>
           <p class="text-foreground font-mono mb-4">{walletAddress ? truncateAddress(walletAddress) : ''}</p>
-          
+
           {#if verificationMessage}
             <p class="text-muted-foreground mb-2 text-sm">Verification Message:</p>
             <pre class="bg-muted p-3 rounded text-foreground text-sm font-mono overflow-x-auto">{verificationMessage.split('\n').slice(0, 1).join('\n')}</pre>
           {/if}
         </div>
-        
-        <Button 
+
+        <Button
           variant="default"
           class="w-full"
           on:click={signAndVerify}
         >
           Sign Message
         </Button>
-        
-        <Button 
+
+        <Button
           variant="ghost"
           class="mt-4 text-muted-foreground hover:text-foreground text-sm"
           on:click={disconnectWallet}
@@ -278,11 +312,11 @@ function closePage() {
       </div>
     {:else}
       <p class="text-foreground mb-6">Connect your wallet to verify ownership</p>
-      
+
       {#if showWalletOptions}
         <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6">
           <div class="space-y-3">
-            <Button 
+            <Button
               variant="ghost"
               class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
               on:click={() => connectWallet('injected')}
@@ -295,8 +329,8 @@ function closePage() {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </Button>
-            
-            <Button 
+
+            <Button
               variant="ghost"
               class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
               on:click={() => connectWallet('walletconnect')}
@@ -312,7 +346,7 @@ function closePage() {
           </div>
         </div>
       {:else}
-        <Button 
+        <Button
           variant="default"
           class="w-full"
           on:click={toggleWalletOptions}
@@ -322,4 +356,4 @@ function closePage() {
       {/if}
     {/if}
   </div>
-</div> 
+</div>

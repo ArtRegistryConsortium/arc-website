@@ -3,16 +3,49 @@
   import { createWeb3Modal } from '@web3modal/wagmi';
   import { config } from '$lib/web3/config';
   import { setConnected, setDisconnected, setConnecting, setError } from '$lib/stores/web3';
-  import { watchAccount, reconnect } from 'wagmi/actions';
+  import { watchAccount, reconnect, getAccount } from 'wagmi/actions';
   import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
   import { checkExistingSession, walletAuthStore } from '$lib/stores/walletAuth';
   import { browser } from '$app/environment';
+  import { get } from 'svelte/store';
 
   // Get WalletConnect project ID from environment variable
   const projectId = PUBLIC_WALLETCONNECT_ID || '';
 
   let unwatch: (() => void) | undefined;
   let isSessionChecked = false;
+
+  // Function to handle wallet reconnection and session validation
+  async function handleWalletReconnection() {
+    if (!browser) return;
+
+    // First check for existing auth session
+    const hasValidSession = checkExistingSession();
+    isSessionChecked = hasValidSession;
+    console.log('Existing session checked:', hasValidSession);
+
+    // Try to reconnect to the previously connected wallet
+    try {
+      await reconnect(config);
+
+      // After reconnection, check if the wallet address matches the session
+      const account = getAccount(config);
+      const sessionAddress = localStorage.getItem('wallet_session_address');
+
+      if (account.isConnected && account.address) {
+        // Update the web3 store with the connected account
+        setConnected(account.address, account.chainId || 1);
+
+        // Validate that the reconnected wallet matches the session address
+        if (hasValidSession && sessionAddress && sessionAddress.toLowerCase() !== account.address.toLowerCase()) {
+          console.warn('Wallet address mismatch with stored session');
+          // In a real app, you might want to prompt the user to verify again
+        }
+      }
+    } catch (error) {
+      console.error('Failed to reconnect wallet:', error);
+    }
+  }
 
   onMount(async () => {
     // Initialize Web3Modal
@@ -26,25 +59,15 @@
       }
     });
 
-    // First check for existing auth session
-    if (browser) {
-      isSessionChecked = checkExistingSession();
-      console.log('Existing session checked:', isSessionChecked);
-    }
-
-    // Try to reconnect to the previously connected wallet
-    try {
-      await reconnect(config);
-    } catch (error) {
-      console.error('Failed to reconnect wallet:', error);
-    }
+    // Handle wallet reconnection
+    await handleWalletReconnection();
 
     // Watch for account changes
     unwatch = watchAccount(config, {
       onChange(account) {
         if (account.isConnected && account.address && account.chainId) {
           setConnected(account.address, account.chainId);
-          
+
           // If we have a session but wallet address changed, check if it matches
           if (browser && isSessionChecked) {
             const sessionAddress = localStorage.getItem('wallet_session_address');
@@ -76,4 +99,4 @@
   });
 </script>
 
-<slot /> 
+<slot />
