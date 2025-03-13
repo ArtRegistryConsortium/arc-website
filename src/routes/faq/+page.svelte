@@ -82,6 +82,8 @@
             <li><strong>Tags:</strong> Keywords associated with the identity.</li>
             <li><strong>Artist-specific:</strong> Date of birth, date of death (if applicable), and location.</li>
             <li><strong>Gallery/Institution-specific:</strong> Physical addresses.</li>
+            <li><strong>Artist-specific:</strong> RepresentedBy - Array of gallery/institution identity IDs representing the artist.</li>
+            <li><strong>Gallery/Institution-specific:</strong> RepresentedArtists - Array of artist identity IDs represented by the gallery/institution.</li>
           </ul>
         </AccordionContent>
       </AccordionItem>
@@ -100,6 +102,22 @@
         <AccordionContent>
           <p class="text-sm md:text-base">
             A <strong>Custodian</strong> is an Identity that has been granted permission to manage another Identity. This is particularly useful for artists who want to delegate management of their Identity and ART Contract to a gallery or representative. Custodians can update the Identity information, mint ARTs, and perform other actions on behalf of the Identity they manage.
+          </p>
+        </AccordionContent>
+      </AccordionItem>
+      
+      <AccordionItem value="representation-relationship">
+        <AccordionTrigger class="text-base md:text-lg font-medium text-left">How does the representation relationship work between artists and galleries/institutions?</AccordionTrigger>
+        <AccordionContent>
+          <p class="text-sm md:text-base">
+            The ARC system tracks representation relationships between artists and galleries/institutions through two fields:
+          </p>
+          <ul class="list-disc pl-6 mt-2 space-y-1">
+            <li><strong>RepresentedBy:</strong> For artist identities, this field contains an array of gallery/institution identity IDs that represent the artist. This makes it easy to see which galleries or institutions are officially representing an artist.</li>
+            <li><strong>RepresentedArtists:</strong> For gallery/institution identities, this field contains an array of artist identity IDs that the gallery/institution represents. This provides a clear roster of artists associated with a gallery or institution.</li>
+          </ul>
+          <p class="mt-2 text-sm md:text-base">
+            These relationships can be established or removed by either party and provide transparency about professional relationships in the art world. They are distinct from the Custodian relationship, which grants specific permissions for managing identities and contracts.
           </p>
         </AccordionContent>
       </AccordionItem>

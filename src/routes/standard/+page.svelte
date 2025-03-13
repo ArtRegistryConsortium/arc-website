@@ -58,6 +58,8 @@
         <li><span class="font-semibold">Tags:</span> Keywords associated with the identity.</li>
         <li><span class="font-semibold">Artist-specific:</span> Date of birth, date of death (if applicable), and location.</li>
         <li><span class="font-semibold">Gallery/Institution-specific:</span> Physical addresses.</li>
+        <li><span class="font-semibold">Artist-specific:</span> RepresentedBy - Array of gallery/institution identity IDs representing the artist.</li>
+        <li><span class="font-semibold">Gallery/Institution-specific:</span> RepresentedArtists - Array of artist identity IDs represented by the gallery/institution.</li>
       </ul>
     </div>
   </section>
