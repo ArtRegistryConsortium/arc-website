@@ -192,7 +192,7 @@
           </p>
           <ul class="list-disc pl-6 mt-2 space-y-1">
             <li><strong>Artist Name</strong></li>
-            <li><strong>Artist Wallet Address</strong></li>
+            <li><strong>Identity ID</strong></li>
             <li><strong>Blockchain</strong></li>
             <li><strong>Contract Address</strong></li>
             <li><strong>Token ID</strong></li>

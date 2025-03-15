@@ -133,9 +133,9 @@
 
     <div class="bg-muted p-8 rounded-md">
       <p>Artist Name</p>
-      <p>Artist Address: [0x...]</p>
+      <p>Identity ID: [Artist Identity ID]</p>
       <p>Blockchain: [Ethereum / Arbitrum / Optimism / Base, etc.]</p>
-      <p>Contract Address: [0x...]</p>
+      <p>Contract Address: [ART Contract Address]</p>
       <p>Token ID: [ART Token ID]</p>
     </div>
   </section>
