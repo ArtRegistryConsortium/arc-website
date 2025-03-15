@@ -55,14 +55,24 @@ onMount(() => {
     isConnected = state.isConnected;
     walletAddress = state.address;
 
+    console.log('Web3Store update on verify-wallet page:', {
+      isConnected: state.isConnected,
+      address: state.address ? truncateAddress(state.address) : null,
+      isVerified,
+      isVerifying,
+      messageReady
+    });
+
     // If wallet is connected but not verified, prepare verification message
     // but don't automatically start the verification process
     if (isConnected && walletAddress && !isVerified && !isVerifying && !messageReady) {
+      console.log('Conditions met to prepare verification message');
       prepareVerificationMessage();
     }
 
     // If wallet was connected but is now disconnected, reset local state
     if (wasConnected && !isConnected) {
+      console.log('Wallet disconnected, resetting state and redirecting');
       resetLocalState();
 
       // Redirect to homepage when disconnected
@@ -71,12 +81,14 @@ onMount(() => {
 
     // If we're initializing and not connected, show wallet options
     if (isInitializing && !isConnected) {
+      console.log('Initializing without connection, showing wallet options');
       showWalletOptions = true;
       isInitializing = false;
     }
 
     // If we're initializing and connected, hide wallet options
     if (isInitializing && isConnected) {
+      console.log('Initializing with connection, hiding wallet options');
       showWalletOptions = false;
       isInitializing = false;
     }
@@ -84,11 +96,20 @@ onMount(() => {
 
   // Subscribe to walletAuthStore
   unsubscribeAuth = walletAuthStore.subscribe(state => {
+    const wasVerified = isVerified;
     isVerified = state.isVerified;
     isVerifying = state.isVerifying;
 
+    console.log('WalletAuthStore update on verify-wallet page:', {
+      isVerified: state.isVerified,
+      isVerifying: state.isVerifying,
+      hasSessionToken: !!state.sessionToken,
+      isRedirecting
+    });
+
     // If verification is complete, redirect after a short delay
-    if (isVerified && !isRedirecting) {
+    if (isVerified && !wasVerified && !isRedirecting) {
+      console.log('Verification completed, redirecting to home page');
       isRedirecting = true;
       setTimeout(() => {
         window.location.href = '/';
@@ -97,6 +118,7 @@ onMount(() => {
 
     // If we're verified and on the verify page, redirect to home
     if (isVerified && !isRedirecting && !isInitializing) {
+      console.log('Already verified, redirecting to home page');
       isRedirecting = true;
       setTimeout(() => {
         window.location.href = '/';
@@ -145,14 +167,34 @@ function toggleWalletOptions() {
 // Function to connect wallet
 async function connectWallet(type: 'injected' | 'walletconnect') {
   try {
+    console.log(`Connecting with ${type} on verify-wallet page...`);
+
+    // Store the connection promise
+    let connectPromise;
+
     if (type === 'injected') {
-      await connect(config, { connector: injected() });
+      connectPromise = connect(config, { connector: injected() });
     } else {
-      await connect(config, { connector: walletConnect({ projectId }) });
+      connectPromise = connect(config, { connector: walletConnect({ projectId }) });
     }
+
+    // Hide wallet options immediately
     showWalletOptions = false;
+
+    // Wait for connection to complete
+    await connectPromise;
+
+    console.log(`${type} connection successful on verify-wallet page`);
+
+    // Force a page reload to ensure all state is properly updated
+    // This is a more reliable approach than depending on reactive state
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   } catch (error) {
     console.error(`Failed to connect with ${type}:`, error);
+    // Show wallet options again if connection failed
+    showWalletOptions = true;
   }
 }
 
@@ -177,15 +219,21 @@ async function disconnectWallet() {
 
 // Function to prepare verification message without starting verification
 async function prepareVerificationMessage() {
-  if (!walletAddress) return;
+  if (!walletAddress) {
+    console.log('Cannot prepare verification message: wallet address is null');
+    return;
+  }
 
+  console.log('Preparing verification message for wallet:', walletAddress);
   try {
     // Create a verification session and get a nonce
     const nonce = await createVerificationSession(walletAddress);
+    console.log('Verification session created with nonce:', nonce);
 
     // Create a message to sign
     verificationMessage = `Sign this message to verify your wallet ownership.\n\nWallet: ${walletAddress}\nNonce: ${nonce}\n\nThis won't cost any gas.`;
     messageReady = true;
+    console.log('Verification message prepared and ready for signing');
   } catch (error) {
     console.error("Failed to prepare verification message:", error);
   }

@@ -36,13 +36,23 @@
   // Function to handle MetaMask connection
   async function connectMetamask() {
     try {
-      await connect(config, { connector: injected() });
+      console.log('Connecting with MetaMask...');
+
+      // Force a hard redirect to verify-wallet page after connection
+      // This is a more direct approach that doesn't rely on reactive state
+      const connectPromise = connect(config, { connector: injected() });
+
+      // Close the popup immediately
       showPopup = false;
 
-      // Check if the wallet is verified, if not redirect to verify page
-      if (!isVerified) {
-        goto('/verify-wallet');
-      }
+      // Wait for connection to complete
+      await connectPromise;
+
+      console.log('MetaMask connection successful, forcing redirect to verify-wallet page');
+
+      // Use window.location for a hard redirect instead of goto
+      // This ensures the page fully reloads with the new wallet state
+      window.location.href = '/verify-wallet';
     } catch (error) {
       console.error("Failed to connect with MetaMask:", error);
     }
@@ -51,13 +61,23 @@
   // Function to handle WalletConnect connection
   async function connectWalletConnect() {
     try {
-      await connect(config, { connector: walletConnect({ projectId }) });
+      console.log('Connecting with WalletConnect...');
+
+      // Force a hard redirect to verify-wallet page after connection
+      // This is a more direct approach that doesn't rely on reactive state
+      const connectPromise = connect(config, { connector: walletConnect({ projectId }) });
+
+      // Close the popup immediately
       showPopup = false;
 
-      // Check if the wallet is verified, if not redirect to verify page
-      if (!isVerified) {
-        goto('/verify-wallet');
-      }
+      // Wait for connection to complete
+      await connectPromise;
+
+      console.log('WalletConnect connection successful, forcing redirect to verify-wallet page');
+
+      // Use window.location for a hard redirect instead of goto
+      // This ensures the page fully reloads with the new wallet state
+      window.location.href = '/verify-wallet';
     } catch (error) {
       console.error("Failed to connect with WalletConnect:", error);
     }
@@ -161,9 +181,24 @@
   });
 
   // Watch for wallet connection and redirect if needed
+  // This is a backup mechanism in case the direct redirects in the connect functions fail
   // Only redirect if not just disconnected and not already on verify-wallet page
-  $: if ($web3Store.isConnected && !isVerified && !justDisconnected && currentPath !== '/verify-wallet') {
-    goto('/verify-wallet');
+  $: if ($web3Store.isConnected && !justDisconnected && currentPath !== '/verify-wallet') {
+    // Check verification status directly from localStorage for reliability
+    const hasValidSession = localStorage.getItem('wallet_session_token') !== null;
+    const isWalletVerified = localStorage.getItem('wallet_verified') === 'true';
+
+    if (!hasValidSession || !isWalletVerified) {
+      console.log('Reactive redirect to verify-wallet page triggered', {
+        isConnected: $web3Store.isConnected,
+        hasValidSession,
+        isWalletVerified,
+        currentPath
+      });
+      // Use window.location for a hard redirect instead of goto
+      // This ensures the page fully reloads with the new wallet state
+      window.location.href = '/verify-wallet';
+    }
   }
 </script>
 
