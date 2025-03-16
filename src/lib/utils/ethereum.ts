@@ -17,11 +17,11 @@ export async function getEthToUsdPrice(): Promise<number> {
     const response = await fetch(
       'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
     );
-    
+
     if (!response.ok) {
       throw new Error(`CoinGecko API responded with status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.ethereum.usd;
   } catch (error) {
@@ -57,46 +57,63 @@ export async function verifyEthTransaction(
   try {
     // Get the current block number
     const currentBlock = await publicClient.getBlockNumber();
-    
+
     // Calculate the starting block (current block - lookback)
     const fromBlock = currentBlock - BigInt(lookbackBlocks);
-    
+
     // Convert expected amount to Wei for comparison (with small tolerance for gas price fluctuations)
     const expectedWei = parseEther(expectedAmount.toFixed(18));
-    
+
     // Get transactions for the sender
     const transactions = await publicClient.getTransactionCount({
       address: fromAddress,
       blockTag: 'latest'
     });
-    
+
     // If there are no transactions, return false
     if (transactions === 0) {
       return false;
     }
-    
+
     // For each transaction, check if it matches our criteria
     for (let i = 0; i < Math.min(transactions, 20); i++) {
-      // This is a simplified approach - in a production environment, you would need
-      // to implement a more robust transaction search using logs or a dedicated indexer
-      const txHash = await publicClient.getTransactionHash({
-        address: fromAddress,
-        index: BigInt(i)
-      });
-      
-      if (!txHash) continue;
-      
-      const tx = await publicClient.getTransaction({ hash: txHash });
-      
-      // Check if this transaction is to our target address with the expected amount
-      if (
-        tx.to?.toLowerCase() === toAddress.toLowerCase() &&
-        tx.value === expectedWei
-      ) {
-        return true;
+      try {
+        // This is a simplified approach - in a production environment, you would need
+        // to implement a more robust transaction search using logs or a dedicated indexer
+        // Note: getTransactionHash is not available in viem, so we're using a workaround
+        // In a real implementation, you would use getTransactionReceipts or getLogs
+
+        // Get the transaction directly by block number and index
+        const blockNumber = await publicClient.getBlockNumber();
+        const block = await publicClient.getBlock({
+          blockNumber: blockNumber - BigInt(i),
+          includeTransactions: true
+        });
+
+        // Find transactions from our target address
+        const matchingTxs = block.transactions.filter(tx =>
+          typeof tx !== 'string' &&
+          tx.from?.toLowerCase() === fromAddress.toLowerCase()
+        );
+
+        if (matchingTxs.length === 0) continue;
+
+        // Check each transaction
+        for (const tx of matchingTxs) {
+          // Check if this transaction is to our target address with the expected amount
+          if (
+            tx.to?.toLowerCase() === toAddress.toLowerCase() &&
+            tx.value === expectedWei
+          ) {
+            return true;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking transaction:', error);
+        // Continue to the next iteration
       }
     }
-    
+
     return false;
   } catch (error) {
     console.error('Failed to verify ETH transaction:', error);

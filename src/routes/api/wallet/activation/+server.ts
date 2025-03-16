@@ -3,6 +3,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/supabase/server';
 import { calculateEthFromUsd, verifyEthTransaction } from '$lib/utils/ethereum';
 import type { Address } from 'viem';
+import type { Chain } from '$lib/services/activationService';
 
 /**
  * API endpoint to handle wallet activation process
@@ -10,25 +11,86 @@ import type { Address } from 'viem';
  */
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { walletAddress } = await request.json();
+    const { walletAddress, chainId } = await request.json();
 
     if (!walletAddress) {
       return json({ success: false, error: 'Wallet address is required' }, { status: 400 });
     }
 
+    // Get available chains
+    const { data: availableChains, error: chainsError } = await supabaseAdmin
+      .from('chains')
+      .select('*')
+      .eq('is_active', true)
+      .order('chain_id');
+
+    if (chainsError) {
+      console.error('Error fetching chains:', chainsError);
+      return json({
+        success: false,
+        error: 'Failed to fetch available chains'
+      }, { status: 500 });
+    }
+
+    // If no chains are available, return an error
+    if (!availableChains || availableChains.length === 0) {
+      return json({
+        success: false,
+        error: 'No active chains available'
+      }, { status: 500 });
+    }
+
     // Get the current timestamp
     const now = new Date().toISOString();
+
+    // Determine which chain to use
+    let selectedChainId = chainId;
+    let selectedChain: Chain | undefined;
+
+    // If no chain ID is provided, use the first available chain
+    if (!selectedChainId && availableChains.length > 0) {
+      selectedChainId = availableChains[0].chain_id;
+    }
+
+    // Find the selected chain in the available chains
+    if (selectedChainId) {
+      const foundChain = availableChains.find(chain => chain.chain_id === selectedChainId);
+      if (foundChain) {
+        // Convert to Chain type to match the expected interface
+        selectedChain = {
+          chain_id: foundChain.chain_id,
+          name: foundChain.name,
+          // Handle optional properties safely with type assertion
+          symbol: (foundChain as any).symbol,
+          icon_url: (foundChain as any).icon_url,
+          explorer_url: foundChain.explorer_url || undefined,
+          rpc_url: foundChain.rpc_url || undefined,
+          is_testnet: (foundChain as any).is_testnet || false,
+          is_active: (foundChain as any).is_active || true
+        };
+      }
+    }
+
+    // If no chain is selected or the selected chain is not available, return an error
+    if (!selectedChain) {
+      return json({
+        success: false,
+        error: 'Selected chain is not available',
+        availableChains
+      }, { status: 400 });
+    }
 
     // 1. Check if a valid registration entry exists
     const { data: registrationData, error: registrationError } = await supabaseAdmin
       .from('user_wallet_registrations')
       .select('*')
       .eq('wallet_address', walletAddress)
+      .eq('chain_id', selectedChainId)
       .gte('valid_to', now) // Only get entries that are still valid
-      .not('eth_amount', 'is', null) // Ensure eth_amount is not null
+      .not('crypto_amount', 'is', null) // Ensure crypto_amount is not null
       .order('created_at', { ascending: false }) // Get the most recent entry
       .limit(1)
-      .single();
+      .maybeSingle();
 
     // First, check if there are any wallets in the table
     const { data: allWallets, error: allWalletsError } = await supabaseAdmin
@@ -51,12 +113,12 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 500 });
     }
 
-    // Get the ARC wallet address for Ethereum
+    // Get the ARC wallet address for the selected chain
     const { data: arcWalletData, error: arcWalletError } = await supabaseAdmin
       .from('arc_wallets')
       .select('wallet_address')
-      .eq('chain_id', 1) // Ethereum mainnet chain ID
-      .maybeSingle(); // Use maybeSingle instead of single
+      .eq('chain_id', selectedChainId)
+      .maybeSingle()
 
     // Declare the wallet address variable
     let arcWalletAddress: Address;
@@ -90,6 +152,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // 2. If a valid registration entry exists
     if (registrationData && !registrationError) {
+      console.log('Found valid registration entry:', registrationData);
       // Check if payment has already been confirmed
       if (registrationData.confirmed) {
         // Update the wallet's fee_paid status if not already done
@@ -104,10 +167,18 @@ export const POST: RequestHandler = async ({ request }) => {
       }
 
       // Verify the transaction on-chain
+      // For now, we're using the Ethereum verification function for all chains
+      // In a production environment, you would use different verification functions for different chains
+      // Use eth_amount for now since the database schema might not be updated yet
+      // In a production environment, you would use crypto_amount after updating the schema
+      const cryptoAmount = 'crypto_amount' in registrationData
+        ? (registrationData as any).crypto_amount
+        : registrationData.eth_amount;
+
       const paymentVerified = await verifyEthTransaction(
         walletAddress as Address,
         arcWalletAddress,
-        registrationData.eth_amount
+        cryptoAmount
       );
 
       if (paymentVerified) {
@@ -134,17 +205,21 @@ export const POST: RequestHandler = async ({ request }) => {
         return json({
           success: true,
           status: 'awaiting_payment',
-          ethAmount: registrationData.eth_amount,
+          cryptoAmount: cryptoAmount,
           validTo: registrationData.valid_to,
-          arcWalletAddress
+          arcWalletAddress,
+          chain: selectedChain,
+          availableChains
         });
       }
     }
     // 3. If no valid registration entry exists, create a new one
     else {
       try {
-        // Calculate the ETH amount equivalent to 5 USD
-        const ethAmount = await calculateEthFromUsd(5);
+        // Calculate the crypto amount equivalent to 5 USD
+        // For now, we're using the Ethereum calculation for all chains
+        // In a production environment, you would use different calculation functions for different chains
+        const cryptoAmount = await calculateEthFromUsd(5);
 
         // Calculate valid_to timestamp (24 hours from now)
         const validTo = new Date();
@@ -155,7 +230,9 @@ export const POST: RequestHandler = async ({ request }) => {
           .from('user_wallet_registrations')
           .insert({
             wallet_address: walletAddress,
-            eth_amount: ethAmount,
+            // Use eth_amount for now since the database schema might not be updated yet
+            eth_amount: cryptoAmount,
+            // Add chain_id as a separate update after insert if needed
             valid_to: validTo.toISOString(),
             confirmed: false,
             created_at: now,
@@ -175,9 +252,11 @@ export const POST: RequestHandler = async ({ request }) => {
         return json({
           success: true,
           status: 'registration_created',
-          ethAmount: ethAmount,
+          cryptoAmount: cryptoAmount,
           validTo: validTo.toISOString(),
-          arcWalletAddress
+          arcWalletAddress,
+          chain: selectedChain,
+          availableChains
         });
       } catch (error) {
         console.error('Error in ETH calculation or registration creation:', error);

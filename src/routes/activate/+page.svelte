@@ -9,12 +9,14 @@ import ProgressSteps from '$lib/components/ProgressSteps.svelte';
 import { onMount, onDestroy } from 'svelte';
 import { getAccount, reconnect } from 'wagmi/actions';
 import type { Address } from 'viem';
-import { checkActivationStatus, formatEthAmount } from '$lib/services/activationService';
+import { checkActivationStatus, formatCryptoAmount, fetchAvailableChains, type Chain } from '$lib/services/activationService';
 import { startPaymentMonitor, stopPaymentMonitor } from '$lib/services/paymentMonitorService';
 import { checkExistingSession } from '$lib/stores/walletAuth';
+// Comment out the missing UI components for now
+// import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "$lib/components/ui/select";
 
 // State variables
-let ethAmount = 0;
+let cryptoAmount = 0;
 let usdEquivalent = 5;
 let arcWalletAddress = '';
 let validTo = '';
@@ -23,9 +25,47 @@ let errorMessage = '';
 let paymentStatus = 'checking'; // 'checking', 'awaiting_payment', 'payment_verified', 'payment_confirmed'
 let walletAddress: Address | undefined;
 let isMonitoring = false;
+let availableChains: Chain[] = [];
+let selectedChain: Chain | undefined;
+let selectedChainId: number | undefined;
 
 // Format the valid until date
 $: formattedValidUntil = validTo ? new Date(validTo).toLocaleString() : '';
+
+// Format the crypto symbol
+$: cryptoSymbol = selectedChain?.symbol || 'ETH';
+
+// Function to load available chains
+async function loadAvailableChains() {
+    try {
+        const chains = await fetchAvailableChains();
+        availableChains = chains;
+
+        // If chains are available, select the first one by default
+        if (chains.length > 0 && !selectedChain) {
+            selectedChain = chains[0];
+            selectedChainId = chains[0].chain_id;
+        }
+
+        console.log('Available chains loaded:', availableChains);
+    } catch (error) {
+        console.error('Failed to load available chains:', error);
+        errorMessage = 'Failed to load available payment chains. Please try again.';
+    }
+}
+
+// Function to handle chain selection
+function handleChainSelect(event: CustomEvent<string>) {
+    const chainId = parseInt(event.detail);
+    selectedChainId = chainId;
+    selectedChain = availableChains.find(chain => chain.chain_id === chainId);
+    console.log('Selected chain:', selectedChain);
+
+    // Refresh activation status with the new chain
+    if (walletAddress) {
+        checkWalletActivationStatus();
+    }
+}
 
 // Function to check activation status
 async function checkWalletActivationStatus() {
@@ -60,8 +100,13 @@ async function checkWalletActivationStatus() {
             return;
         }
 
-        // Call the activation service
-        const result = await checkActivationStatus(walletAddress);
+        // Load available chains if not already loaded
+        if (availableChains.length === 0) {
+            await loadAvailableChains();
+        }
+
+        // Call the activation service with the selected chain
+        const result = await checkActivationStatus(walletAddress, selectedChainId);
 
         if (!result.success) {
             throw new Error(result.error || 'Failed to check activation status');
@@ -70,14 +115,25 @@ async function checkWalletActivationStatus() {
         // Update UI based on status
         paymentStatus = result.status;
 
+        // Update available chains if provided
+        if (result.availableChains && result.availableChains.length > 0) {
+            availableChains = result.availableChains;
+        }
+
+        // Update selected chain if provided
+        if (result.chain) {
+            selectedChain = result.chain;
+            selectedChainId = result.chain.chain_id;
+        }
+
         if (result.status === 'awaiting_payment' || result.status === 'registration_created') {
-            ethAmount = result.ethAmount || 0;
+            cryptoAmount = result.cryptoAmount || 0;
             validTo = result.validTo || '';
             arcWalletAddress = result.arcWalletAddress || '';
 
             // Start monitoring for payment if not already monitoring
             if (!isMonitoring && walletAddress) {
-                startMonitoring(walletAddress);
+                startMonitoring(walletAddress, selectedChainId);
             }
         } else if (result.status === 'payment_verified' || result.status === 'payment_confirmed') {
             // Redirect to next step
@@ -103,7 +159,7 @@ async function copyArcWalletAddress() {
 }
 
 // Start monitoring for payment
-function startMonitoring(address: Address) {
+function startMonitoring(address: Address, chainId?: number) {
     isMonitoring = true;
 
     // Start the payment monitor
@@ -119,7 +175,9 @@ function startMonitoring(address: Address) {
             console.error('Payment monitor error:', error);
             // Don't show errors from the monitor to the user
             // Just keep checking manually
-        }
+        },
+        // Chain ID
+        chainId
     );
 }
 
@@ -182,8 +240,11 @@ async function reconnectWallet() {
 }
 
 // Check activation status on mount and clean up on destroy
-onMount(() => {
-    // Try to reconnect wallet first, then check activation status
+onMount(async () => {
+    // Load available chains first
+    await loadAvailableChains();
+
+    // Try to reconnect wallet, then check activation status
     reconnectWallet();
 });
 
@@ -193,7 +254,7 @@ onDestroy(() => {
         stopPaymentMonitor(walletAddress);
         isMonitoring = false;
     }
-})
+});
 </script>
 
 <div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
@@ -261,15 +322,39 @@ onDestroy(() => {
             </div>
         {:else if paymentStatus === 'awaiting_payment' || paymentStatus === 'registration_created'}
             <p class="text-lg mb-4">
-                A one-time ${usdEquivalent} (ETH equivalent) fee is required to register on ARC.
+                A one-time ${usdEquivalent} USD fee is required to register on ARC.
             </p>
 
+            {#if availableChains.length > 1}
+                <div class="mb-6">
+                    <label for="chain-select" class="block text-sm font-medium mb-2">Select payment chain:</label>
+                    <!-- Temporarily replaced with a simple select element -->
+                    <select
+                        id="chain-select"
+                        class="w-full p-2 rounded-md border border-input bg-background"
+                        value={selectedChainId?.toString()}
+                        on:change={(e) => {
+                            const target = e.target as HTMLSelectElement;
+                            if (target) {
+                                handleChainSelect(new CustomEvent('valueChange', { detail: target.value }));
+                            }
+                        }}
+                    >
+                        {#each availableChains as chain}
+                            <option value={chain.chain_id.toString()}>
+                                {chain.name} {chain.is_testnet ? '(Testnet)' : ''}
+                            </option>
+                        {/each}
+                    </select>
+                </div>
+            {/if}
+
             <div class="text-3xl font-bold mb-4">
-                {ethAmount.toFixed(6)} ETH
+                {formatCryptoAmount(cryptoAmount)} {cryptoSymbol}
             </div>
 
             <div class="bg-muted p-4 rounded-md mb-6 text-left">
-                <p class="text-sm mb-2">Send exactly <span class="font-bold">{ethAmount.toFixed(6)} ETH</span> to:</p>
+                <p class="text-sm mb-2">Send exactly <span class="font-bold">{formatCryptoAmount(cryptoAmount)} {cryptoSymbol}</span> to:</p>
                 <div class="flex items-center gap-2 mb-2">
                     <code class="bg-background p-2 rounded text-xs flex-1 overflow-hidden text-ellipsis">{arcWalletAddress}</code>
                     <Button variant="outline" size="sm" on:click={copyArcWalletAddress}>
@@ -278,6 +363,9 @@ onDestroy(() => {
                         </svg>
                     </Button>
                 </div>
+                {#if selectedChain}
+                    <p class="text-xs mb-1">Network: <span class="font-semibold">{selectedChain.name}</span></p>
+                {/if}
                 <p class="text-xs text-muted-foreground">Valid until: {formattedValidUntil}</p>
             </div>
 
