@@ -6,10 +6,122 @@ import { disconnect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
+import { onMount, onDestroy } from 'svelte';
+import { getAccount, reconnect } from 'wagmi/actions';
+import type { Address } from 'viem';
+import { checkActivationStatus, formatEthAmount } from '$lib/services/activationService';
+import { startPaymentMonitor, stopPaymentMonitor } from '$lib/services/paymentMonitorService';
+import { checkExistingSession } from '$lib/stores/walletAuth';
 
-// State for the ETH amount
-const ethAmount = 0.004;
-const usdEquivalent = 5;
+// State variables
+let ethAmount = 0;
+let usdEquivalent = 5;
+let arcWalletAddress = '';
+let validTo = '';
+let isLoading = true;
+let errorMessage = '';
+let paymentStatus = 'checking'; // 'checking', 'awaiting_payment', 'payment_verified', 'payment_confirmed'
+let walletAddress: Address | undefined;
+let isMonitoring = false;
+
+// Format the valid until date
+$: formattedValidUntil = validTo ? new Date(validTo).toLocaleString() : '';
+
+// Function to check activation status
+async function checkWalletActivationStatus() {
+    try {
+        isLoading = true;
+        errorMessage = '';
+
+        // Get the current wallet address
+        const account = getAccount(config);
+        console.log('Current account state:', account);
+
+        // Check if we have a wallet address from the account
+        if (account.address) {
+            walletAddress = account.address;
+            console.log('Using wallet address from account:', walletAddress);
+        }
+        // If not, try to get it from localStorage (session)
+        else {
+            const sessionAddress = localStorage.getItem('wallet_session_address');
+            console.log('Session address from localStorage:', sessionAddress);
+
+            if (sessionAddress) {
+                walletAddress = sessionAddress as Address;
+                console.log('Using wallet address from session:', walletAddress);
+            }
+        }
+
+        if (!walletAddress) {
+            errorMessage = 'No wallet connected. Please connect your wallet first.';
+            console.error('No wallet address found in account or session');
+            isLoading = false;
+            return;
+        }
+
+        // Call the activation service
+        const result = await checkActivationStatus(walletAddress);
+
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to check activation status');
+        }
+
+        // Update UI based on status
+        paymentStatus = result.status;
+
+        if (result.status === 'awaiting_payment' || result.status === 'registration_created') {
+            ethAmount = result.ethAmount || 0;
+            validTo = result.validTo || '';
+            arcWalletAddress = result.arcWalletAddress || '';
+
+            // Start monitoring for payment if not already monitoring
+            if (!isMonitoring && walletAddress) {
+                startMonitoring(walletAddress);
+            }
+        } else if (result.status === 'payment_verified' || result.status === 'payment_confirmed') {
+            // Redirect to next step
+            await goto(result.nextStep || '/activate/select-chain');
+        }
+    } catch (error) {
+        console.error('Error checking activation status:', error);
+        errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Function to copy ARC wallet address to clipboard
+async function copyArcWalletAddress() {
+    try {
+        await navigator.clipboard.writeText(arcWalletAddress);
+        alert('ARC wallet address copied to clipboard!');
+    } catch (error) {
+        console.error('Failed to copy address:', error);
+        alert('Failed to copy address. Please copy it manually.');
+    }
+}
+
+// Start monitoring for payment
+function startMonitoring(address: Address) {
+    isMonitoring = true;
+
+    // Start the payment monitor
+    startPaymentMonitor(
+        address,
+        // Success callback
+        () => {
+            console.log('Payment confirmed!');
+            goto('/activate/select-chain');
+        },
+        // Error callback
+        (error) => {
+            console.error('Payment monitor error:', error);
+            // Don't show errors from the monitor to the user
+            // Just keep checking manually
+        }
+    );
+}
 
 // Function to close the page and return to home
 async function closePage() {
@@ -41,6 +153,47 @@ async function handleLogout() {
         console.error('Error logging out:', error);
     }
 }
+
+// Function to manually reconnect wallet
+async function reconnectWallet() {
+    try {
+        console.log('Attempting to reconnect wallet...');
+        isLoading = true;
+
+        // Check for existing session first
+        const hasSession = checkExistingSession();
+        console.log('Has existing session:', hasSession);
+
+        // Try to reconnect using wagmi
+        await reconnect(config);
+
+        // Get the account after reconnection
+        const account = getAccount(config);
+        console.log('Account after reconnection:', account);
+
+        // Check activation status again
+        await checkWalletActivationStatus();
+    } catch (error) {
+        console.error('Error reconnecting wallet:', error);
+        errorMessage = 'Failed to reconnect wallet. Please try connecting manually.';
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Check activation status on mount and clean up on destroy
+onMount(() => {
+    // Try to reconnect wallet first, then check activation status
+    reconnectWallet();
+});
+
+onDestroy(() => {
+    // Stop payment monitoring when component is destroyed
+    if (walletAddress && isMonitoring) {
+        stopPaymentMonitor(walletAddress);
+        isMonitoring = false;
+    }
+})
 </script>
 
 <div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
@@ -63,20 +216,88 @@ async function handleLogout() {
     <div class="w-full max-w-md text-center">
         <h1 class="text-4xl font-bold mb-8">Activate Your Profile</h1>
 
-        <p class="text-lg mb-4">
-            A one-time ${usdEquivalent} (ETH equivalent) fee is required to register on ARC.
-        </p>
+        {#if isLoading}
+            <div class="flex justify-center items-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        {:else if errorMessage}
+            <div class="bg-destructive/10 text-destructive p-4 rounded-md mb-6">
+                <p>{errorMessage}</p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <Button
+                    class="w-full"
+                    on:click={checkWalletActivationStatus}
+                >
+                    Try Again
+                </Button>
 
-        <div class="text-3xl font-bold mb-8">
-            {ethAmount} ETH
-        </div>
+                {#if errorMessage.includes('No wallet connected')}
+                    <Button
+                        variant="outline"
+                        class="w-full"
+                        on:click={reconnectWallet}
+                    >
+                        Reconnect Wallet
+                    </Button>
 
-        <Button
-            class="w-full"
-            on:click={() => goto('/activate/select-chain')}
-        >
-            Continue
-        </Button>
+                    <Button
+                        variant="ghost"
+                        class="w-full"
+                        on:click={() => {
+                            // Open Web3Modal for manual connection
+                            const w3mButton = document.querySelector('w3m-button');
+                            if (w3mButton) {
+                                // @ts-ignore - This is a custom element method
+                                w3mButton.click();
+                            } else {
+                                console.error('Web3Modal button not found');
+                            }
+                        }}
+                    >
+                        Connect Manually
+                    </Button>
+                {/if}
+            </div>
+        {:else if paymentStatus === 'awaiting_payment' || paymentStatus === 'registration_created'}
+            <p class="text-lg mb-4">
+                A one-time ${usdEquivalent} (ETH equivalent) fee is required to register on ARC.
+            </p>
+
+            <div class="text-3xl font-bold mb-4">
+                {ethAmount.toFixed(6)} ETH
+            </div>
+
+            <div class="bg-muted p-4 rounded-md mb-6 text-left">
+                <p class="text-sm mb-2">Send exactly <span class="font-bold">{ethAmount.toFixed(6)} ETH</span> to:</p>
+                <div class="flex items-center gap-2 mb-2">
+                    <code class="bg-background p-2 rounded text-xs flex-1 overflow-hidden text-ellipsis">{arcWalletAddress}</code>
+                    <Button variant="outline" size="sm" on:click={copyArcWalletAddress}>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </Button>
+                </div>
+                <p class="text-xs text-muted-foreground">Valid until: {formattedValidUntil}</p>
+            </div>
+
+            <Button
+                class="w-full"
+                on:click={checkWalletActivationStatus}
+            >
+                I've Sent the Payment
+            </Button>
+        {:else}
+            <div class="bg-primary/10 text-primary p-4 rounded-md mb-6">
+                <p>Checking payment status...</p>
+            </div>
+            <Button
+                class="w-full"
+                on:click={checkWalletActivationStatus}
+            >
+                Check Again
+            </Button>
+        {/if}
 
         <!-- Log out button -->
         <Button
