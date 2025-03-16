@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      arc_wallets: {
+        Row: {
+          chain_id: number
+          created_at: string | null
+          id: number
+          updated_at: string | null
+          wallet_address: string
+        }
+        Insert: {
+          chain_id: number
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+          wallet_address: string
+        }
+        Update: {
+          chain_id?: number
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arc_wallets_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "chains"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
       art_contracts: {
         Row: {
           artist_identity_id: number
@@ -436,6 +468,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "identities"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wallet_registrations: {
+        Row: {
+          confirmed: boolean
+          created_at: string | null
+          eth_amount: number
+          id: number
+          updated_at: string | null
+          valid_to: string
+          wallet_address: string
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string | null
+          eth_amount: number
+          id?: number
+          updated_at?: string | null
+          valid_to: string
+          wallet_address: string
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string | null
+          eth_amount?: number
+          id?: number
+          updated_at?: string | null
+          valid_to?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_wallet_registrations_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: true
+            referencedRelation: "wallets"
+            referencedColumns: ["wallet_address"]
           },
         ]
       }
