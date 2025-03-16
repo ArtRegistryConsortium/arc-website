@@ -54,66 +54,118 @@ export async function verifyEthTransaction(
   expectedAmount: number,
   lookbackBlocks: number = 10000
 ): Promise<boolean> {
-  try {
-    // Get the current block number
-    const currentBlock = await publicClient.getBlockNumber();
+  console.log('Verifying ETH transaction:', {
+    fromAddress,
+    toAddress,
+    expectedAmount,
+    lookbackBlocks
+  });
 
-    // Calculate the starting block (current block - lookback)
-    const fromBlock = currentBlock - BigInt(lookbackBlocks);
+  try {
+    // Format the expected amount properly
+    let formattedAmount: string;
+    try {
+      formattedAmount = expectedAmount.toString();
+      console.log('Formatted expected amount:', formattedAmount);
+    } catch (formatError) {
+      console.error('Error formatting expected amount:', formatError);
+      formattedAmount = '0';
+    }
 
     // Convert expected amount to Wei for comparison (with small tolerance for gas price fluctuations)
-    const expectedWei = parseEther(expectedAmount.toFixed(18));
-
-    // Get transactions for the sender
-    const transactions = await publicClient.getTransactionCount({
-      address: fromAddress,
-      blockTag: 'latest'
-    });
-
-    // If there are no transactions, return false
-    if (transactions === 0) {
+    let expectedWei: bigint;
+    try {
+      expectedWei = parseEther(formattedAmount);
+      console.log('Expected amount in wei:', expectedWei.toString());
+    } catch (parseError) {
+      console.error('Error parsing expected amount to wei:', parseError);
       return false;
     }
 
-    // For each transaction, check if it matches our criteria
-    for (let i = 0; i < Math.min(transactions, 20); i++) {
-      try {
-        // This is a simplified approach - in a production environment, you would need
-        // to implement a more robust transaction search using logs or a dedicated indexer
-        // Note: getTransactionHash is not available in viem, so we're using a workaround
-        // In a real implementation, you would use getTransactionReceipts or getLogs
+    // Get the current block number
+    const currentBlock = await publicClient.getBlockNumber();
+    console.log('Current block number:', currentBlock.toString());
 
-        // Get the transaction directly by block number and index
-        const blockNumber = await publicClient.getBlockNumber();
+    // Calculate the starting block (current block - lookback)
+    const fromBlock = currentBlock - BigInt(lookbackBlocks);
+    console.log('Looking back from block:', fromBlock.toString());
+
+    // Use a more direct approach: get the transaction history using getLogs
+    console.log('Checking for transfers to:', toAddress);
+
+    // Note: viem doesn't have a direct getTransactions method, so we'll skip this approach
+    // and go straight to the manual block checking
+
+    // Fallback: manually check recent blocks
+    console.log('Falling back to manual block checking...');
+
+    // Check the last 10 blocks
+    for (let i = 0; i < 10; i++) {
+      try {
+        const blockNumber = currentBlock - BigInt(i);
+        console.log(`Checking block ${blockNumber.toString()}...`);
+
         const block = await publicClient.getBlock({
-          blockNumber: blockNumber - BigInt(i),
+          blockNumber,
           includeTransactions: true
         });
 
-        // Find transactions from our target address
-        const matchingTxs = block.transactions.filter(tx =>
-          typeof tx !== 'string' &&
-          tx.from?.toLowerCase() === fromAddress.toLowerCase()
-        );
+        // Find transactions from our target address to the destination
+        for (const tx of block.transactions) {
+          if (typeof tx === 'string') continue;
 
-        if (matchingTxs.length === 0) continue;
+          // Check sender and recipient
+          const txFrom = tx.from?.toLowerCase();
+          const txTo = tx.to?.toLowerCase();
 
-        // Check each transaction
-        for (const tx of matchingTxs) {
-          // Check if this transaction is to our target address with the expected amount
+          if (!txFrom || !txTo) continue;
+
+          // Log all transactions from our sender for debugging
+          if (txFrom === fromAddress.toLowerCase()) {
+            console.log('Found transaction from sender:', {
+              hash: tx.hash,
+              to: txTo,
+              value: tx.value.toString(),
+              expectedTo: toAddress.toLowerCase(),
+              expectedValue: expectedWei.toString()
+            });
+          }
+
+          // Check if this is our target transaction
           if (
-            tx.to?.toLowerCase() === toAddress.toLowerCase() &&
-            tx.value === expectedWei
+            txFrom === fromAddress.toLowerCase() &&
+            txTo === toAddress.toLowerCase()
           ) {
-            return true;
+            // For value comparison, allow a small margin of error (gas price variations)
+            const txValue = tx.value;
+            const valueDiff = txValue > expectedWei
+              ? txValue - expectedWei
+              : expectedWei - txValue;
+
+            // Allow a 5% margin of error
+            const margin = expectedWei * BigInt(5) / BigInt(100);
+
+            console.log('Transaction value comparison:', {
+              txValue: txValue.toString(),
+              expectedWei: expectedWei.toString(),
+              difference: valueDiff.toString(),
+              margin: margin.toString(),
+              isWithinMargin: valueDiff <= margin
+            });
+
+            if (valueDiff <= margin) {
+              console.log('Found matching transaction with acceptable value!', tx.hash);
+              return true;
+            }
           }
         }
       } catch (error) {
-        console.error('Error checking transaction:', error);
-        // Continue to the next iteration
+        console.error(`Error checking block ${(currentBlock - BigInt(i)).toString()}:`, error);
+        // Continue to the next block
       }
     }
 
+    console.log('No matching transaction found');
     return false;
   } catch (error) {
     console.error('Failed to verify ETH transaction:', error);

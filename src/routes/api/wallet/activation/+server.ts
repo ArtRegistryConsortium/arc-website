@@ -169,30 +169,65 @@ export const POST: RequestHandler = async ({ request }) => {
       // Verify the transaction on-chain
       // For now, we're using the Ethereum verification function for all chains
       // In a production environment, you would use different verification functions for different chains
-      // Use eth_amount for now since the database schema might not be updated yet
-      // In a production environment, you would use crypto_amount after updating the schema
-      const cryptoAmount = 'crypto_amount' in registrationData
-        ? (registrationData as any).crypto_amount
-        : registrationData.eth_amount;
+      // Get the crypto amount from the registration data
+      // Handle both schema versions (eth_amount and crypto_amount)
+      let cryptoAmount: number;
+      if ('crypto_amount' in registrationData && registrationData.crypto_amount !== null) {
+        cryptoAmount = Number(registrationData.crypto_amount);
+        console.log('Using crypto_amount from registration:', cryptoAmount);
+      } else if ('eth_amount' in registrationData && registrationData.eth_amount !== null) {
+        cryptoAmount = Number(registrationData.eth_amount);
+        console.log('Using eth_amount from registration:', cryptoAmount);
+      } else {
+        console.error('No valid amount found in registration data:', registrationData);
+        return json({
+          success: false,
+          error: 'Invalid registration data: no amount found'
+        }, { status: 500 });
+      }
 
+      console.log('Verifying payment:', {
+        walletAddress,
+        arcWalletAddress,
+        cryptoAmount,
+        registrationId: registrationData.id
+      });
+
+      // Verify the transaction on the blockchain
       const paymentVerified = await verifyEthTransaction(
         walletAddress as Address,
         arcWalletAddress,
         cryptoAmount
       );
 
+      console.log('Payment verification result:', paymentVerified);
+
       if (paymentVerified) {
+        console.log('Payment verified, updating registration entry...');
+
         // Update the registration entry to confirmed
-        await supabaseAdmin
+        const { data: updateData, error: updateError } = await supabaseAdmin
           .from('user_wallet_registrations')
           .update({
             confirmed: true,
             updated_at: now
           })
-          .eq('id', registrationData.id);
+          .eq('id', registrationData.id)
+          .select();
+
+        if (updateError) {
+          console.error('Error updating registration entry:', updateError);
+          return json({
+            success: false,
+            error: 'Failed to update registration status'
+          }, { status: 500 });
+        }
+
+        console.log('Registration entry updated:', updateData);
 
         // Update the wallet's fee_paid status
-        await updateWalletFeePaid(walletAddress);
+        const walletUpdateResult = await updateWalletFeePaid(walletAddress);
+        console.log('Wallet fee_paid update result:', walletUpdateResult);
 
         return json({
           success: true,
@@ -201,6 +236,8 @@ export const POST: RequestHandler = async ({ request }) => {
           nextStep: '/activate/select-chain'
         });
       } else {
+        console.log('Payment not yet verified, waiting for transaction...');
+
         // Payment not yet verified
         return json({
           success: true,
@@ -230,9 +267,8 @@ export const POST: RequestHandler = async ({ request }) => {
           .from('user_wallet_registrations')
           .insert({
             wallet_address: walletAddress,
-            // Use eth_amount for now since the database schema might not be updated yet
-            eth_amount: cryptoAmount,
-            // Add chain_id as a separate update after insert if needed
+            chain_id: selectedChainId,
+            crypto_amount: cryptoAmount,
             valid_to: validTo.toISOString(),
             confirmed: false,
             created_at: now,
@@ -278,9 +314,12 @@ export const POST: RequestHandler = async ({ request }) => {
 /**
  * Updates the wallet's fee_paid status to true and increments setup_step if needed
  * @param walletAddress The wallet address to update
+ * @returns Object with success status and details
  */
-async function updateWalletFeePaid(walletAddress: string): Promise<void> {
+async function updateWalletFeePaid(walletAddress: string): Promise<{ success: boolean; details: any }> {
   try {
+    console.log('Updating wallet fee_paid status for:', walletAddress);
+
     // First, get the current wallet data
     const { data: walletData, error: getError } = await supabaseAdmin
       .from('wallets')
@@ -290,8 +329,10 @@ async function updateWalletFeePaid(walletAddress: string): Promise<void> {
 
     if (getError) {
       console.error('Error fetching wallet data:', getError);
-      return;
+      return { success: false, details: { error: getError, message: 'Failed to fetch wallet data' } };
     }
+
+    console.log('Current wallet data:', walletData);
 
     // Only update if fee_paid is false
     if (!walletData.fee_paid) {
@@ -309,12 +350,27 @@ async function updateWalletFeePaid(walletAddress: string): Promise<void> {
         updateData.setup_step = 1;
       }
 
-      await supabaseAdmin
+      console.log('Updating wallet with:', updateData);
+
+      const { data: updatedData, error: updateError } = await supabaseAdmin
         .from('wallets')
         .update(updateData)
-        .eq('wallet_address', walletAddress);
+        .eq('wallet_address', walletAddress)
+        .select();
+
+      if (updateError) {
+        console.error('Error updating wallet:', updateError);
+        return { success: false, details: { error: updateError, message: 'Failed to update wallet' } };
+      }
+
+      console.log('Wallet updated successfully:', updatedData);
+      return { success: true, details: { updated: true, data: updatedData } };
+    } else {
+      console.log('Wallet already has fee_paid=true, no update needed');
+      return { success: true, details: { updated: false, message: 'Wallet already has fee_paid=true' } };
     }
   } catch (error) {
     console.error('Error updating wallet fee_paid status:', error);
+    return { success: false, details: { error, message: 'Exception occurred during wallet update' } };
   }
 }
