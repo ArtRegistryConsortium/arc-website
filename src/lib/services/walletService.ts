@@ -1,5 +1,12 @@
 import type { Address } from 'viem';
 
+// Define the wallet setup status interface
+export interface WalletSetupStatus {
+  setup_completed: boolean;
+  setup_step: number;
+  fee_paid: boolean;
+}
+
 /**
  * Check if a wallet exists in the database
  * @param walletAddress The wallet address to check
@@ -134,5 +141,44 @@ export async function ensureWalletExists(walletAddress: Address): Promise<boolea
   } catch (error) {
     console.error('Failed to ensure wallet exists:', error);
     return false;
+  }
+}
+
+/**
+ * Get the setup status for a wallet
+ * @param walletAddress The wallet address to check
+ * @returns The wallet setup status or null if there was an error
+ */
+export async function getWalletSetupStatus(walletAddress: Address): Promise<WalletSetupStatus | null> {
+  try {
+    console.log('Getting setup status for wallet:', walletAddress);
+
+    const response = await fetch('/api/wallet/status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Wallet setup status result:', result);
+
+    if (!result.success) {
+      return null;
+    }
+
+    return {
+      setup_completed: result.data.setup_completed || false,
+      setup_step: result.data.setup_step || 0,
+      fee_paid: result.data.fee_paid || false
+    };
+  } catch (error) {
+    console.error('Failed to get wallet setup status:', error);
+    return null;
   }
 }

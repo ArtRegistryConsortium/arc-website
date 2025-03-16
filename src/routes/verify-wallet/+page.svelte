@@ -11,6 +11,7 @@ import {
   verifyWalletSignature,
   clearSession
 } from '$lib/stores/walletAuth';
+import { setupStatusStore, getSetupRedirectUrl, checkSetupStatus } from '$lib/stores/setupStatus';
 import { connect, disconnect, reconnect } from 'wagmi/actions';
 import { injected, walletConnect } from 'wagmi/connectors';
 import { config } from '$lib/web3/config';
@@ -27,6 +28,8 @@ let verificationMessage = '';
 let isRedirecting = false;
 let messageReady = false;
 let isInitializing = true;
+let setupStatus: import('$lib/services/walletService').WalletSetupStatus | null = null;
+let unsubscribeSetup: (() => void) | undefined;
 
 // Subscribe to stores
 let isConnected = false;
@@ -50,7 +53,7 @@ onMount(() => {
   initializeWallet();
 
   // Subscribe to web3Store
-  unsubscribeWeb3 = web3Store.subscribe(state => {
+  unsubscribeWeb3 = web3Store.subscribe((state: any) => {
     const wasConnected = isConnected;
     isConnected = state.isConnected;
     walletAddress = state.address;
@@ -95,7 +98,7 @@ onMount(() => {
   });
 
   // Subscribe to walletAuthStore
-  unsubscribeAuth = walletAuthStore.subscribe(state => {
+  unsubscribeAuth = walletAuthStore.subscribe((state: any) => {
     const wasVerified = isVerified;
     isVerified = state.isVerified;
     isVerifying = state.isVerifying;
@@ -107,28 +110,46 @@ onMount(() => {
       isRedirecting
     });
 
-    // If verification is complete, redirect after a short delay
-    if (isVerified && !wasVerified && !isRedirecting) {
-      console.log('Verification completed, redirecting to home page');
-      isRedirecting = true;
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
-    }
+    // If verification is complete, we'll handle redirection based on setup status
+    // This is now handled in the setupStatusStore subscription
 
-    // If we're verified and on the verify page, redirect to home
+    // If we're verified and on the verify page, we'll check setup status
     if (isVerified && !isRedirecting && !isInitializing) {
-      console.log('Already verified, redirecting to home page');
+      console.log('Already verified, checking setup status');
+    }
+  });
+
+  // Subscribe to setupStatusStore
+  unsubscribeSetup = setupStatusStore.subscribe((state: any) => {
+    setupStatus = state.status;
+
+    console.log('SetupStatusStore update on verify-wallet page:', {
+      status: state.status,
+      isLoading: state.isLoading,
+      isVerified,
+      isRedirecting
+    });
+
+    // If we're verified and have setup status, redirect to the appropriate page
+    if (isVerified && setupStatus && !isRedirecting) {
       isRedirecting = true;
+
+      // Get the appropriate redirect URL based on setup status
+      const redirectUrl = getSetupRedirectUrl(setupStatus);
+      console.log('Redirecting based on setup status:', redirectUrl);
+
+      // Add a short delay to show the success message
       setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
+        console.log('Executing redirect to:', redirectUrl);
+        window.location.href = redirectUrl;
+      }, 2000);
     }
   });
 
   return () => {
     if (unsubscribeWeb3) unsubscribeWeb3();
     if (unsubscribeAuth) unsubscribeAuth();
+    if (unsubscribeSetup) unsubscribeSetup();
   };
 });
 
@@ -149,7 +170,7 @@ async function initializeWallet() {
     // this might be due to the store not being updated yet, so we'll force an update
     if (hasValidSession && isWalletVerified && !isVerified) {
       console.log('Forcing wallet verification state update on verify page');
-      walletAuthStore.update(state => ({
+      walletAuthStore.update((state: any) => ({
         ...state,
         isVerified: true
       }));
@@ -254,7 +275,33 @@ async function signAndVerify() {
 
       if (nonce) {
         // Verify the signature
-        await verifyWalletSignature(walletAddress, signature, nonce);
+        const verified = await verifyWalletSignature(walletAddress, signature, nonce);
+
+        if (verified) {
+          // Check the wallet setup status after successful verification
+          console.log('Signature verified, checking setup status for redirection');
+
+          // Explicitly check setup status to trigger the redirection
+          await checkSetupStatus(walletAddress);
+
+          // The setupStatusStore subscription should handle the redirection
+          // But as a fallback, we'll also implement direct redirection here
+          if (!isRedirecting && setupStatus) {
+            isRedirecting = true;
+            const redirectUrl = getSetupRedirectUrl(setupStatus);
+            console.log('Direct redirection fallback to:', redirectUrl);
+            setTimeout(() => {
+              window.location.href = redirectUrl;
+            }, 2000);
+          } else if (!isRedirecting) {
+            // If we still don't have setup status, wait a bit and redirect to activate page
+            isRedirecting = true;
+            console.log('Fallback redirection to activate page');
+            setTimeout(() => {
+              window.location.href = '/activate';
+            }, 2000);
+          }
+        }
       }
     }
   } catch (error) {

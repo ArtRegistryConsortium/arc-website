@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { supabaseAdmin } from '$lib/supabase/server';
+import type { RequestHandler } from '@sveltejs/kit';
+import { supabaseAdmin } from '../../../../lib/supabase/server';
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const { walletAddress } = await request.json();
-    
+
     if (!walletAddress) {
       return json({ exists: false, error: 'Wallet address is required' }, { status: 400 });
     }

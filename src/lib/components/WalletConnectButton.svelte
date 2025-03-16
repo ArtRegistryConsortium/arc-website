@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { web3Store } from "$lib/stores/web3";
-  import { walletAuthStore, checkExistingSession, clearSession } from "$lib/stores/walletAuth";
+  import { Button } from "./ui/button/index.js";
+  import { web3Store } from "../stores/web3";
+  import { walletAuthStore, checkExistingSession, clearSession } from "../stores/walletAuth";
   import { disconnect, connect } from "wagmi/actions";
   import { injected, walletConnect } from "wagmi/connectors";
-  import { config } from "$lib/web3/config";
-  import { truncateAddress } from "$lib/utils/web3";
+  import { config } from "../web3/config";
+  import { truncateAddress } from "../utils/web3";
   import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resetSetupStatus } from '../stores/setupStatus';
 
   // Get WalletConnect project ID from environment variable
   const projectId = PUBLIC_WALLETCONNECT_ID || '';
@@ -92,8 +93,13 @@
       // First clear the auth session
       clearSession();
 
+      // Reset setup status
+      resetSetupStatus();
+
       // Then disconnect the wallet
       await disconnect(config);
+
+      console.log('Wallet disconnected and setup status reset');
 
       // Always redirect to homepage after disconnecting
       // Only avoid redirect if we're already on the homepage

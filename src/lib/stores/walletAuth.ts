@@ -1,8 +1,9 @@
 import { writable } from 'svelte/store';
 import type { Address } from 'viem';
 import { signMessage } from 'wagmi/actions';
-import { config } from '$lib/web3/config';
-import { ensureWalletExists } from '$lib/services/walletService';
+import { config } from '../web3/config';
+import { ensureWalletExists, getWalletSetupStatus } from '../services/walletService';
+import { checkSetupStatus } from './setupStatus';
 
 // Define the authentication state interface
 interface WalletAuthState {
@@ -71,13 +72,22 @@ export function checkExistingSession(): boolean {
     ensureWalletExists(address)
       .then(success => {
         if (success) {
-          console.log('Wallet entry confirmed or updated in Supabase during session check');
+          console.log('Wallet entry confirmed or updated during session check');
+
+          // Check the wallet setup status
+          checkSetupStatus(address)
+            .then(() => {
+              console.log('Wallet setup status checked during session check');
+            })
+            .catch(setupError => {
+              console.error('Error checking setup status during session check:', setupError);
+            });
         } else {
-          console.warn('Failed to confirm or update wallet entry in Supabase during session check');
+          console.warn('Failed to confirm or update wallet entry during session check');
         }
       })
       .catch(error => {
-        console.error('Error interacting with Supabase during session check:', error);
+        console.error('Error interacting with database during session check:', error);
       });
   }
 
@@ -149,6 +159,10 @@ export async function verifyWalletSignature(address: Address, signature: string,
 
       if (walletCreated) {
         console.log('Wallet entry created or updated for:', address);
+
+        // Check the wallet setup status
+        console.log('Checking wallet setup status...');
+        await checkSetupStatus(address);
       } else {
         console.warn('Failed to create or update wallet entry for:', address);
       }
