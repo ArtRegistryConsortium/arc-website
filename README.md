@@ -18,14 +18,28 @@ This project is built with Svelte and uses TailwindCSS for styling. It also inte
 
 ### Setup
 
+1. Install dependencies:
 ```bash
-# Install dependencies
 npm install
+```
 
-# Start the development server
+2. Set up environment variables:
+   - Edit the `.env` file with your Supabase and WalletConnect credentials
+
+```bash
+# Required environment variables:
+# PUBLIC_SUPABASE_URL - Your Supabase project URL (client-side)
+# PUBLIC_SUPABASE_ANON_KEY - Your Supabase anonymous key (client-side)
+# PUBLIC_WALLETCONNECT_ID - Your WalletConnect project ID (client-side)
+# SUPABASE_URL - Your Supabase project URL (server-side)
+# SUPABASE_SERVICE_KEY - Your Supabase service role key (server-side)
+```
+
+3. Start the development server:
+```bash
 npm run dev
 
-# Start the server and open in a browser
+# Or start the server and open in a browser
 npm run dev -- --open
 ```
 

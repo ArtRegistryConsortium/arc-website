@@ -3,7 +3,6 @@ import type { Address } from 'viem';
 import { signMessage } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { ensureWalletExists } from '$lib/services/walletService';
-import { testSupabaseConnection } from '$lib/supabase/client';
 
 // Define the authentication state interface
 interface WalletAuthState {
@@ -140,30 +139,26 @@ export async function verifyWalletSignature(address: Address, signature: string,
 
     console.log('Wallet verification successful, session created for:', address);
 
-    // Check if wallet exists in Supabase and create it if it doesn't
+    // Check if wallet exists in database and create it if it doesn't
     try {
-      console.log('Starting Supabase wallet check/creation for address:', address);
-
-      // Test Supabase connection first
-      const connectionTest = await testSupabaseConnection();
-      console.log('Supabase connection test result:', connectionTest ? 'Success' : 'Failed');
+      console.log('Starting wallet check/creation for address:', address);
 
       // Ensure the wallet entry exists
       console.log('Calling ensureWalletExists...');
       const walletCreated = await ensureWalletExists(address);
 
       if (walletCreated) {
-        console.log('Wallet entry created or updated in Supabase for:', address);
+        console.log('Wallet entry created or updated for:', address);
       } else {
-        console.warn('Failed to create or update wallet entry in Supabase for:', address);
+        console.warn('Failed to create or update wallet entry for:', address);
       }
     } catch (dbError) {
-      console.error('Error interacting with Supabase:', dbError);
+      console.error('Error interacting with database:', dbError);
       if (dbError instanceof Error) {
         console.error('Error message:', dbError.message);
         console.error('Error stack:', dbError.stack);
       }
-      // Continue with local authentication even if Supabase interaction fails
+      // Continue with local authentication even if database interaction fails
     }
 
     // Update the store

@@ -1,4 +1,3 @@
-import { supabase, isSupabaseConfigured } from '$lib/supabase/client';
 import type { Address } from 'viem';
 
 /**
@@ -7,36 +6,25 @@ import type { Address } from 'viem';
  * @returns True if the wallet exists, false otherwise
  */
 export async function checkWalletExists(walletAddress: Address): Promise<boolean> {
-  // Check if Supabase is properly configured
-  if (!isSupabaseConfigured()) {
-    console.warn('Supabase is not properly configured. Skipping wallet existence check.');
-    return false; // Assume wallet doesn't exist to trigger creation attempt
-  }
-
   try {
     console.log('Checking if wallet exists:', walletAddress);
 
-    const { data, error } = await supabase
-      .from('wallets')
-      .select('wallet_address')
-      .eq('wallet_address', walletAddress as string)
-      .single();
+    const response = await fetch('/api/wallet/check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
 
-    console.log('Wallet existence check result:', data, error ? `Error: ${error.message}` : 'No error');
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // PGRST116 means no rows returned, which means the wallet doesn't exist
-        console.log('Wallet does not exist in database');
-        return false;
-      }
-      console.error('Error checking wallet existence:', error.message);
-      console.error('Error details:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    console.log('Wallet exists in database:', !!data);
-    return !!data;
+    const result = await response.json();
+    console.log('Wallet existence check result:', result);
+
+    return result.exists;
   } catch (error) {
     console.error('Failed to check wallet existence:', error);
     if (error instanceof Error) {
@@ -53,55 +41,25 @@ export async function checkWalletExists(walletAddress: Address): Promise<boolean
  * @returns True if the wallet was created successfully, false otherwise
  */
 export async function createWalletEntry(walletAddress: Address): Promise<boolean> {
-  // Check if Supabase is properly configured
-  if (!isSupabaseConfigured()) {
-    console.warn('Supabase is not properly configured. Skipping wallet creation.');
-    return true; // Return true to not block the authentication flow
-  }
-
   try {
     console.log('Creating wallet entry for address:', walletAddress);
-    const now = new Date().toISOString();
 
-    // Create the wallet entry data
-    const walletData = {
-      wallet_address: walletAddress as string,
-      created_at: now,
-      updated_at: now,
-      last_login: now,
-      fee_paid: false,
-      setup_completed: false,
-      setup_step: 0
-    };
+    const response = await fetch('/api/wallet/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
 
-    console.log('Wallet data to insert:', JSON.stringify(walletData));
-
-    // First, let's check if we can access the wallets table at all
-    const { data: testData, error: testError } = await supabase
-      .from('wallets')
-      .select('wallet_address')
-      .limit(1);
-
-    console.log('Test query result:', testData, testError ? `Error: ${testError.message}` : 'No error');
-
-    // Insert the wallet entry
-    console.log('Attempting to insert wallet entry...');
-    const { data, error, status } = await supabase
-      .from('wallets')
-      .insert(walletData)
-      .select();
-
-    console.log('Supabase insert response status:', status);
-    console.log('Supabase insert response data:', data);
-
-    if (error) {
-      console.error('Error creating wallet entry:', error.message);
-      console.error('Error details:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    console.log('Wallet entry created successfully:', data);
-    return true;
+    const result = await response.json();
+    console.log('Wallet creation result:', result);
+
+    return result.success;
   } catch (error) {
     console.error('Failed to create wallet entry:', error);
     if (error instanceof Error) {
@@ -118,40 +76,25 @@ export async function createWalletEntry(walletAddress: Address): Promise<boolean
  * @returns True if the wallet was updated successfully, false otherwise
  */
 export async function updateWalletLastLogin(walletAddress: Address): Promise<boolean> {
-  // Check if Supabase is properly configured
-  if (!isSupabaseConfigured()) {
-    console.warn('Supabase is not properly configured. Skipping wallet last login update.');
-    return true; // Return true to not block the authentication flow
-  }
-
   try {
     console.log('Updating wallet last login for:', walletAddress);
-    const now = new Date().toISOString();
 
-    const updateData = {
-      last_login: now,
-      updated_at: now
-    };
+    const response = await fetch('/api/wallet/update-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
 
-    console.log('Update data:', updateData);
-
-    const { data, error, status } = await supabase
-      .from('wallets')
-      .update(updateData)
-      .eq('wallet_address', walletAddress as string)
-      .select();
-
-    console.log('Update response status:', status);
-    console.log('Update response data:', data);
-
-    if (error) {
-      console.error('Error updating wallet last login:', error.message);
-      console.error('Error details:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    console.log('Wallet last login updated successfully');
-    return true;
+    const result = await response.json();
+    console.log('Wallet last login update result:', result);
+
+    return result.success;
   } catch (error) {
     console.error('Failed to update wallet last login:', error);
     if (error instanceof Error) {
@@ -168,22 +111,26 @@ export async function updateWalletLastLogin(walletAddress: Address): Promise<boo
  * @returns True if the wallet exists or was created successfully, false otherwise
  */
 export async function ensureWalletExists(walletAddress: Address): Promise<boolean> {
-  // Check if Supabase is properly configured
-  if (!isSupabaseConfigured()) {
-    console.warn('Supabase is not properly configured. Skipping wallet database operations.');
-    return true; // Return true to not block the authentication flow
-  }
-
   try {
-    // Check if the wallet exists
-    const exists = await checkWalletExists(walletAddress);
+    console.log('Ensuring wallet exists for address:', walletAddress);
 
-    if (!exists) {
-      return await createWalletEntry(walletAddress);
+    // Use the dedicated endpoint that handles both checking and creating in one request
+    const response = await fetch('/api/wallet/ensure', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    // Update the last login time
-    return await updateWalletLastLogin(walletAddress);
+    const result = await response.json();
+    console.log('Ensure wallet exists result:', result);
+
+    return result.success;
   } catch (error) {
     console.error('Failed to ensure wallet exists:', error);
     return false;
