@@ -193,20 +193,32 @@ export type Database = {
         Row: {
           chain_id: number
           explorer_url: string | null
+          icon_url: string | null
+          is_active: boolean | null
+          is_testnet: boolean | null
           name: string
           rpc_url: string | null
+          symbol: string | null
         }
         Insert: {
           chain_id: number
           explorer_url?: string | null
+          icon_url?: string | null
+          is_active?: boolean | null
+          is_testnet?: boolean | null
           name: string
           rpc_url?: string | null
+          symbol?: string | null
         }
         Update: {
           chain_id?: number
           explorer_url?: string | null
+          icon_url?: string | null
+          is_active?: boolean | null
+          is_testnet?: boolean | null
           name?: string
           rpc_url?: string | null
+          symbol?: string | null
         }
         Relationships: []
       }
@@ -473,27 +485,30 @@ export type Database = {
       }
       user_wallet_registrations: {
         Row: {
+          chain_id: number
           confirmed: boolean
           created_at: string | null
-          eth_amount: number
+          crypto_amount: number
           id: number
           updated_at: string | null
           valid_to: string
           wallet_address: string
         }
         Insert: {
+          chain_id: number
           confirmed?: boolean
           created_at?: string | null
-          eth_amount: number
+          crypto_amount: number
           id?: number
           updated_at?: string | null
           valid_to: string
           wallet_address: string
         }
         Update: {
+          chain_id?: number
           confirmed?: boolean
           created_at?: string | null
-          eth_amount?: number
+          crypto_amount?: number
           id?: number
           updated_at?: string | null
           valid_to?: string
