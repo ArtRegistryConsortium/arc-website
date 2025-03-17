@@ -518,7 +518,7 @@ export type Database = {
           {
             foreignKeyName: "user_wallet_registrations_wallet_address_fkey"
             columns: ["wallet_address"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "wallets"
             referencedColumns: ["wallet_address"]
           },
