@@ -17,7 +17,7 @@
         </p>
         <div class="flex justify-center">
           <Button class="px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg">
-            <a href="https://discord.com/invite/kNmQCnNWSp" class="no-underline">Join the ARC Consortium on Discord</a>
+            <a href="https://discord.com/invite/kNmQCnNWSp" class="no-underline" target="_blank">Join the ARC Consortium on Discord</a>
           </Button>
         </div>
         
