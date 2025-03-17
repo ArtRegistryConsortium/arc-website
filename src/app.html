@@ -8,17 +8,27 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.jpg" type="image/jpeg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- Google Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Cormorant:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Libre+Franklin:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
 		<script>
 			// On page load, check localStorage for theme preference
 			// This prevents flash of wrong theme
 			const theme = localStorage.getItem('theme');
 			const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			
+
 			// Apply dark mode if explicitly set to dark or if system preference is dark and theme is set to system
 			if (theme === 'dark' || (theme === 'system' && systemDarkMode) || (!theme && systemDarkMode)) {
 				document.documentElement.classList.add('dark');
 			} else {
 				document.documentElement.classList.remove('dark');
+			}
+
+			// Apply font preference from localStorage
+			const font = localStorage.getItem('font');
+			if (font && font !== 'system') {
+				document.documentElement.classList.add(`font-${font}`);
 			}
 		</script>
 		%sveltekit.head%

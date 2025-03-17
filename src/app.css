@@ -78,6 +78,47 @@
   html {
     @apply text-base;
   }
+
+  /* Font classes */
+  .font-dm-sans {
+    font-family: 'DM Sans', sans-serif;
+  }
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-space-grotesk {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .font-montserrat {
+    font-family: 'Montserrat', sans-serif;
+  }
+  .font-roboto {
+    font-family: 'Roboto', sans-serif;
+  }
+  .font-outfit {
+    font-family: 'Outfit', sans-serif;
+  }
+  .font-bricolage-grotesque {
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+  .font-urbanist {
+    font-family: 'Urbanist', sans-serif;
+  }
+  .font-plus-jakarta-sans {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .font-libre-baskerville {
+    font-family: 'Libre Baskerville', serif;
+  }
+  .font-libre-franklin {
+    font-family: 'Libre Franklin', sans-serif;
+  }
+  .font-cormorant {
+    font-family: 'Cormorant', serif;
+  }
+  .font-dm-serif-display {
+    font-family: 'DM Serif Display', serif;
+  }
   /* Improve mobile form elements */
   input, select, textarea {
     @apply text-base;
@@ -99,25 +140,25 @@
   .container {
     @apply px-4;
   }
-  
+
   /* Improve spacing on mobile */
   section {
     @apply py-6;
   }
-  
+
   /* Adjust font sizes for better readability on small screens */
   h1 {
     @apply text-2xl;
   }
-  
+
   h2 {
     @apply text-xl;
   }
-  
+
   h3 {
     @apply text-lg;
   }
-  
+
   p, li {
     @apply text-sm leading-relaxed;
   }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import ThemeToggle from './ThemeToggle.svelte';
+  import FontSelector from './FontSelector.svelte';
   import { page } from '$app/stores';
 </script>
 
@@ -12,7 +13,7 @@
           Establishing open standards for documenting and tracking physical artworks on the blockchain.
         </p>
       </div>
-      
+
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Resources</h3>
         <ul class="space-y-1 md:space-y-2">
@@ -22,7 +23,7 @@
           <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/faq'}>FAQ</a></li>
         </ul>
       </div>
-      
+
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Consortium</h3>
         <ul class="space-y-1 md:space-y-2">
@@ -32,7 +33,7 @@
           <li><a href="/terms-of-service" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/terms-of-service'}>Terms of Service</a></li>
         </ul>
       </div>
-      
+
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Connect</h3>
         <ul class="space-y-1 md:space-y-2">
@@ -43,10 +44,11 @@
         </ul>
       </div>
     </div>
-    
+
     <div class="border-t border-border mt-8 md:mt-12 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center">
       <p class="text-gray-500 dark:text-gray-400 text-sm">&copy; {new Date().getFullYear()} Art Registry Consortium. All rights reserved.</p>
-      <div class="mt-4 md:mt-0">
+      <div class="mt-4 md:mt-0 flex items-center gap-3">
+        <FontSelector />
         <ThemeToggle />
       </div>
     </div>
@@ -58,4 +60,4 @@
     text-decoration: underline;
     text-underline-offset: 4px;
   }
-</style> 
+</style>

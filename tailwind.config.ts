@@ -67,7 +67,20 @@ const config: Config = {
 				sm: "calc(var(--radius) - 4px)"
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: [...fontFamily.sans],
+				'dm-sans': ['DM Sans', ...fontFamily.sans],
+				'inter': ['Inter', ...fontFamily.sans],
+				'space-grotesk': ['Space Grotesk', ...fontFamily.sans],
+				'montserrat': ['Montserrat', ...fontFamily.sans],
+				'roboto': ['Roboto', ...fontFamily.sans],
+				'outfit': ['Outfit', ...fontFamily.sans],
+				'bricolage-grotesque': ['Bricolage Grotesque', ...fontFamily.sans],
+				'urbanist': ['Urbanist', ...fontFamily.sans],
+				'plus-jakarta-sans': ['Plus Jakarta Sans', ...fontFamily.sans],
+				'libre-baskerville': ['Libre Baskerville', ...fontFamily.serif],
+				'libre-franklin': ['Libre Franklin', ...fontFamily.sans],
+				'cormorant': ['Cormorant', ...fontFamily.serif],
+				'dm-serif-display': ['DM Serif Display', ...fontFamily.serif]
 			},
 			keyframes: {
 				"accordion-down": {

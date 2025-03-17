@@ -8,8 +8,9 @@
 	import { goto } from '$app/navigation';
 	import Web3Provider from '../lib/components/Web3Provider.svelte';
 
-	// Import the theme store to initialize it
+	// Import the theme and font stores to initialize them
 	import { themeStore } from '../lib/stores/theme';
+	import { fontStore } from '../lib/stores/font';
 	// Import wallet and setup stores
 	import { walletAuthStore } from '../lib/stores/walletAuth';
 	import { setupStatusStore, getSetupRedirectUrl } from '../lib/stores/setupStatus';
@@ -24,8 +25,9 @@
 	// This import is needed to initialize the theme
 	// The store subscription will handle the theme changes
 	onMount(() => {
-		// Force a theme update on mount
+		// Force a theme and font update on mount
 		themeStore.update(theme => theme);
+		fontStore.update(font => font);
 	});
 
 	// Subscribe to stores and handle redirects
