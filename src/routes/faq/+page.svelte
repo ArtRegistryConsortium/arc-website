@@ -395,7 +395,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Where can I get help?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            For support, visit our <a href="https://discord.com/invite/TFkNXhhP" class="text-blue-600 hover:underline">Help Channel on Discord</a>.
+            For support, visit our <a href="https://discord.com/invite/kNmQCnNWSp" class="text-blue-600 hover:underline">Help Channel on Discord</a>.
           </p>
         </AccordionContent>
       </AccordionItem>
@@ -404,7 +404,7 @@
         <AccordionTrigger class="text-base md:text-lg font-medium text-left">Is there a community for ARC users?</AccordionTrigger>
         <AccordionContent>
           <p class="text-sm md:text-base">
-            Yes! Join our <a href="https://discord.com/invite/TFkNXhhP" class="text-blue-600 hover:underline">Discord</a> to connect with other artists, collectors, and institutions using ARC.
+            Yes! Join our <a href="https://discord.com/invite/kNmQCnNWSp" class="text-blue-600 hover:underline">Discord</a> to connect with other artists, collectors, and institutions using ARC.
           </p>
         </AccordionContent>
       </AccordionItem>

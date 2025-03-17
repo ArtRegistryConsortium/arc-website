@@ -21,7 +21,7 @@
     
     <div class="mt-8 mb-10">
       <Button variant="default" class="px-4 md:px-6 py-2 md:py-3">
-        <a href="https://discord.gg/TFkNXhhP" class="no-underline">Join the ARC Consortium on Discord</a>
+        <a href="https://discord.com/invite/kNmQCnNWSp" class="no-underline">Join the ARC Consortium on Discord</a>
       </Button>
     </div>
     

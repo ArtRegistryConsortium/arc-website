@@ -21,7 +21,7 @@
 
     <div class="my-8">
       <Button variant="default" class="px-6 py-3">
-        <a href="https://discord.gg/TFkNXhhP" target="_blank" class="flex items-center">
+        <a href="https://discord.com/invite/kNmQCnNWSp" target="_blank" class="flex items-center">
           Join the ARC Discord
         </a>
       </Button>

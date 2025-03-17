@@ -245,7 +245,7 @@ async function manuallyVerifyPayment() {
 
 
 // Function to check transaction status
-async function checkTransactionStatus(hash: string) {
+async function checkTransactionStatus(hash: `0x${string}`) {
     if (isCheckingTransaction || !hash) return;
 
     try {
@@ -263,7 +263,7 @@ async function checkTransactionStatus(hash: string) {
         console.log('Transaction receipt:', receipt);
 
         // Check transaction status - receipt.status is a number (0 = failure, 1 = success)
-        if (receipt && receipt.status === 1) {
+        if (receipt && Number(receipt.status) === 1) {
             console.log('Transaction confirmed successfully!');
             transactionStatus = 'confirmed';
 
@@ -281,7 +281,7 @@ async function checkTransactionStatus(hash: string) {
             }
         } else {
             console.log('Transaction failed or is still pending');
-            transactionStatus = receipt && receipt.status === 0 ? 'failed' : 'pending';
+            transactionStatus = receipt && Number(receipt.status) === 0 ? 'failed' : 'pending';
 
             // If still pending and we haven't checked too many times, check again
             if (transactionStatus === 'pending' && transactionCheckCount < 10) {
@@ -292,7 +292,7 @@ async function checkTransactionStatus(hash: string) {
         console.error('Error checking transaction status:', error);
 
         // If it's a timeout error, the transaction might still be pending
-        if (error.message?.includes('timeout') && transactionCheckCount < 10) {
+        if (error instanceof Error && error.message.includes('timeout') && transactionCheckCount < 10) {
             transactionStatus = 'pending';
             setTimeout(() => checkTransactionStatus(hash), 10000); // Check again in 10 seconds
         } else {
@@ -366,7 +366,7 @@ async function sendPayment() {
                 amount = BigInt(weiValue);
             } catch (fallbackError) {
                 console.error('Error with fallback calculation:', fallbackError);
-                throw new Error(`Failed to convert ${formattedAmount} to wei: ${fallbackError.message}`);
+                throw new Error(`Failed to convert ${formattedAmount} to wei: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
             }
         }
 
@@ -375,27 +375,22 @@ async function sendPayment() {
         console.log(`Sending ${formattedAmount} ${selectedChain?.symbol || 'ETH'} to ${arcWalletAddress}`);
 
         // Prepare transaction parameters
-        const txParams: {
-            to: Address;
-            value: bigint;
-            chainId?: number;
-        } = {
+        const txParams = {
             to: arcWalletAddress as Address,
             value: amount
         };
 
-        // Only add chainId if it's defined
-        if (selectedChainId !== undefined) {
-            txParams.chainId = selectedChainId;
-        }
+        // Note: chainId is handled automatically by wagmi
 
         console.log('Transaction params:', txParams);
 
         // Send the transaction
-        const { hash } = await sendTransaction(config, txParams);
+        const result = await sendTransaction(config, txParams);
+        // The hash is a `0x${string}` type
+        const hash = result;
 
         console.log('Transaction sent:', hash);
-        transactionHash = hash;
+        transactionHash = hash as string;
         transactionStatus = 'pending';
 
         // Start checking transaction status
@@ -414,10 +409,11 @@ async function sendPayment() {
 
             // Check for specific error types
             if (error.message.includes('BigInt')) {
+                const localFormattedAmount = cryptoAmount.toString();
                 console.error('BigInt conversion error detected. Current values:', {
                     cryptoAmount,
-                    formattedAmount,
-                    amount: amount?.toString() || 'undefined'
+                    formattedAmount: localFormattedAmount,
+                    amountString: 'conversion failed'
                 });
                 transactionError = 'Error with crypto amount conversion. Please try a different amount or chain.';
             } else {
@@ -600,7 +596,7 @@ onDestroy(() => {
 
             {#if availableChains.length > 0}
                 <div class="mb-6">
-                    <label class="block text-sm font-medium mb-3 text-center">Select payment chain:</label>
+                    <p class="block text-sm font-medium mb-3 text-center">Select payment chain:</p>
                     <div class="flex flex-wrap gap-2 justify-center">
                         {#each availableChains as chain}
                             <button
@@ -650,7 +646,7 @@ onDestroy(() => {
                                 on:error={(e) => {
                                     const img = e.target as HTMLImageElement;
                                     img.onerror = null;
-                                    img.src = `https://placehold.co/20x20/svg?text=${selectedChain.symbol || 'ETH'}`;
+                                    img.src = `https://placehold.co/20x20/svg?text=${selectedChain?.symbol || 'ETH'}`;
                                 }}
                             />
                         {:else}
@@ -759,7 +755,7 @@ onDestroy(() => {
                         class="w-full"
                         variant="default"
                         disabled={isCheckingTransaction}
-                        on:click={() => checkTransactionStatus(transactionHash)}
+                        on:click={() => checkTransactionStatus(transactionHash as `0x${string}`)}
                     >
                         {#if isCheckingTransaction}
                             <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>

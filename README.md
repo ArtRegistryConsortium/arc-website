@@ -147,6 +147,6 @@ We welcome contributions to the ARC website. Please feel free to submit issues o
 ## Connect with ARC
 
 - [GitHub](https://github.com/ArtRegistryConsortium)
-- [Discord](https://discord.gg/TFkNXhhP)
+- [Discord](https://discord.com/invite/kNmQCnNWSp)
 - [X (Twitter)](https://x.com/art_registry_c)
 - [Threads](https://www.threads.net/@art_registry_c)
