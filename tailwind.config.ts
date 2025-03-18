@@ -80,7 +80,16 @@ const config: Config = {
 				'libre-baskerville': ['Libre Baskerville', ...fontFamily.serif],
 				'libre-franklin': ['Libre Franklin', ...fontFamily.sans],
 				'cormorant': ['Cormorant', ...fontFamily.serif],
-				'dm-serif-display': ['DM Serif Display', ...fontFamily.serif]
+				'dm-serif-display': ['DM Serif Display', ...fontFamily.serif],
+				'merriweather': ['Merriweather', ...fontFamily.serif],
+				'cormorant-garamond': ['Cormorant Garamond', ...fontFamily.serif],
+				'playfair-display': ['Playfair Display', ...fontFamily.serif],
+				'lora': ['Lora', ...fontFamily.serif],
+				'noto-serif': ['Noto Serif', ...fontFamily.serif],
+				'crimson-text': ['Crimson Text', ...fontFamily.serif],
+				'open-sans': ['Open Sans', ...fontFamily.sans],
+				'lato': ['Lato', ...fontFamily.sans],
+				'poppins': ['Poppins', ...fontFamily.sans]
 			},
 			keyframes: {
 				"accordion-down": {

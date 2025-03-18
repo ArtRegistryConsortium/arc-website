@@ -1,21 +1,30 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 
-export type Font = 
-  | 'system' 
-  | 'dm-sans' 
-  | 'inter' 
-  | 'space-grotesk' 
-  | 'montserrat' 
-  | 'roboto' 
-  | 'outfit' 
-  | 'bricolage-grotesque' 
-  | 'urbanist' 
-  | 'plus-jakarta-sans' 
-  | 'libre-baskerville' 
-  | 'libre-franklin' 
-  | 'cormorant' 
-  | 'dm-serif-display';
+export type Font =
+  | 'system'
+  | 'dm-sans'
+  | 'inter'
+  | 'space-grotesk'
+  | 'montserrat'
+  | 'roboto'
+  | 'outfit'
+  | 'bricolage-grotesque'
+  | 'urbanist'
+  | 'plus-jakarta-sans'
+  | 'libre-baskerville'
+  | 'libre-franklin'
+  | 'cormorant'
+  | 'dm-serif-display'
+  | 'merriweather'
+  | 'cormorant-garamond'
+  | 'playfair-display'
+  | 'lora'
+  | 'noto-serif'
+  | 'crimson-text'
+  | 'open-sans'
+  | 'lato'
+  | 'poppins';
 
 // Font display names for UI
 export const fontNames: Record<Font, string> = {
@@ -32,13 +41,22 @@ export const fontNames: Record<Font, string> = {
   'libre-baskerville': 'Libre Baskerville',
   'libre-franklin': 'Libre Franklin',
   'cormorant': 'Cormorant',
-  'dm-serif-display': 'DM Serif Display'
+  'dm-serif-display': 'DM Serif Display',
+  'merriweather': 'Merriweather',
+  'cormorant-garamond': 'Cormorant Garamond',
+  'playfair-display': 'Playfair Display',
+  'lora': 'Lora',
+  'noto-serif': 'Noto Serif',
+  'crimson-text': 'Crimson Text',
+  'open-sans': 'Open Sans',
+  'lato': 'Lato',
+  'poppins': 'Poppins'
 };
 
 // Initialize font from localStorage or use system font
 function getInitialFont(): Font {
   if (!browser) return 'system';
-  
+
   const storedFont = localStorage.getItem('font') as Font | null;
   return storedFont || 'system';
 }
@@ -49,7 +67,7 @@ const fontStore = writable<Font>(getInitialFont());
 // Function to update the document with the current font
 function updateFont(font: Font) {
   if (!browser) return;
-  
+
   // Remove all font classes
   document.documentElement.classList.remove(
     'font-dm-sans',
@@ -64,14 +82,23 @@ function updateFont(font: Font) {
     'font-libre-baskerville',
     'font-libre-franklin',
     'font-cormorant',
-    'font-dm-serif-display'
+    'font-dm-serif-display',
+    'font-merriweather',
+    'font-cormorant-garamond',
+    'font-playfair-display',
+    'font-lora',
+    'font-noto-serif',
+    'font-crimson-text',
+    'font-open-sans',
+    'font-lato',
+    'font-poppins'
   );
-  
+
   // Add the selected font class if not system
   if (font !== 'system') {
     document.documentElement.classList.add(`font-${font}`);
   }
-  
+
   localStorage.setItem('font', font);
 }
 
