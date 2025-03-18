@@ -1,14 +1,44 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+
   export let currentStep: number;
 
-  // Define the steps
+  // Define the steps with their routes
   const steps = [
-    { number: 1, label: "Payment" },
-    { number: 2, label: "Identity Type" },
-    { number: 3, label: "Create Identity" },
-    { number: 4, label: "Select Chain" },
-    { number: 5, label: "Confirmation" }
+    { number: 1, label: "Payment", route: "/activate" },
+    { number: 2, label: "Identity Type", route: "/activate/choose-identity-type" },
+    { number: 3, label: "Create Identity", route: "/activate/create-identity" },
+    { number: 4, label: "Select Chain", route: "/activate/select-chain" },
+    { number: 5, label: "Confirmation", route: "/activate/confirmation" }
   ];
+
+  // Map the setup_step (0-4) to the UI step (1-5)
+  // This ensures the UI shows the correct step based on the database value
+  // 0: Payment (UI: 1)
+  // 1: Identity Type (UI: 2)
+  // 2: Create Identity (UI: 3)
+  // 3: Select Chain (UI: 4)
+  // 4: Confirmation (UI: 5)
+
+  // Calculate the progress percentage based on the current step
+  // For step 1, progress is 0%
+  // For step 5, progress is 100%
+  // Steps in between are evenly distributed
+  const progressPercentage = (currentStep - 1) / (steps.length - 1) * 100;
+
+  // Function to handle step click
+  function handleStepClick(step: any) {
+    // Don't allow going back to payment step
+    if (step.number === 1) {
+      return;
+    }
+
+    // Allow clicking on steps that have been completed, the current step, or the next step
+    // This ensures users can navigate to the next step after completing the current one
+    if (step.number <= currentStep + 1) {
+      goto(step.route);
+    }
+  }
 </script>
 
 <div class="hidden md:block w-full max-w-2xl mb-16">
@@ -22,21 +52,38 @@
 
       <!-- Completed progress line -->
       <div
-        class="absolute left-0 h-0.5 top-1/2 -translate-y-1/2 bg-primary transition-all duration-300"
-        style="width: {Math.max(0, (currentStep - 1) / (steps.length - 1) * 100)}%; margin-top: -11px;
-    margin-right: 20px; margin-left: 20px;"
+        class="absolute left-0 h-0.5 right-0 top-1/2 -translate-y-1/2 bg-primary transition-all duration-300"
+        style="width: {Math.max(0, progressPercentage-3)}%; margin-top: -11px;
+    margin-right: 1px; margin-left: 2px;"
       ></div>
 
       <!-- Step circles -->
       {#each steps as step}
         <div class="relative flex flex-col items-center">
-          <div
+          <button
+            on:click={() => handleStepClick(step)}
             class="w-12 h-12 rounded-full flex items-center justify-center font-bold transition-colors z-10
-            {currentStep >= step.number ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}"
+            {currentStep >= step.number ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
+            {step.number <= currentStep + 1 && step.number !== 1 ? 'cursor-pointer' : 'cursor-default'}"
+            disabled={step.number > currentStep + 1 || step.number === 1}
+            aria-label={`Go to ${step.label} step`}
+            title={step.number === 1 ? 'Cannot return to payment step' :
+                  step.number > currentStep + 1 ? 'Complete previous steps first' :
+                  `Go to ${step.label}`}
           >
+
             {step.number}
-          </div>
-          <span class="text-xs text-center mt-2 {currentStep >= step.number ? 'text-primary font-medium' : 'text-muted-foreground'}">
+          </button>
+          <span
+            class="text-xs text-center mt-2
+            {currentStep >= step.number ? 'text-primary font-medium' : 'text-muted-foreground'}
+            {step.number <= currentStep + 1 && step.number !== 1 ? 'cursor-pointer' : ''}"
+            on:click={() => handleStepClick(step)}
+            role={step.number <= currentStep + 1 && step.number !== 1 ? 'button' : 'none'}
+            title={step.number === 1 ? 'Cannot return to payment step' :
+                  step.number > currentStep + 1 ? 'Complete previous steps first' :
+                  `Go to ${step.label}`}
+          >
             {step.label}
           </span>
         </div>
@@ -44,3 +91,7 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* Custom styles can be added here if needed in the future */
+</style>

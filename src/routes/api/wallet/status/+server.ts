@@ -22,6 +22,8 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ success: false, error: 'Database error' }, { status: 500 });
     }
 
+    console.log('Wallet status data from database:', data);
+
     return json({
       success: true,
       data: {

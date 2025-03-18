@@ -31,11 +31,16 @@
   // Function to handle complete setup button click
   function handleCompleteSetup() {
     if (setupStatus) {
+      console.log('Complete Setup button clicked, current setup status:', setupStatus);
+
       // Reset the flag to allow redirection to activate pages
       setUserClosedActivatePage(false);
 
       const redirectUrl = getSetupRedirectUrl(setupStatus);
+      console.log('Navigating to:', redirectUrl);
       goto(redirectUrl);
+    } else {
+      console.log('Complete Setup button clicked but setupStatus is null');
     }
   }
 

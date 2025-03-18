@@ -228,3 +228,13 @@ function generateSessionToken(): string {
   const timestampPart = Date.now().toString(36);
   return `${randomPart}${timestampPart}`;
 }
+
+// Get the wallet address from localStorage
+export function getWalletAddress(): Address | null {
+  if (typeof window === 'undefined') return null;
+
+  const sessionAddress = localStorage.getItem('wallet_session_address');
+  if (!sessionAddress) return null;
+
+  return sessionAddress as Address;
+}

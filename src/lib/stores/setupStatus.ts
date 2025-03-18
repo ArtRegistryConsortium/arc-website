@@ -47,23 +47,39 @@ export async function checkSetupStatus(walletAddress: Address): Promise<void> {
 
 // Function to get the redirect URL based on setup step
 export function getSetupRedirectUrl(status: WalletSetupStatus): string {
+  console.log('Getting redirect URL for setup status:', status);
+
   if (status.setup_completed) {
+    console.log('Setup is completed, redirecting to home');
     return '/'; // No redirect needed if setup is completed
   }
 
   // Redirect based on setup step
+  let redirectUrl = '/activate';
+
   switch (status.setup_step) {
-    case 0:
-      return '/activate';
-    case 1:
-      return '/activate/select-chain';
-    case 2:
-      return '/activate/create-identity';
-    case 3:
-      return '/activate/confirmation';
+    case 0: // Payment
+      redirectUrl = '/activate';
+      break;
+    case 1: // Identity Type
+      redirectUrl = '/activate/choose-identity-type';
+      break;
+    case 2: // Create Identity
+      redirectUrl = '/activate/create-identity';
+      break;
+    case 3: // Select Chain
+      redirectUrl = '/activate/select-chain';
+      break;
+    case 4: // Confirmation
+      redirectUrl = '/activate/confirmation';
+      break;
     default:
-      return '/activate';
+      redirectUrl = '/activate';
+      break;
   }
+
+  console.log(`Redirecting to ${redirectUrl} for setup_step ${status.setup_step}`);
+  return redirectUrl;
 }
 
 // Function to reset the store

@@ -4,21 +4,84 @@ import { goto } from '$app/navigation';
 import { setUserClosedActivatePage } from '$lib/stores/navigationState';
 import { disconnect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
-import { clearSession } from '$lib/stores/walletAuth';
+import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
+import { identityStore } from '$lib/stores/identityStore';
+import { updateSetupProgress } from '$lib/services/setupProgressService';
+import { onMount } from 'svelte';
+import type { Chain } from '$lib/services/activationService';
 
-const chains = [
-    { id: 'ethereum', name: 'Ethereum', icon: '🔷' },
-    { id: 'optimism', name: 'Optimism', icon: '🔴' },
-    { id: 'base', name: 'Base', icon: '🔵' },
-    { id: 'zora', name: 'Zora', icon: '🟣' }
-];
+let availableChains: Chain[] = [];
+let selectedChainId: number | null = null;
+let isLoading = true;
+let isUpdatingProgress = false;
+let errorMessage = '';
 
-let selectedChain: string | null = null;
+// On mount, fetch available chains and update the setup progress
+onMount(async () => {
+    const walletAddress = getWalletAddress();
+    if (walletAddress) {
+        try {
+            isUpdatingProgress = true;
+            const result = await updateSetupProgress(walletAddress, 3);
+            if (!result.success) {
+                console.error('Failed to update setup progress:', result.error);
+                errorMessage = 'Failed to update setup progress. Please try again.';
+            }
+        } catch (error) {
+            console.error('Error updating setup progress:', error);
+            errorMessage = 'An error occurred. Please try again.';
+        } finally {
+            isUpdatingProgress = false;
+        }
+    }
 
-function handleContinue() {
-    if (selectedChain) {
-        goto('/activate/confirmation');
+    // Fetch available chains
+    try {
+        const response = await fetch('/api/chains');
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            availableChains = data.chains;
+        } else {
+            errorMessage = data.error || 'Failed to load chains';
+        }
+    } catch (error) {
+        console.error('Error fetching chains:', error);
+        errorMessage = error instanceof Error ? error.message : 'Failed to load chains';
+    } finally {
+        isLoading = false;
+    }
+});
+
+async function handleContinue() {
+    if (selectedChainId) {
+        // Find the selected chain object
+        const selectedChain = availableChains.find(chain => chain.chain_id === selectedChainId);
+        if (selectedChain) {
+            // Store the selected chain in the store
+            identityStore.setSelectedChain(selectedChain);
+
+            // Update setup progress to the next step (4 - Confirmation)
+            const walletAddress = getWalletAddress();
+            if (walletAddress) {
+                try {
+                    const result = await updateSetupProgress(walletAddress, 4);
+                    if (!result.success) {
+                        console.error('Failed to update setup progress:', result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating setup progress:', error);
+                }
+            }
+
+            goto('/activate/confirmation');
+        } else {
+            errorMessage = 'Selected chain not found';
+        }
     }
 }
 
@@ -78,26 +141,44 @@ async function handleLogout() {
             Choose the blockchain where you want to create your identity
         </p>
 
-        <div class="grid gap-4 mb-8">
-            {#each chains as chain}
-                <button
-                    class="w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between
-                        {selectedChain === chain.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
-                    on:click={() => selectedChain = chain.id}
-                >
-                    <span class="text-xl">{chain.name}</span>
-                    <span class="text-2xl">{chain.icon}</span>
-                </button>
-            {/each}
-        </div>
+        {#if isLoading}
+            <div class="flex justify-center items-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        {:else if errorMessage}
+            <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg">
+                <p>{errorMessage}</p>
+            </div>
+        {:else if availableChains.length === 0}
+            <div class="p-4 mb-6 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg">
+                <p>No chains available for identity creation. Please contact support.</p>
+            </div>
+        {:else}
+            <div class="grid gap-4 mb-8">
+                {#each availableChains as chain}
+                    <button
+                        class="w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between
+                            {selectedChainId === chain.chain_id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
+                        on:click={() => selectedChainId = chain.chain_id}
+                    >
+                        <span class="text-xl">{chain.name}</span>
+                        {#if chain.icon_url}
+                            <img src={chain.icon_url} alt={chain.name} class="h-6 w-6" />
+                        {:else}
+                            <span class="text-2xl">{chain.symbol || '⛓️'}</span>
+                        {/if}
+                    </button>
+                {/each}
+            </div>
 
-        <Button
-            class="w-full"
-            disabled={!selectedChain}
-            on:click={handleContinue}
-        >
-            Continue
-        </Button>
+            <Button
+                class="w-full"
+                disabled={!selectedChainId}
+                on:click={handleContinue}
+            >
+                Continue
+            </Button>
+        {/if}
 
         <!-- Log out button -->
         <Button

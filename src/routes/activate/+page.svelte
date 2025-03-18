@@ -19,6 +19,7 @@ let arcWalletAddress = '';
 let validTo = '';
 let isLoading = true; // Only for initial page load
 let errorMessage = '';
+let statusMessage = ''; // For neutral status messages like switching chains
 let isVerifying = false; // For transaction verification
 let paymentStatus = 'checking'; // 'checking', 'awaiting_payment', 'payment_verified', 'payment_confirmed'
 let walletAddress: Address | undefined;
@@ -104,17 +105,19 @@ async function handleChainSelect(chainId: number) {
 
             try {
                 // Show switching message
-                errorMessage = 'Switching chain in wallet...';
+                statusMessage = 'Switching chain in wallet...';
+                errorMessage = ''; // Clear any existing error messages
 
                 // Request the wallet to switch to the selected chain
                 // Cast chainId to support all our chains
                 await switchChain(config, { chainId: chainId as 1 | 11155111 | 10 | 42161 | 8453 });
 
                 console.log('Chain switched successfully');
-                errorMessage = '';
+                statusMessage = ''; // Clear the status message on success
             } catch (switchError) {
                 console.error('Failed to switch chain:', switchError);
                 errorMessage = 'Failed to switch chain. Please switch manually in your wallet.';
+                statusMessage = ''; // Clear the status message on error
             }
         }
 
@@ -168,6 +171,7 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             startPeriodicVerification();
         }
         errorMessage = '';
+        statusMessage = '';
 
         // Get the current wallet address
         const account = getAccount(config);
@@ -647,6 +651,13 @@ onDestroy(() => {
         {#if isLoading}
             <div class="flex justify-center items-center py-8">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        {:else if statusMessage}
+            <div class="bg-muted p-4 rounded-md mb-6">
+                <p class="font-medium mb-2">{statusMessage}</p>
+                <div class="flex justify-center">
+                    <div class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                </div>
             </div>
         {:else if errorMessage}
             <div class="bg-red-500/10 border border-red-200 p-4 rounded-md mb-6">

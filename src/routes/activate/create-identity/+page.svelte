@@ -4,11 +4,36 @@ import { goto } from '$app/navigation';
 import { setUserClosedActivatePage } from '$lib/stores/navigationState';
 import { disconnect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
-import { clearSession } from '$lib/stores/walletAuth';
+import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
+import { identityStore } from '$lib/stores/identityStore';
+import { updateSetupProgress } from '$lib/services/setupProgressService';
+import { onMount } from 'svelte';
 
 let username = '';
 let isValid = false;
+let isUpdatingProgress = false;
+let errorMessage = '';
+
+// On mount, update the setup progress
+onMount(async () => {
+    const walletAddress = getWalletAddress();
+    if (walletAddress) {
+        try {
+            isUpdatingProgress = true;
+            const result = await updateSetupProgress(walletAddress, 2);
+            if (!result.success) {
+                console.error('Failed to update setup progress:', result.error);
+                errorMessage = 'Failed to update setup progress. Please try again.';
+            }
+        } catch (error) {
+            console.error('Error updating setup progress:', error);
+            errorMessage = 'An error occurred. Please try again.';
+        } finally {
+            isUpdatingProgress = false;
+        }
+    }
+});
 
 function validateUsername(value: string) {
     // Only allow lowercase letters, numbers, and hyphens
@@ -22,8 +47,24 @@ function handleInput(event: Event) {
     isValid = validateUsername(username);
 }
 
-function handleContinue() {
+async function handleContinue() {
     if (isValid) {
+        // Store the username in the store
+        identityStore.setUsername(username);
+
+        // Update setup progress to the next step (3 - Select Chain)
+        const walletAddress = getWalletAddress();
+        if (walletAddress) {
+            try {
+                const result = await updateSetupProgress(walletAddress, 3);
+                if (!result.success) {
+                    console.error('Failed to update setup progress:', result.error);
+                }
+            } catch (error) {
+                console.error('Error updating setup progress:', error);
+            }
+        }
+
         goto('/activate/select-chain');
     }
 }
