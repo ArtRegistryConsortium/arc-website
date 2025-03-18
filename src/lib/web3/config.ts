@@ -1,5 +1,5 @@
 import { createConfig, http } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { mainnet, sepolia, optimism, arbitrum, base } from 'wagmi/chains';
 import { injected, walletConnect } from 'wagmi/connectors';
 import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 
@@ -12,10 +12,13 @@ if (!projectId) {
 
 // Create wagmi config
 export const config = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [mainnet, sepolia, optimism, arbitrum, base],
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
+    [optimism.id]: http(),
+    [arbitrum.id]: http(),
+    [base.id]: http(),
   },
   connectors: [
     injected({

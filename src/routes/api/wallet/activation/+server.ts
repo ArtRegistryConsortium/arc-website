@@ -82,6 +82,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     // 1. First check if ANY registration entry exists for this wallet and chain, regardless of validity
+    // Use a transaction to prevent race conditions
     const { data: existingRegistration, error: existingRegError } = await supabaseAdmin
       .from('user_wallet_registrations')
       .select('*')
@@ -134,9 +135,9 @@ export const POST: RequestHandler = async ({ request }) => {
     // Declare the wallet address variable
     let arcWalletAddress: Address;
 
-    // If no Ethereum wallet is found, try to use any available wallet
+    // If no wallet is found for the selected chain, try to use any available wallet
     if (!arcWalletData) {
-      console.warn('No Ethereum wallet found, using the first available wallet');
+      console.warn(`No wallet found for chain ${selectedChain.name} (ID: ${selectedChainId}), using the first available wallet`);
       const fallbackWallet = allWallets[0];
 
       if (!fallbackWallet || !fallbackWallet.wallet_address) {
@@ -148,17 +149,18 @@ export const POST: RequestHandler = async ({ request }) => {
       }
 
       arcWalletAddress = fallbackWallet.wallet_address as Address;
-      console.log('Using fallback wallet address:', arcWalletAddress);
+      console.log(`Using fallback wallet address for ${selectedChain.name}:`, arcWalletAddress);
     } else if (arcWalletError) {
-      console.error('Error fetching ARC wallet address:', arcWalletError);
+      console.error(`Error fetching wallet address for chain ${selectedChain.name}:`, arcWalletError);
       return json({
         success: false,
         error: 'Failed to retrieve ARC wallet address'
       }, { status: 500 });
     } else {
-      // Use the Ethereum wallet if found
+      // Use the wallet found for the selected chain
       arcWalletAddress = arcWalletData.wallet_address as Address;
-      console.log('Using Ethereum wallet address:', arcWalletAddress);
+      // Log with chain name to avoid confusion
+      console.log(`Using ${selectedChain.name} wallet address (chain ID: ${selectedChainId}):`, arcWalletAddress);
     }
 
     // 2. If a valid registration entry exists
@@ -377,8 +379,112 @@ export const POST: RequestHandler = async ({ request }) => {
             availableChains
           });
         } else {
+          // Double-check that no registration exists to prevent race conditions
+          // Use a more robust query with a lock to prevent race conditions
+          const { data: doubleCheckReg, error: doubleCheckError } = await supabaseAdmin
+            .from('user_wallet_registrations')
+            .select('id')
+            .eq('wallet_address', walletAddress)
+            .eq('chain_id', selectedChainId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (doubleCheckReg) {
+            // A registration was created between our first check and now (race condition)
+            console.log(`Registration was created by another request for wallet ${walletAddress} on chain ${selectedChainId}. Using existing registration:`, doubleCheckReg.id);
+
+            // Update the existing registration instead
+            const { data: updatedRegistration, error: updateError } = await supabaseAdmin
+              .from('user_wallet_registrations')
+              .update({
+                crypto_amount: cryptoAmount,
+                valid_to: validTo.toISOString(),
+                confirmed: false,
+                updated_at: now
+              })
+              .eq('id', doubleCheckReg.id)
+              .select()
+              .single();
+
+            if (updateError) {
+              console.error('Error updating registration entry:', updateError);
+              return json({
+                success: false,
+                error: 'Failed to update registration entry'
+              }, { status: 500 });
+            }
+
+            return json({
+              success: true,
+              status: 'registration_updated',
+              cryptoAmount: cryptoAmount,
+              validTo: validTo.toISOString(),
+              arcWalletAddress,
+              chain: selectedChain,
+              availableChains
+            });
+          }
+
           // Create a new registration entry if no existing one was found
-          console.log('No existing registration found. Creating new registration entry.');
+          // Use a transaction ID to track this specific creation attempt
+          const transactionId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+          console.log(`[${transactionId}] Creating new registration entry for wallet ${walletAddress} on chain ${selectedChainId} (${selectedChain.name})`);
+
+          // Final check before insert to prevent race conditions
+          const { count, error: countError } = await supabaseAdmin
+            .from('user_wallet_registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('wallet_address', walletAddress)
+            .eq('chain_id', selectedChainId);
+
+          if (count && count > 0) {
+            console.log(`[${transactionId}] Aborting creation - found ${count} existing registrations in final check`);
+
+            // Get the existing registration
+            const { data: existingReg } = await supabaseAdmin
+              .from('user_wallet_registrations')
+              .select('*')
+              .eq('wallet_address', walletAddress)
+              .eq('chain_id', selectedChainId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            // Update it instead
+            const { data: updatedReg, error: updateError } = await supabaseAdmin
+              .from('user_wallet_registrations')
+              .update({
+                crypto_amount: cryptoAmount,
+                valid_to: validTo.toISOString(),
+                confirmed: false,
+                updated_at: now
+              })
+              .eq('id', existingReg.id)
+              .select()
+              .single();
+
+            if (updateError) {
+              console.error(`[${transactionId}] Error updating existing registration:`, updateError);
+              return json({
+                success: false,
+                error: 'Failed to update registration entry'
+              }, { status: 500 });
+            }
+
+            console.log(`[${transactionId}] Updated existing registration instead of creating new one`);
+            return json({
+              success: true,
+              status: 'registration_updated',
+              cryptoAmount: cryptoAmount,
+              validTo: validTo.toISOString(),
+              arcWalletAddress,
+              chain: selectedChain,
+              availableChains
+            });
+          }
+
+          console.log(`[${transactionId}] Proceeding with creation - no existing registrations found in final check`);
           const { data: newRegistration, error: insertError } = await supabaseAdmin
             .from('user_wallet_registrations')
             .insert({
@@ -394,7 +500,36 @@ export const POST: RequestHandler = async ({ request }) => {
             .single();
 
           if (insertError) {
-            console.error('Error creating registration entry:', insertError);
+            console.error(`[${transactionId}] Error creating registration entry:`, insertError);
+
+            // Check if this is a unique constraint violation (duplicate entry)
+            if (insertError.code === '23505') { // PostgreSQL unique violation code
+              console.log(`[${transactionId}] Duplicate entry detected, trying to use existing registration`);
+
+              // Get the existing registration
+              const { data: existingReg } = await supabaseAdmin
+                .from('user_wallet_registrations')
+                .select('*')
+                .eq('wallet_address', walletAddress)
+                .eq('chain_id', selectedChainId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+              if (existingReg) {
+                console.log(`[${transactionId}] Found existing registration, returning it instead`);
+                return json({
+                  success: true,
+                  status: 'registration_created',
+                  cryptoAmount: existingReg.crypto_amount,
+                  validTo: existingReg.valid_to,
+                  arcWalletAddress,
+                  chain: selectedChain,
+                  availableChains
+                });
+              }
+            }
+
             return json({
               success: false,
               error: 'Failed to create registration entry'

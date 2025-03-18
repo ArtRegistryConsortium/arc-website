@@ -359,9 +359,13 @@ async function closePage() {
 
     {#if isVerified}
       <div class="bg-green-500/20 p-6 rounded-lg border border-green-500/50 mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
+        <div class="flex justify-center mb-4">
+          <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+          </div>
+      </div>
         <p class="text-foreground mb-2">Wallet successfully verified!</p>
         <p class="text-muted-foreground text-sm">Redirecting you back...</p>
       </div>

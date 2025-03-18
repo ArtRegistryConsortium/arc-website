@@ -32,6 +32,7 @@ let transactionError = '';
 let transactionStatus = ''; // 'pending', 'confirmed', 'failed'
 let isCheckingTransaction = false;
 let transactionCheckCount = 0;
+let transactionWasSent = false; // Track if transaction was sent using the button
 
 // Format the valid until date
 $: formattedValidUntil = validTo ? new Date(validTo).toLocaleString() : '';
@@ -91,6 +92,9 @@ async function handleChainSelect(chainId: number) {
         selectedChain = availableChains.find(chain => chain.chain_id === chainId);
         console.log('Selected chain:', selectedChain);
 
+        // Reset transaction-related flags when changing chains
+        transactionWasSent = false;
+
         // Get the current chain ID from the wallet
         const currentChainId = await getChainId(config);
 
@@ -103,8 +107,8 @@ async function handleChainSelect(chainId: number) {
                 errorMessage = 'Switching chain in wallet...';
 
                 // Request the wallet to switch to the selected chain
-                // Cast chainId to the expected type
-                await switchChain(config, { chainId: chainId as 1 | 11155111 });
+                // Cast chainId to support all our chains
+                await switchChain(config, { chainId: chainId as 1 | 11155111 | 10 | 42161 | 8453 });
 
                 console.log('Chain switched successfully');
                 errorMessage = '';
@@ -435,6 +439,7 @@ async function sendPayment() {
         console.log('Transaction sent:', hash);
         transactionHash = hash as string;
         transactionStatus = 'pending';
+        transactionWasSent = true; // Set flag to indicate transaction was sent using the button
 
         // Start checking transaction status
         checkTransactionStatus(hash);
@@ -803,6 +808,7 @@ onDestroy(() => {
                                 placeholder="Enter transaction hash (0x...)"
                                 class="flex-1 px-2 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
                                 bind:value={transactionHash}
+                                on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
                                 disabled={isVerifying}
                             />
                             <Button
@@ -836,7 +842,7 @@ onDestroy(() => {
                     </div>
                 </div>
 
-                {#if transactionHash}
+                {#if transactionHash && (transactionWasSent || transactionStatus)}
                     <div class="mt-3 p-3 rounded-md
                         {transactionStatus === 'confirmed' ? 'bg-green-500/10 text-green-600' :
                          transactionStatus === 'failed' ? 'bg-muted' :
