@@ -1,13 +1,5 @@
 <script lang="ts">
     import { Button } from "$lib/components/ui/button/index.js";
-    import { onMount } from 'svelte';
-    import { fade, fly } from 'svelte/transition';
-
-    let isVisible = false;
-
-    onMount(() => {
-        isVisible = true;
-    });
 </script>
 
 <div class="min-h-screen">
@@ -24,8 +16,7 @@
     <div class="absolute bottom-20 left-1/3 w-80 h-80 bg-secondary/5 dark:bg-secondary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
 
     <div class="container mx-auto px-4 relative h-full flex items-center justify-center">
-      {#if isVisible}
-      <div class="max-w-4xl mx-auto text-center py-7 md:py-12" in:fade={{duration: 1000, delay: 200}}>
+      <div class="max-w-4xl mx-auto text-center py-7 md:py-12">
         <!-- Badge -->
         <div class="inline-block px-4 py-1 text-sm font-medium bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground rounded-full mb-8 backdrop-blur-sm">
           Blockchain-Powered Art Documentation
@@ -61,7 +52,6 @@
           </Button>
         </div>
       </div>
-      {/if}
 
       <!-- Removed scroll indicator -->
     </div>
