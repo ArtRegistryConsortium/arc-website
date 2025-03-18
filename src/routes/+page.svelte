@@ -4,16 +4,16 @@
 
 <div class="min-h-screen">
   <!-- Hero Section with Enhanced Styling -->
-  <section class="py-10 md:py-40 relative overflow-hidden border-b border-border/40">
-    <!-- Background elements with static gradient -->
-    <div class="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background dark:from-background dark:via-muted/5 dark:to-background"></div>
-    <div class="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 dark:from-primary/10 dark:via-accent/10 dark:to-primary/10"></div>
-    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMjIiIGZpbGwtb3BhY2l0eT0iLjAyIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50 dark:opacity-30"></div>
+  <section class="py-10 md:py-40 relative overflow-hidden border-b border-border/40 bg-background/80 dark:bg-background/90">
+    <!-- Background elements with static gradient (hidden on mobile) -->
+    <div class="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background dark:from-background dark:via-muted/5 dark:to-background hidden md:block"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 dark:from-primary/10 dark:via-accent/10 dark:to-primary/10 hidden md:block"></div>
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMjIiIGZpbGwtb3BhY2l0eT0iLjAyIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50 dark:opacity-30 hidden md:block"></div>
 
-    <!-- Decorative elements with animations -->
-    <div class="absolute top-20 left-10 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-    <div class="absolute top-40 right-10 w-72 h-72 bg-accent/5 dark:bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-    <div class="absolute bottom-20 left-1/3 w-80 h-80 bg-secondary/5 dark:bg-secondary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+    <!-- Decorative elements with animations (hidden on mobile) -->
+    <div class="absolute top-20 left-10 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob hidden md:block"></div>
+    <div class="absolute top-40 right-10 w-72 h-72 bg-accent/5 dark:bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000 hidden md:block"></div>
+    <div class="absolute bottom-20 left-1/3 w-80 h-80 bg-secondary/5 dark:bg-secondary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000 hidden md:block"></div>
 
     <div class="container mx-auto px-4 relative h-full flex items-center justify-center">
       <div class="max-w-4xl mx-auto text-center py-7 md:py-12">
