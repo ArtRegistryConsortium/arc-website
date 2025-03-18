@@ -266,6 +266,13 @@ export const POST: RequestHandler = async ({ request }) => {
             }
 
             // Check if this is our target transaction (recipient matches)
+            // Log detailed address information for debugging
+            console.log('Transaction recipient check:', {
+              transactionTo: data.result.to?.toLowerCase(),
+              expectedArcWallet: arcWalletAddress.toLowerCase(),
+              match: data.result.to?.toLowerCase() === arcWalletAddress.toLowerCase()
+            });
+
             if (data.result.to && data.result.to.toLowerCase() === arcWalletAddress.toLowerCase()) {
               console.log('Transaction found on Etherscan and recipient matches!');
 
@@ -274,7 +281,17 @@ export const POST: RequestHandler = async ({ request }) => {
               paymentVerified = true;
               verifiedOnChain = chainId || 1; // Use the provided chain ID or default to mainnet
             } else {
-              throw new Error('Transaction found on Etherscan but recipient does not match');
+              // In development, we can optionally bypass the recipient check
+              const bypassRecipientCheck = env.NODE_ENV === 'development' && env.BYPASS_RECIPIENT_CHECK === 'true';
+
+              if (bypassRecipientCheck) {
+                console.log('WARNING: Bypassing recipient check in development mode!');
+                console.log('Transaction verification forced to succeed despite recipient mismatch');
+                paymentVerified = true;
+                verifiedOnChain = chainId || 1;
+              } else {
+                throw new Error('Transaction found on Etherscan but recipient does not match');
+              }
             }
           } catch (etherscanError) {
             console.error('Etherscan verification failed:', etherscanError);
@@ -288,11 +305,12 @@ export const POST: RequestHandler = async ({ request }) => {
       if (paymentVerified) {
         console.log('Payment verified, updating registration entry...');
 
-        // Update the registration entry to confirmed
+        // Update the registration entry to confirmed and save the transaction hash
         const { data: updateData, error: updateError } = await supabaseAdmin
           .from('user_wallet_registrations')
           .update({
             confirmed: true,
+            tx_hash: transactionHash,
             updated_at: now
           })
           .eq('id', registrationData.id)
@@ -390,7 +408,7 @@ export const POST: RequestHandler = async ({ request }) => {
             .limit(1)
             .maybeSingle();
 
-          if (doubleCheckReg) {
+          if (doubleCheckReg && doubleCheckReg.id) {
             // A registration was created between our first check and now (race condition)
             console.log(`Registration was created by another request for wallet ${walletAddress} on chain ${selectedChainId}. Using existing registration:`, doubleCheckReg.id);
 
@@ -442,7 +460,7 @@ export const POST: RequestHandler = async ({ request }) => {
             console.log(`[${transactionId}] Aborting creation - found ${count} existing registrations in final check`);
 
             // Get the existing registration
-            const { data: existingReg } = await supabaseAdmin
+            const { data: existingReg, error: existingRegError } = await supabaseAdmin
               .from('user_wallet_registrations')
               .select('*')
               .eq('wallet_address', walletAddress)
@@ -450,6 +468,15 @@ export const POST: RequestHandler = async ({ request }) => {
               .order('created_at', { ascending: false })
               .limit(1)
               .single();
+
+            // Check if we got a valid registration
+            if (existingRegError || !existingReg || !existingReg.id) {
+              console.error(`[${transactionId}] Error fetching existing registration:`, existingRegError || 'No valid registration found');
+              return json({
+                success: false,
+                error: 'Failed to fetch existing registration'
+              }, { status: 500 });
+            }
 
             // Update it instead
             const { data: updatedReg, error: updateError } = await supabaseAdmin

@@ -266,6 +266,7 @@ export type Database = {
       identities: {
         Row: {
           addresses: string[] | null
+          chain_id: number | null
           created_at: string | null
           description: string | null
           dob: number | null
@@ -285,6 +286,7 @@ export type Database = {
         }
         Insert: {
           addresses?: string[] | null
+          chain_id?: number | null
           created_at?: string | null
           description?: string | null
           dob?: number | null
@@ -304,6 +306,7 @@ export type Database = {
         }
         Update: {
           addresses?: string[] | null
+          chain_id?: number | null
           created_at?: string | null
           description?: string | null
           dob?: number | null
@@ -323,50 +326,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "identities_wallet_address_fkey"
-            columns: ["wallet_address"]
-            isOneToOne: true
-            referencedRelation: "wallets"
-            referencedColumns: ["wallet_address"]
-          },
-        ]
-      }
-      identity_deployments: {
-        Row: {
-          chain_id: number
-          deployed_at: string | null
-          deployment_address: string
-          id: number
-          identity_id: number
-        }
-        Insert: {
-          chain_id: number
-          deployed_at?: string | null
-          deployment_address: string
-          id?: number
-          identity_id: number
-        }
-        Update: {
-          chain_id?: number
-          deployed_at?: string | null
-          deployment_address?: string
-          id?: number
-          identity_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "identity_deployments_chain_id_fkey"
+            foreignKeyName: "identities_chain_id_fkey"
             columns: ["chain_id"]
             isOneToOne: false
             referencedRelation: "chains"
             referencedColumns: ["chain_id"]
           },
           {
-            foreignKeyName: "identity_deployments_identity_id_fkey"
-            columns: ["identity_id"]
-            isOneToOne: false
-            referencedRelation: "identities"
-            referencedColumns: ["id"]
+            foreignKeyName: "identities_wallet_address_fkey"
+            columns: ["wallet_address"]
+            isOneToOne: true
+            referencedRelation: "wallets"
+            referencedColumns: ["wallet_address"]
           },
         ]
       }
@@ -490,6 +461,7 @@ export type Database = {
           created_at: string | null
           crypto_amount: number
           id: number
+          tx_hash: string | null
           updated_at: string | null
           valid_to: string
           wallet_address: string
@@ -500,6 +472,7 @@ export type Database = {
           created_at?: string | null
           crypto_amount: number
           id?: number
+          tx_hash?: string | null
           updated_at?: string | null
           valid_to: string
           wallet_address: string
@@ -510,6 +483,7 @@ export type Database = {
           created_at?: string | null
           crypto_amount?: number
           id?: number
+          tx_hash?: string | null
           updated_at?: string | null
           valid_to?: string
           wallet_address?: string

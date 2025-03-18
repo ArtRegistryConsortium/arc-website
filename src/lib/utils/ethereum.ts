@@ -219,7 +219,22 @@ export async function verifyEthTransaction(
         // Check if this is our target transaction
         // Note: We're being more flexible here - we only check that the recipient matches
         // This allows verification even if the payment was sent from a different wallet
-        if (tx.to?.toLowerCase() === toAddress.toLowerCase()) {
+
+        // Log detailed address information for debugging
+        console.log(`Transaction recipient check on ${network.name}:`, {
+          transactionTo: tx.to?.toLowerCase(),
+          expectedAddress: toAddress.toLowerCase(),
+          match: tx.to?.toLowerCase() === toAddress.toLowerCase()
+        });
+
+        // In development, we can optionally bypass the recipient check
+        const bypassRecipientCheck = env.NODE_ENV === 'development' && env.BYPASS_RECIPIENT_CHECK === 'true';
+
+        if (tx.to?.toLowerCase() === toAddress.toLowerCase() || bypassRecipientCheck) {
+          if (bypassRecipientCheck && tx.to?.toLowerCase() !== toAddress.toLowerCase()) {
+            console.log('WARNING: Bypassing recipient check in development mode!');
+            console.log('Transaction verification proceeding despite recipient mismatch');
+          }
           // Get the transaction value
           const txValue = tx.value;
 

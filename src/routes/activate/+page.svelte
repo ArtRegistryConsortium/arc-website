@@ -240,7 +240,15 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             console.log('Payment details updated:', {
                 cryptoAmount,
                 validTo,
-                arcWalletAddress: arcWalletAddress.substring(0, 10) + '...'
+                arcWalletAddress: arcWalletAddress
+            });
+
+            // Log the ARC wallet address in different formats for debugging
+            console.log('ARC wallet address formats:', {
+                original: arcWalletAddress,
+                lowercase: arcWalletAddress.toLowerCase(),
+                checksummed: arcWalletAddress,
+                length: arcWalletAddress.length
             });
 
             // Start monitoring for payment if not already monitoring
@@ -641,8 +649,20 @@ onDestroy(() => {
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         {:else if errorMessage}
-            <div class="bg-muted p-4 rounded-md mb-6">
-                <p>{errorMessage}</p>
+            <div class="bg-red-500/10 border border-red-200 p-4 rounded-md mb-6">
+                <p class="text-red-600 font-medium mb-2">Error</p>
+                <p class="text-red-600">{errorMessage}</p>
+                {#if errorMessage.includes('recipient does not match')}
+                    <div class="mt-3 text-xs text-red-600">
+                        <p>This error occurs when the transaction was sent to a different address than expected.</p>
+                        <p class="mt-1">Please check that you sent the payment to the correct address.</p>
+                    </div>
+                {:else if errorMessage.includes('API Key')}
+                    <div class="mt-3 text-xs text-red-600">
+                        <p>There's an issue with the Etherscan API key configuration.</p>
+                        <p class="mt-1">Please contact support to resolve this issue.</p>
+                    </div>
+                {/if}
             </div>
             <div class="flex flex-col gap-3">
                 <Button
@@ -886,9 +906,20 @@ onDestroy(() => {
                 {/if}
 
                 {#if transactionError}
-                    <div class="mt-3 p-3 bg-muted rounded-md">
-                        <p class="text-sm font-medium mb-1">Transaction Failed</p>
-                        <p class="text-xs">{transactionError}</p>
+                    <div class="mt-3 p-3 bg-red-500/10 border border-red-200 rounded-md">
+                        <p class="text-sm font-medium mb-1 text-red-600">Transaction Failed</p>
+                        <p class="text-xs text-red-600">{transactionError}</p>
+                        {#if transactionError.includes('recipient does not match')}
+                            <div class="mt-2 text-xs text-red-600">
+                                <p>This error occurs when the transaction was sent to a different address than expected.</p>
+                                <p class="mt-1">Please check that you sent the payment to the correct address.</p>
+                            </div>
+                        {:else if transactionError.includes('API Key')}
+                            <div class="mt-2 text-xs text-red-600">
+                                <p>There's an issue with the Etherscan API key configuration.</p>
+                                <p class="mt-1">Please contact support to resolve this issue.</p>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>

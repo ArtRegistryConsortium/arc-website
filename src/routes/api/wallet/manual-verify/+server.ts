@@ -103,19 +103,52 @@ export const POST: RequestHandler = async ({ request }) => {
 
           const data = await response.json();
 
+          // Check if the response contains an error message
+          if (data.error || data.message) {
+            const errorMessage = data.error || data.message;
+            console.error(`Etherscan API error: ${errorMessage}`);
+
+            // Handle specific error cases
+            if (errorMessage.includes('API Key')) {
+              console.error('Missing or invalid Etherscan API key. Please configure a valid API key in your environment variables.');
+              console.error('You can get a free API key at https://etherscan.io/apis');
+              throw new Error('Etherscan API key error: ' + errorMessage);
+            }
+
+            throw new Error('Etherscan API error: ' + errorMessage);
+          }
+
           // Check if the transaction was found
           if (data.result === null) {
             throw new Error('Transaction not found on Etherscan');
           }
 
+          // Log the full transaction data for debugging
+          console.log('Full transaction data from Etherscan:', data.result);
+
           // Check if this is our target transaction (recipient matches)
+          // Log detailed address information for debugging
+          console.log('Transaction recipient check:', {
+            transactionTo: data.result.to?.toLowerCase(),
+            expectedArcWallet: arcWalletAddress.toLowerCase(),
+            match: data.result.to?.toLowerCase() === arcWalletAddress.toLowerCase()
+          });
+
           if (data.result.to && data.result.to.toLowerCase() === arcWalletAddress.toLowerCase()) {
             console.log('Transaction found on Etherscan and recipient matches!');
 
             // Success! Transaction verified with Etherscan
             console.log('Transaction verified successfully with Etherscan API');
           } else {
-            throw new Error('Transaction found on Etherscan but recipient does not match');
+            // In development, we can optionally bypass the recipient check
+            const bypassRecipientCheck = env.NODE_ENV === 'development' && env.BYPASS_RECIPIENT_CHECK === 'true';
+
+            if (bypassRecipientCheck) {
+              console.log('WARNING: Bypassing recipient check in development mode!');
+              console.log('Transaction verification forced to succeed despite recipient mismatch');
+            } else {
+              throw new Error('Transaction found on Etherscan but recipient does not match');
+            }
           }
         } catch (etherscanError) {
           console.error('Etherscan verification failed:', etherscanError);
@@ -153,7 +186,7 @@ export const POST: RequestHandler = async ({ request }) => {
         confirmed: true,
         updated_at: now,
         // Store the transaction hash if provided
-        ...(transactionHash ? { transaction_hash: transactionHash } : {})
+        tx_hash: transactionHash
       })
       .eq('id', registrationData.id)
       .select();
