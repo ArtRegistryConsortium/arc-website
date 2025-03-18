@@ -95,15 +95,41 @@ const config: Config = {
 					"0%,70%,100%": { opacity: "1" },
 					"20%,50%": { opacity: "0" },
 				},
+				"blob": {
+					"0%": { transform: "translate(0px, 0px) scale(1)" },
+					"33%": { transform: "translate(30px, -50px) scale(1.1)" },
+					"66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+					"100%": { transform: "translate(0px, 0px) scale(1)" },
+				},
+				"gradient-slow": {
+					"0%": { backgroundPosition: "0% 50%" },
+					"50%": { backgroundPosition: "100% 50%" },
+					"100%": { backgroundPosition: "0% 50%" },
+				},
 			},
 			animation: {
         		"accordion-down": "accordion-down 0.2s ease-out",
         		"accordion-up": "accordion-up 0.2s ease-out",
        			"caret-blink": "caret-blink 1.25s ease-out infinite",
+				"blob": "blob 7s infinite",
+				"gradient-slow": "gradient-slow 15s ease infinite",
       		},
 		},
 	},
-	plugins: [tailwindcssAnimate],
+	plugins: [
+		tailwindcssAnimate,
+		function({ addUtilities }) {
+			const newUtilities = {
+				'.animation-delay-2000': {
+					'animation-delay': '2s',
+				},
+				'.animation-delay-4000': {
+					'animation-delay': '4s',
+				},
+			};
+			addUtilities(newUtilities);
+		},
+	],
 };
 
 export default config;
