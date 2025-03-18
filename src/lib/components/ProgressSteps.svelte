@@ -3,27 +3,28 @@
 
   // Define the steps
   const steps = [
-    { number: 1, label: "Activate" },
-    { number: 2, label: "Select Chain" },
+    { number: 1, label: "Payment" },
+    { number: 2, label: "Identity Type" },
     { number: 3, label: "Create Identity" },
-    { number: 4, label: "Confirmation" }
+    { number: 4, label: "Select Chain" },
+    { number: 5, label: "Confirmation" }
   ];
 </script>
 
-<div class="w-full max-w-md mb-16">
+<div class="hidden md:block w-full max-w-2xl mb-16">
   <!-- Progress bar container with relative positioning -->
   <div class="relative">
     <!-- Step circles and connecting lines -->
     <div class="flex items-center justify-between">
       <!-- Background line that spans the entire width -->
-      <div class="absolute left-0 right-0 h-0.5 top-1/2 -translate-y-1/2 bg-muted" style="margin-top: -10px;
-    margin-right: 20px;"></div>
+      <div class="absolute left-0 right-0 h-0.5 top-1/2 -translate-y-1/2 bg-muted" style="margin-top: -11px;
+    margin-right: 20px; margin-left: 20px;"></div>
 
       <!-- Completed progress line -->
       <div
         class="absolute left-0 h-0.5 top-1/2 -translate-y-1/2 bg-primary transition-all duration-300"
-        style="width: {Math.max(0, (currentStep - 1) / (steps.length - 1) * 100)}%; margin-top: -10px;
-    margin-right: 20px;"
+        style="width: {Math.max(0, (currentStep - 1) / (steps.length - 1) * 100)}%; margin-top: -11px;
+    margin-right: 20px; margin-left: 20px;"
       ></div>
 
       <!-- Step circles -->

@@ -20,14 +20,15 @@ async function testActivationProcess() {
     const testWalletAddress = '0x1234567890123456789012345678901234567890';
     const now = new Date().toISOString();
     const validTo = new Date();
-    validTo.setHours(validTo.getHours() + 24);
+    validTo.setHours(validTo.getHours() + 1);
 
     // Create a test registration entry
     const { data: registrationData, error: registrationError } = await supabaseAdmin
       .from('user_wallet_registrations')
       .insert({
         wallet_address: testWalletAddress,
-        eth_amount: ethAmount,
+        chain_id: 1, // Ethereum mainnet
+        crypto_amount: ethAmount,
         valid_to: validTo.toISOString(),
         confirmed: false,
         created_at: now,

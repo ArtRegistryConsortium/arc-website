@@ -33,9 +33,9 @@ export const POST: RequestHandler = async ({ request }) => {
         .single();
 
       if (walletError) {
-        return json({ 
-          success: false, 
-          error: 'Failed to retrieve wallet data' 
+        return json({
+          success: false,
+          error: 'Failed to retrieve wallet data'
         }, { status: 500 });
       }
 
@@ -71,7 +71,7 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({
         success: true,
         status: 'awaiting_payment',
-        ethAmount: pendingData.eth_amount,
+        ethAmount: pendingData.crypto_amount,
         validTo: pendingData.valid_to,
         feePaid: false
       });
@@ -88,7 +88,7 @@ export const POST: RequestHandler = async ({ request }) => {
       // Update wallet fee_paid status
       await supabaseAdmin
         .from('wallets')
-        .update({ 
+        .update({
           fee_paid: true,
           updated_at: now
         })
@@ -103,9 +103,9 @@ export const POST: RequestHandler = async ({ request }) => {
     });
   } catch (error) {
     console.error('Server error checking payment status:', error);
-    return json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return json({
+      success: false,
+      error: 'Internal server error'
     }, { status: 500 });
   }
 };

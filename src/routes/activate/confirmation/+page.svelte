@@ -63,7 +63,7 @@ async function handleLogout() {
         </svg>
     </Button>
     <!-- Progress indicator -->
-    <ProgressSteps currentStep={4} />
+    <ProgressSteps currentStep={5} />
 
     <!-- Main content -->
     <div class="w-full max-w-md text-center">

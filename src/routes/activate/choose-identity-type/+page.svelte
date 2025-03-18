@@ -7,18 +7,18 @@ import { config } from '$lib/web3/config';
 import { clearSession } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
 
-const chains = [
-    { id: 'ethereum', name: 'Ethereum', icon: '🔷' },
-    { id: 'optimism', name: 'Optimism', icon: '🔴' },
-    { id: 'base', name: 'Base', icon: '🔵' },
-    { id: 'zora', name: 'Zora', icon: '🟣' }
+const identityTypes = [
+    { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
+    { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
+    { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
+    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
 ];
 
-let selectedChain: string | null = null;
+let selectedType: string | null = null;
 
 function handleContinue() {
-    if (selectedChain) {
-        goto('/activate/confirmation');
+    if (selectedType) {
+        goto('/activate/create-identity');
     }
 }
 
@@ -26,7 +26,7 @@ function handleContinue() {
 async function closePage() {
     // Set the flag to prevent automatic redirection back to activate pages
     setUserClosedActivatePage(true);
-    console.log('Closing select-chain page, flag set to prevent auto-redirect');
+    console.log('Closing identity type page, flag set to prevent auto-redirect');
 
     // Use goto for cleaner navigation
     await goto('/');
@@ -44,7 +44,7 @@ async function handleLogout() {
         // Disconnect the wallet
         await disconnect(config);
 
-        console.log('Logged out from select-chain page');
+        console.log('Logged out from identity type page');
 
         // Navigate to home page
         await goto('/');
@@ -68,32 +68,32 @@ async function handleLogout() {
         </svg>
     </Button>
     <!-- Progress indicator -->
-    <ProgressSteps currentStep={4} />
+    <ProgressSteps currentStep={2} />
 
     <!-- Main content -->
     <div class="w-full max-w-md text-center">
-        <h1 class="text-4xl font-bold mb-8">Select Chain</h1>
+        <h1 class="text-4xl font-bold mb-8">Choose Identity Type</h1>
 
         <p class="text-lg mb-8">
-            Choose the blockchain where you want to create your identity
+            Select the type of identity you want to create
         </p>
 
         <div class="grid gap-4 mb-8">
-            {#each chains as chain}
+            {#each identityTypes as type}
                 <button
-                    class="w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between
-                        {selectedChain === chain.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
-                    on:click={() => selectedChain = chain.id}
+                    class="w-full p-4 rounded-lg border-2 transition-all flex flex-col items-start text-left
+                        {selectedType === type.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
+                    on:click={() => selectedType = type.id}
                 >
-                    <span class="text-xl">{chain.name}</span>
-                    <span class="text-2xl">{chain.icon}</span>
+                    <span class="text-xl font-medium mb-1">{type.name}</span>
+                    <span class="text-sm text-muted-foreground">{type.description}</span>
                 </button>
             {/each}
         </div>
 
         <Button
             class="w-full"
-            disabled={!selectedChain}
+            disabled={!selectedType}
             on:click={handleContinue}
         >
             Continue
@@ -102,7 +102,7 @@ async function handleLogout() {
         <!-- Log out button -->
         <Button
           variant="ghost"
-          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
+          class="mt-4 mb-8 text-muted-foreground hover:text-foreground text-sm"
           on:click={handleLogout}
         >
           Disconnect Wallet

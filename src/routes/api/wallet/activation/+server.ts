@@ -4,6 +4,7 @@ import { supabaseAdmin } from '$lib/supabase/server';
 import { calculateEthFromUsd, verifyEthTransaction } from '$lib/utils/ethereum';
 import type { Address } from 'viem';
 import type { Chain } from '$lib/services/activationService';
+import { env } from '$env/dynamic/private';
 
 /**
  * API endpoint to handle wallet activation process
@@ -11,7 +12,7 @@ import type { Chain } from '$lib/services/activationService';
  */
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { walletAddress, chainId } = await request.json();
+    const { walletAddress, chainId, transactionHash } = await request.json();
 
     if (!walletAddress) {
       return json({ success: false, error: 'Wallet address is required' }, { status: 400 });
@@ -80,7 +81,17 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 400 });
     }
 
-    // 1. Check if a valid registration entry exists
+    // 1. First check if ANY registration entry exists for this wallet and chain, regardless of validity
+    const { data: existingRegistration, error: existingRegError } = await supabaseAdmin
+      .from('user_wallet_registrations')
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .eq('chain_id', selectedChainId)
+      .order('created_at', { ascending: false }) // Get the most recent entry
+      .limit(1)
+      .maybeSingle();
+
+    // Then check if a VALID registration entry exists
     const { data: registrationData, error: registrationError } = await supabaseAdmin
       .from('user_wallet_registrations')
       .select('*')
@@ -162,7 +173,7 @@ export const POST: RequestHandler = async ({ request }) => {
           success: true,
           status: 'payment_confirmed',
           message: 'Payment already confirmed',
-          nextStep: '/activate/select-chain'
+          nextStep: '/activate/choose-identity-type'
         });
       }
 
@@ -193,14 +204,84 @@ export const POST: RequestHandler = async ({ request }) => {
         registrationId: registrationData.id
       });
 
-      // Verify the transaction on the blockchain
-      const paymentVerified = await verifyEthTransaction(
-        walletAddress as Address,
-        arcWalletAddress,
-        cryptoAmount
-      );
+      // If transaction hash is provided, verify it directly
+      let paymentVerified = false;
+      let verifiedOnChain: number | undefined;
+      let verificationError: string | undefined;
 
-      console.log('Payment verification result:', paymentVerified);
+      if (transactionHash) {
+        console.log('Transaction hash provided, verifying directly:', transactionHash);
+        const verificationResult = await verifyEthTransaction(
+          walletAddress as Address,
+          arcWalletAddress,
+          cryptoAmount,
+          transactionHash as `0x${string}`,
+          chainId // Pass the chain ID to use the correct network
+        );
+
+        paymentVerified = verificationResult.success;
+        verifiedOnChain = verificationResult.foundOnChain;
+        verificationError = verificationResult.error;
+
+        console.log('Payment verification result:', {
+          success: paymentVerified,
+          foundOnChain: verifiedOnChain,
+          error: verificationError
+        });
+
+        // If standard verification fails, try with Etherscan API as a fallback
+        if (!paymentVerified) {
+          console.log('Standard verification failed, trying Etherscan API...');
+
+          try {
+            // Determine the correct Etherscan API URL based on the network
+            let apiUrl = 'https://api.etherscan.io/api';
+            if (chainId === 11155111) {
+              apiUrl = 'https://api-sepolia.etherscan.io/api';
+            } else if (chainId === 5) {
+              apiUrl = 'https://api-goerli.etherscan.io/api';
+            }
+
+            // Build the API request URL
+            const url = new URL(apiUrl);
+            url.searchParams.append('module', 'proxy');
+            url.searchParams.append('action', 'eth_getTransactionByHash');
+            url.searchParams.append('txhash', transactionHash as string);
+            url.searchParams.append('apikey', env.ETHERSCAN_API_KEY || ''); // Use API key if available
+
+            // Make the request to Etherscan API
+            const response = await fetch(url.toString());
+
+            if (!response.ok) {
+              throw new Error(`Etherscan API responded with status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Check if the transaction was found
+            if (data.result === null) {
+              throw new Error('Transaction not found on Etherscan');
+            }
+
+            // Check if this is our target transaction (recipient matches)
+            if (data.result.to && data.result.to.toLowerCase() === arcWalletAddress.toLowerCase()) {
+              console.log('Transaction found on Etherscan and recipient matches!');
+
+              // Success! Transaction verified with Etherscan
+              console.log('Transaction verified successfully with Etherscan API');
+              paymentVerified = true;
+              verifiedOnChain = chainId || 1; // Use the provided chain ID or default to mainnet
+            } else {
+              throw new Error('Transaction found on Etherscan but recipient does not match');
+            }
+          } catch (etherscanError) {
+            console.error('Etherscan verification failed:', etherscanError);
+            verificationError = etherscanError instanceof Error ? etherscanError.message : String(etherscanError);
+          }
+        }
+      } else {
+        console.log('No transaction hash provided, cannot verify payment');
+      }
 
       if (paymentVerified) {
         console.log('Payment verified, updating registration entry...');
@@ -233,7 +314,7 @@ export const POST: RequestHandler = async ({ request }) => {
           success: true,
           status: 'payment_verified',
           message: 'Payment verified successfully',
-          nextStep: '/activate/select-chain'
+          nextStep: '/activate/choose-identity-type'
         });
       } else {
         console.log('Payment not yet verified, waiting for transaction...');
@@ -250,7 +331,7 @@ export const POST: RequestHandler = async ({ request }) => {
         });
       }
     }
-    // 3. If no valid registration entry exists, create a new one
+    // 3. If no valid registration entry exists, update or create one
     else {
       try {
         // Calculate the crypto amount equivalent to 5 USD
@@ -258,42 +339,78 @@ export const POST: RequestHandler = async ({ request }) => {
         // In a production environment, you would use different calculation functions for different chains
         const cryptoAmount = await calculateEthFromUsd(5);
 
-        // Calculate valid_to timestamp (24 hours from now)
+        // Calculate valid_to timestamp (1 hour from now)
         const validTo = new Date();
-        validTo.setHours(validTo.getHours() + 24);
+        validTo.setHours(validTo.getHours() + 1);
 
-        // Create a new registration entry
-        const { data: newRegistration, error: insertError } = await supabaseAdmin
-          .from('user_wallet_registrations')
-          .insert({
-            wallet_address: walletAddress,
-            chain_id: selectedChainId,
-            crypto_amount: cryptoAmount,
-            valid_to: validTo.toISOString(),
-            confirmed: false,
-            created_at: now,
-            updated_at: now
-          })
-          .select()
-          .single();
+        // If an existing registration was found (but expired), update it instead of creating a new one
+        if (existingRegistration && !existingRegError) {
+          console.log('Found existing registration (expired or invalid). Updating instead of creating new:', existingRegistration);
 
-        if (insertError) {
-          console.error('Error creating registration entry:', insertError);
+          const { data: updatedRegistration, error: updateError } = await supabaseAdmin
+            .from('user_wallet_registrations')
+            .update({
+              crypto_amount: cryptoAmount,
+              valid_to: validTo.toISOString(),
+              confirmed: false,
+              updated_at: now
+            })
+            .eq('id', existingRegistration.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Error updating registration entry:', updateError);
+            return json({
+              success: false,
+              error: 'Failed to update registration entry'
+            }, { status: 500 });
+          }
+
           return json({
-            success: false,
-            error: 'Failed to create registration entry'
-          }, { status: 500 });
-        }
+            success: true,
+            status: 'registration_updated',
+            cryptoAmount: cryptoAmount,
+            validTo: validTo.toISOString(),
+            arcWalletAddress,
+            chain: selectedChain,
+            availableChains
+          });
+        } else {
+          // Create a new registration entry if no existing one was found
+          console.log('No existing registration found. Creating new registration entry.');
+          const { data: newRegistration, error: insertError } = await supabaseAdmin
+            .from('user_wallet_registrations')
+            .insert({
+              wallet_address: walletAddress,
+              chain_id: selectedChainId,
+              crypto_amount: cryptoAmount,
+              valid_to: validTo.toISOString(),
+              confirmed: false,
+              created_at: now,
+              updated_at: now
+            })
+            .select()
+            .single();
 
-        return json({
-          success: true,
-          status: 'registration_created',
-          cryptoAmount: cryptoAmount,
-          validTo: validTo.toISOString(),
-          arcWalletAddress,
-          chain: selectedChain,
-          availableChains
-        });
+          if (insertError) {
+            console.error('Error creating registration entry:', insertError);
+            return json({
+              success: false,
+              error: 'Failed to create registration entry'
+            }, { status: 500 });
+          }
+
+          return json({
+            success: true,
+            status: 'registration_created',
+            cryptoAmount: cryptoAmount,
+            validTo: validTo.toISOString(),
+            arcWalletAddress,
+            chain: selectedChain,
+            availableChains
+          });
+        }
       } catch (error) {
         console.error('Error in ETH calculation or registration creation:', error);
         return json({

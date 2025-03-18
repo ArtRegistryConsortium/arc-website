@@ -24,7 +24,7 @@ function handleInput(event: Event) {
 
 function handleContinue() {
     if (isValid) {
-        goto('/activate/confirmation');
+        goto('/activate/select-chain');
     }
 }
 

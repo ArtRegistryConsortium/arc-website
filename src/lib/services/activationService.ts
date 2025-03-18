@@ -61,7 +61,7 @@ export async function fetchAvailableChains(): Promise<Chain[]> {
  * @param chainId Optional chain ID to check for a specific chain
  * @returns The activation status
  */
-export async function checkActivationStatus(walletAddress: Address, chainId?: number): Promise<ActivationStatus> {
+export async function checkActivationStatus(walletAddress: Address, chainId?: number, transactionHash?: string): Promise<ActivationStatus> {
   try {
     console.log('Checking activation status for wallet:', walletAddress, 'on chain:', chainId || 'any');
 
@@ -70,7 +70,7 @@ export async function checkActivationStatus(walletAddress: Address, chainId?: nu
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ walletAddress, chainId })
+      body: JSON.stringify({ walletAddress, chainId, transactionHash })
     });
 
     if (!response.ok) {

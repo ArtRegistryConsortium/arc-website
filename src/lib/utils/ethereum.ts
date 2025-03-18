@@ -1,12 +1,86 @@
 import { createPublicClient, http, parseEther, formatEther, type Address } from 'viem';
-import { mainnet } from 'viem/chains';
+import { mainnet, sepolia, goerli, optimism, arbitrum, base } from 'viem/chains';
 import { env } from '$env/dynamic/private';
 
-// Create a public client for Ethereum mainnet
-const publicClient = createPublicClient({
+// Create public clients for different networks
+const mainnetClient = createPublicClient({
   chain: mainnet,
   transport: http(env.INFURA_URL || 'https://mainnet.infura.io/v3/your-infura-key')
 });
+
+// For Sepolia, use multiple fallback options for better reliability
+const sepoliaClient = createPublicClient({
+  chain: sepolia,
+  transport: http(env.SEPOLIA_INFURA_URL || env.INFURA_URL || 'https://eth-sepolia.g.alchemy.com/v2/demo')
+});
+
+// Backup Sepolia clients with public endpoints
+const sepoliaBackupClients = [
+  createPublicClient({
+    chain: sepolia,
+    transport: http('https://rpc.sepolia.org')
+  }),
+  createPublicClient({
+    chain: sepolia,
+    transport: http('https://rpc.ankr.com/eth_sepolia')
+  })
+];
+
+// Create clients for other networks using public RPC endpoints
+const goerliClient = createPublicClient({
+  chain: goerli,
+  transport: http('https://rpc.ankr.com/eth_goerli')
+});
+
+const optimismClient = createPublicClient({
+  chain: optimism,
+  transport: http('https://mainnet.optimism.io')
+});
+
+const arbitrumClient = createPublicClient({
+  chain: arbitrum,
+  transport: http('https://arb1.arbitrum.io/rpc')
+});
+
+const baseClient = createPublicClient({
+  chain: base,
+  transport: http('https://mainnet.base.org')
+});
+
+// Public RPC fallbacks
+const publicRpcClients = {
+  1: createPublicClient({ chain: mainnet, transport: http('https://eth.llamarpc.com') }),
+  5: goerliClient,
+  10: optimismClient,
+  42161: arbitrumClient,
+  8453: baseClient,
+  11155111: createPublicClient({ chain: sepolia, transport: http('https://rpc.sepolia.org') })
+};
+
+// Function to get the appropriate client based on chain ID
+function getPublicClient(chainId?: number) {
+  // Default to mainnet if no chain ID is provided
+  if (!chainId) return mainnetClient;
+
+  // Return the appropriate client based on chain ID
+  switch (chainId) {
+    case 1: // Ethereum Mainnet
+      return mainnetClient;
+    case 5: // Goerli Testnet
+      return goerliClient;
+    case 10: // Optimism
+      return optimismClient;
+    case 42161: // Arbitrum
+      return arbitrumClient;
+    case 8453: // Base
+      return baseClient;
+    case 11155111: // Sepolia Testnet
+      return sepoliaClient;
+    default:
+      console.log(`No specific client for chain ID ${chainId}, using mainnet client`);
+      return mainnetClient;
+  }
+}
 
 /**
  * Fetches the current ETH to USD price from CoinGecko API
@@ -52,124 +126,163 @@ export async function verifyEthTransaction(
   fromAddress: Address,
   toAddress: Address,
   expectedAmount: number,
-  lookbackBlocks: number = 10000
-): Promise<boolean> {
+  transactionHash?: `0x${string}`, // Transaction hash
+  chainId?: number // Chain ID to determine which network to use
+): Promise<{ success: boolean; foundOnChain?: number; error?: string }> {
   console.log('Verifying ETH transaction:', {
     fromAddress,
     toAddress,
     expectedAmount,
-    lookbackBlocks
+    transactionHash: transactionHash ? transactionHash : 'Not provided',
+    chainId: chainId || 'Not provided (using mainnet)'
   });
 
+  // If no transaction hash is provided, we can't verify
+  if (!transactionHash) {
+    console.log('No transaction hash provided, cannot verify');
+    return { success: false, error: 'No transaction hash provided' };
+  }
+
   try {
-    // Format the expected amount properly
-    let formattedAmount: string;
-    try {
-      formattedAmount = expectedAmount.toString();
-      console.log('Formatted expected amount:', formattedAmount);
-    } catch (formatError) {
-      console.error('Error formatting expected amount:', formatError);
-      formattedAmount = '0';
-    }
+    console.log('Checking transaction hash directly:', transactionHash);
 
-    // Convert expected amount to Wei for comparison (with small tolerance for gas price fluctuations)
-    let expectedWei: bigint;
-    try {
-      expectedWei = parseEther(formattedAmount);
-      console.log('Expected amount in wei:', expectedWei.toString());
-    } catch (parseError) {
-      console.error('Error parsing expected amount to wei:', parseError);
-      return false;
-    }
+    // Define networks to check
+    const networksToCheck = [
+      { id: chainId || 1, name: chainId ? `Specified Chain (${chainId})` : 'Ethereum Mainnet' },
+      { id: 1, name: 'Ethereum Mainnet' },
+      { id: 11155111, name: 'Sepolia Testnet' },
+      { id: 5, name: 'Goerli Testnet' },
+      { id: 10, name: 'Optimism' },
+      { id: 42161, name: 'Arbitrum' },
+      { id: 8453, name: 'Base' }
+    ];
 
-    // Get the current block number
-    const currentBlock = await publicClient.getBlockNumber();
-    console.log('Current block number:', currentBlock.toString());
+    // Remove duplicates
+    const uniqueNetworks = networksToCheck.filter((network, index, self) =>
+      index === self.findIndex((n) => n.id === network.id)
+    );
 
-    // Calculate the starting block (current block - lookback)
-    const fromBlock = currentBlock - BigInt(lookbackBlocks);
-    console.log('Looking back from block:', fromBlock.toString());
+    console.log(`Checking transaction on ${uniqueNetworks.length} networks:`,
+      uniqueNetworks.map(n => n.name).join(', '));
 
-    // Use a more direct approach: get the transaction history using getLogs
-    console.log('Checking for transfers to:', toAddress);
-
-    // Note: viem doesn't have a direct getTransactions method, so we'll skip this approach
-    // and go straight to the manual block checking
-
-    // Fallback: manually check recent blocks
-    console.log('Falling back to manual block checking...');
-
-    // Check the last 10 blocks
-    for (let i = 0; i < 10; i++) {
+    // Try each network
+    for (const network of uniqueNetworks) {
       try {
-        const blockNumber = currentBlock - BigInt(i);
-        console.log(`Checking block ${blockNumber.toString()}...`);
+        console.log(`Checking on ${network.name} (Chain ID: ${network.id})...`);
 
-        const block = await publicClient.getBlock({
-          blockNumber,
-          includeTransactions: true
-        });
+        // Get the appropriate client for this chain
+        const client = getPublicClient(network.id);
+        if (!client) {
+          console.log(`No client available for ${network.name}, skipping`);
+          continue;
+        }
 
-        // Find transactions from our target address to the destination
-        for (const tx of block.transactions) {
-          if (typeof tx === 'string') continue;
+        let tx;
+        let usedBackup = false;
 
-          // Check sender and recipient
-          const txFrom = tx.from?.toLowerCase();
-          const txTo = tx.to?.toLowerCase();
+        try {
+          // Try with the primary client first
+          tx = await client.getTransaction({
+            hash: transactionHash,
+          });
+        } catch (primaryError) {
+          // If this is Sepolia and we have backup clients, try those
+          if (network.id === 11155111 && sepoliaBackupClients.length > 0) {
+            console.log('Primary Sepolia client failed, trying backups...');
 
-          if (!txFrom || !txTo) continue;
-
-          // Log all transactions from our sender for debugging
-          if (txFrom === fromAddress.toLowerCase()) {
-            console.log('Found transaction from sender:', {
-              hash: tx.hash,
-              to: txTo,
-              value: tx.value.toString(),
-              expectedTo: toAddress.toLowerCase(),
-              expectedValue: expectedWei.toString()
-            });
-          }
-
-          // Check if this is our target transaction
-          if (
-            txFrom === fromAddress.toLowerCase() &&
-            txTo === toAddress.toLowerCase()
-          ) {
-            // For value comparison, allow a small margin of error (gas price variations)
-            const txValue = tx.value;
-            const valueDiff = txValue > expectedWei
-              ? txValue - expectedWei
-              : expectedWei - txValue;
-
-            // Allow a 5% margin of error
-            const margin = expectedWei * BigInt(5) / BigInt(100);
-
-            console.log('Transaction value comparison:', {
-              txValue: txValue.toString(),
-              expectedWei: expectedWei.toString(),
-              difference: valueDiff.toString(),
-              margin: margin.toString(),
-              isWithinMargin: valueDiff <= margin
-            });
-
-            if (valueDiff <= margin) {
-              console.log('Found matching transaction with acceptable value!', tx.hash);
-              return true;
+            // Try each backup client
+            for (const backupClient of sepoliaBackupClients) {
+              try {
+                tx = await backupClient.getTransaction({
+                  hash: transactionHash,
+                });
+                usedBackup = true;
+                console.log('Successfully retrieved transaction using backup Sepolia client');
+                break;
+              } catch (backupError) {
+                console.log('Backup client also failed:', backupError instanceof Error ? backupError.message : String(backupError));
+              }
             }
+
+            // If all backups failed, rethrow the original error
+            if (!tx) {
+              throw primaryError;
+            }
+          } else {
+            // For other networks, just rethrow the error
+            throw primaryError;
           }
         }
+
+        console.log(`Transaction found on ${network.name}${usedBackup ? ' (using backup client)' : ''}!`);
+
+        // Check if this is our target transaction
+        // Note: We're being more flexible here - we only check that the recipient matches
+        // This allows verification even if the payment was sent from a different wallet
+        if (tx.to?.toLowerCase() === toAddress.toLowerCase()) {
+          // Get the transaction value
+          const txValue = tx.value;
+
+          // Format the expected amount properly
+          let formattedAmount: string;
+          try {
+            formattedAmount = expectedAmount.toString();
+            console.log('Formatted expected amount:', formattedAmount);
+          } catch (formatError) {
+            console.error('Error formatting expected amount:', formatError);
+            formattedAmount = '0';
+          }
+
+          // Convert expected amount to Wei for comparison
+          let expectedWei: bigint;
+          try {
+            expectedWei = parseEther(formattedAmount);
+            console.log('Expected amount in wei:', expectedWei.toString());
+          } catch (parseError) {
+            console.error('Error parsing expected amount to wei:', parseError);
+            continue; // Try next network
+          }
+
+          // Accept if transaction value is greater than or equal to expected amount
+          const isGreaterThanExpected = txValue >= expectedWei;
+
+          // For amounts slightly less than expected, allow a 1% margin of error
+          const smallMargin = expectedWei * BigInt(1) / BigInt(100);
+          const isCloseEnough = txValue < expectedWei && (expectedWei - txValue) <= smallMargin;
+
+          console.log('Transaction value comparison:', {
+            txValue: txValue.toString(),
+            expectedWei: expectedWei.toString(),
+            isGreaterThanExpected,
+            isCloseEnough: isCloseEnough,
+            smallMargin: smallMargin.toString()
+          });
+
+          if (isGreaterThanExpected || isCloseEnough) {
+            console.log(`Found matching transaction with acceptable value on ${network.name}!`, transactionHash);
+            return { success: true, foundOnChain: network.id };
+          } else {
+            console.log(`Transaction found on ${network.name} but amount is not sufficient`);
+            // Continue checking other networks
+          }
+        } else {
+          console.log(`Transaction found on ${network.name} but recipient does not match`);
+          console.log('Expected recipient:', toAddress.toLowerCase());
+          console.log('Actual recipient:', tx.to?.toLowerCase());
+          // Continue checking other networks
+        }
       } catch (error) {
-        console.error(`Error checking block ${(currentBlock - BigInt(i)).toString()}:`, error);
-        // Continue to the next block
+        // If transaction not found on this network, try the next one
+        console.log(`Transaction not found on ${network.name}:`, error instanceof Error ? error.message : String(error));
       }
     }
 
-    console.log('No matching transaction found');
-    return false;
+    // If we get here, we checked all networks and didn't find a valid transaction
+    console.log('Transaction not found on any network with matching criteria');
+    return { success: false, error: 'Transaction not found on any network with matching criteria' };
   } catch (error) {
-    console.error('Failed to verify ETH transaction:', error);
-    return false;
+    console.error('Error in transaction verification process:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error during verification' };
   }
 }
 

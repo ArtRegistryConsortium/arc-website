@@ -2,7 +2,7 @@
 import { Button } from "$lib/components/ui/button/index.js";
 import { goto } from '$app/navigation';
 import { setUserClosedActivatePage } from '$lib/stores/navigationState';
-import { disconnect, getAccount, reconnect, sendTransaction, waitForTransaction } from 'wagmi/actions';
+import { disconnect, getAccount, reconnect, sendTransaction, waitForTransaction, getChainId, switchChain, watchChainId } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
@@ -17,8 +17,9 @@ let cryptoAmount = 0;
 let usdEquivalent = 5;
 let arcWalletAddress = '';
 let validTo = '';
-let isLoading = true;
+let isLoading = true; // Only for initial page load
 let errorMessage = '';
+let isVerifying = false; // For transaction verification
 let paymentStatus = 'checking'; // 'checking', 'awaiting_payment', 'payment_verified', 'payment_confirmed'
 let walletAddress: Address | undefined;
 let isMonitoring = false;
@@ -31,7 +32,6 @@ let transactionError = '';
 let transactionStatus = ''; // 'pending', 'confirmed', 'failed'
 let isCheckingTransaction = false;
 let transactionCheckCount = 0;
-let isManuallyVerifying = false;
 
 // Format the valid until date
 $: formattedValidUntil = validTo ? new Date(validTo).toLocaleString() : '';
@@ -45,22 +45,35 @@ async function loadAvailableChains() {
         const chains = await fetchAvailableChains();
         availableChains = chains;
 
-        // If chains are available, select the first one by default
-        // Prefer mainnet chains over testnets
+        // Get the current chain ID from the connected wallet
+        const currentChainId = await getChainId(config);
+        console.log('Current wallet chain ID:', currentChainId);
+
+        // If chains are available, select the appropriate one
         if (chains.length > 0 && !selectedChain) {
-            // First try to find a mainnet chain
-            const mainnetChain = chains.find(chain => !chain.is_testnet);
+            // First try to match the current wallet chain
+            const walletChain = chains.find(chain => chain.chain_id === currentChainId);
 
-            if (mainnetChain) {
-                selectedChain = mainnetChain;
-                selectedChainId = mainnetChain.chain_id;
+            if (walletChain) {
+                // Use the chain that matches the wallet's current chain
+                selectedChain = walletChain;
+                selectedChainId = walletChain.chain_id;
+                console.log('Selected chain matching wallet:', selectedChain);
             } else {
-                // If no mainnet chain is available, use the first chain
-                selectedChain = chains[0];
-                selectedChainId = chains[0].chain_id;
-            }
+                // If wallet chain is not supported, try to find a mainnet chain
+                const mainnetChain = chains.find(chain => !chain.is_testnet);
 
-            console.log('Selected default chain:', selectedChain);
+                if (mainnetChain) {
+                    selectedChain = mainnetChain;
+                    selectedChainId = mainnetChain.chain_id;
+                } else {
+                    // If no mainnet chain is available, use the first chain
+                    selectedChain = chains[0];
+                    selectedChainId = chains[0].chain_id;
+                }
+
+                console.log('Selected default chain:', selectedChain);
+            }
         }
 
         console.log('Available chains loaded:', availableChains);
@@ -71,21 +84,85 @@ async function loadAvailableChains() {
 }
 
 // Function to handle chain selection
-function handleChainSelect(chainId: number) {
-    selectedChainId = chainId;
-    selectedChain = availableChains.find(chain => chain.chain_id === chainId);
-    console.log('Selected chain:', selectedChain);
+async function handleChainSelect(chainId: number) {
+    try {
+        // Update the selected chain in the UI
+        selectedChainId = chainId;
+        selectedChain = availableChains.find(chain => chain.chain_id === chainId);
+        console.log('Selected chain:', selectedChain);
 
-    // Refresh activation status with the new chain
-    if (walletAddress) {
-        checkWalletActivationStatus();
+        // Get the current chain ID from the wallet
+        const currentChainId = await getChainId(config);
+
+        // If the selected chain is different from the current wallet chain, switch the chain
+        if (currentChainId !== chainId) {
+            console.log(`Switching wallet from chain ${currentChainId} to chain ${chainId}...`);
+
+            try {
+                // Show switching message
+                errorMessage = 'Switching chain in wallet...';
+
+                // Request the wallet to switch to the selected chain
+                // Cast chainId to the expected type
+                await switchChain(config, { chainId: chainId as 1 | 11155111 });
+
+                console.log('Chain switched successfully');
+                errorMessage = '';
+            } catch (switchError) {
+                console.error('Failed to switch chain:', switchError);
+                errorMessage = 'Failed to switch chain. Please switch manually in your wallet.';
+            }
+        }
+
+        // Refresh activation status with the new chain but don't start verification
+        if (walletAddress) {
+            await checkWalletActivationStatus(false);
+        }
+    } catch (error) {
+        console.error('Error handling chain selection:', error);
+        errorMessage = 'Error selecting chain. Please try again.';
     }
 }
 
+// Variable to track verification interval
+let verificationInterval: number | null = null;
+
+// Function to start periodic verification
+function startPeriodicVerification() {
+    // Clear any existing interval
+    if (verificationInterval) {
+        clearInterval(verificationInterval);
+    }
+
+    // Set isVerifying state
+    isVerifying = true;
+
+    // Do an immediate check
+    checkWalletActivationStatus(false);
+
+    // Set up interval to check every 10 seconds
+    verificationInterval = setInterval(() => {
+        checkWalletActivationStatus(false);
+    }, 10000) as unknown as number; // Cast to number for TypeScript
+}
+
+// Function to stop periodic verification
+function stopPeriodicVerification() {
+    if (verificationInterval) {
+        clearInterval(verificationInterval);
+        verificationInterval = null;
+    }
+    isVerifying = false;
+}
+
 // Function to check activation status
-async function checkWalletActivationStatus() {
+async function checkWalletActivationStatus(startPeriodic = false) {
     try {
-        isLoading = true;
+        // Only start periodic verification if explicitly requested
+        // This prevents automatic verification on page load
+        if (startPeriodic && !isVerifying) {
+            startPeriodicVerification();
+        }
         errorMessage = '';
 
         // Get the current wallet address
@@ -126,8 +203,8 @@ async function checkWalletActivationStatus() {
             currentStatus: paymentStatus
         });
 
-        // Call the activation service with the selected chain
-        const result = await checkActivationStatus(walletAddress, selectedChainId);
+        // Call the activation service with the selected chain and transaction hash if provided
+        const result = await checkActivationStatus(walletAddress, selectedChainId, transactionHash || undefined);
         console.log('Activation status result:', result);
 
         if (!result.success) {
@@ -168,15 +245,27 @@ async function checkWalletActivationStatus() {
                 startMonitoring(walletAddress, selectedChainId);
             }
         } else if (result.status === 'payment_verified' || result.status === 'payment_confirmed') {
-            console.log('Payment confirmed! Redirecting to next step...');
-            // Redirect to next step
-            await goto(result.nextStep || '/activate/select-chain');
+            console.log('Payment confirmed! Showing success message...');
+            // Stop periodic verification
+            stopPeriodicVerification();
+            // Set payment status to confirmed
+            paymentStatus = 'payment_confirmed';
+            // Don't redirect automatically - show success message and continue button instead
         }
     } catch (error) {
         console.error('Error checking activation status:', error);
         errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     } finally {
-        isLoading = false;
+        // Only reset verification state if we're not doing periodic verification
+        // or if there was an error
+        if (errorMessage || !verificationInterval) {
+            isVerifying = false;
+        }
+
+        // Only set isLoading to false if this is the initial page load
+        if (paymentStatus === 'checking') {
+            isLoading = false;
+        }
     }
 }
 
@@ -191,62 +280,12 @@ async function copyArcWalletAddress() {
     }
 }
 
-// Function to manually verify payment
-async function manuallyVerifyPayment() {
-    if (!walletAddress) {
-        errorMessage = 'No wallet connected. Please connect your wallet first.';
-        return;
-    }
-
-    try {
-        isManuallyVerifying = true;
-        errorMessage = '';
-
-        console.log('Manually verifying payment for wallet:', walletAddress);
-
-        const response = await fetch('/api/wallet/manual-verify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                walletAddress,
-                transactionHash
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to manually verify payment');
-        }
-
-        console.log('Manual verification successful:', result);
-
-        // Update UI based on result
-        paymentStatus = result.status;
-
-        // Redirect to next step
-        if (result.status === 'payment_verified' || result.status === 'payment_confirmed') {
-            await goto(result.nextStep || '/activate/select-chain');
-        }
-    } catch (error) {
-        console.error('Error manually verifying payment:', error);
-        errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    } finally {
-        isManuallyVerifying = false;
-    }
-}
-
-
-
 // Function to check transaction status
 async function checkTransactionStatus(hash: `0x${string}`) {
     if (isCheckingTransaction || !hash) return;
+
+    // Start periodic verification
+    startPeriodicVerification();
 
     try {
         isCheckingTransaction = true;
@@ -254,10 +293,10 @@ async function checkTransactionStatus(hash: `0x${string}`) {
 
         console.log(`Checking transaction status (attempt ${transactionCheckCount})...`);
 
-        // Get transaction receipt
+        // Get transaction receipt with a longer timeout
         const receipt = await waitForTransaction(config, {
             hash,
-            timeout: 15000 // 15 seconds timeout
+            timeout: 30000 // 30 seconds timeout
         });
 
         console.log('Transaction receipt:', receipt);
@@ -277,14 +316,28 @@ async function checkTransactionStatus(hash: `0x${string}`) {
                 setTimeout(async () => {
                     console.log('Performing delayed activation status check...');
                     await checkWalletActivationStatus();
+
+                    // If payment is now verified, show success message
+                    if (paymentStatus === 'payment_verified' || paymentStatus === 'payment_confirmed') {
+                        console.log('Payment now verified, showing success message...');
+                        // No automatic redirection - user will click the continue button
+                    }
                 }, 5000); // Check again after 5 seconds
+            } else {
+                // If payment is already verified, show success message
+                console.log('Payment verified, showing success message...');
+                // No automatic redirection - user will click the continue button
             }
         } else {
             console.log('Transaction failed or is still pending');
             transactionStatus = receipt && Number(receipt.status) === 0 ? 'failed' : 'pending';
 
+            if (transactionStatus === 'failed') {
+                transactionError = 'Transaction failed. Please try again or send the payment manually.';
+            }
+
             // If still pending and we haven't checked too many times, check again
-            if (transactionStatus === 'pending' && transactionCheckCount < 10) {
+            if (transactionStatus === 'pending' && transactionCheckCount < 20) { // Increased max attempts
                 setTimeout(() => checkTransactionStatus(hash), 10000); // Check again in 10 seconds
             }
         }
@@ -292,14 +345,16 @@ async function checkTransactionStatus(hash: `0x${string}`) {
         console.error('Error checking transaction status:', error);
 
         // If it's a timeout error, the transaction might still be pending
-        if (error instanceof Error && error.message.includes('timeout') && transactionCheckCount < 10) {
+        if (error instanceof Error && error.message.includes('timeout') && transactionCheckCount < 20) { // Increased max attempts
             transactionStatus = 'pending';
             setTimeout(() => checkTransactionStatus(hash), 10000); // Check again in 10 seconds
         } else {
             transactionStatus = 'unknown';
+            transactionError = error instanceof Error ? error.message : 'Unknown error checking transaction';
         }
     } finally {
         isCheckingTransaction = false;
+        // Don't reset verification state here - let the periodic verification continue
     }
 }
 
@@ -344,33 +399,21 @@ async function sendPayment() {
             throw new Error(`Invalid crypto amount: ${cryptoAmount}`);
         }
 
-        // Format with fixed precision to avoid scientific notation
-        // Remove trailing zeros to avoid parsing issues
-        const formattedAmount = cryptoAmount.toString();
+        // Format the amount properly to ensure it works with parseEther
+        // Use toFixed to get a string representation with exact decimal places
+        const formattedAmount = cryptoAmount.toFixed(18).replace(/\.?0+$/, '');
         console.log('Formatted amount:', formattedAmount);
 
-        // Try different parsing approaches
+        // Parse the amount to wei
         let amount: bigint;
         try {
-            // First try the standard parseEther
+            // Use parseEther which handles the conversion to wei (1 ETH = 10^18 wei)
             amount = parseEther(formattedAmount);
+            console.log('Parsed amount (wei):', amount.toString());
         } catch (parseError) {
-            console.error('Error with parseEther:', parseError);
-
-            // Fallback: manually calculate the wei amount (1 ETH = 10^18 wei)
-            try {
-                // Convert to a number with 18 decimal places
-                const ethValue = Number(formattedAmount);
-                // Convert to wei (multiply by 10^18)
-                const weiValue = Math.floor(ethValue * 1e18).toString();
-                amount = BigInt(weiValue);
-            } catch (fallbackError) {
-                console.error('Error with fallback calculation:', fallbackError);
-                throw new Error(`Failed to convert ${formattedAmount} to wei: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
-            }
+            console.error('Error parsing ETH amount:', parseError);
+            throw new Error(`Failed to convert ${formattedAmount} to wei. Please try again.`);
         }
-
-        console.log('Parsed amount (wei):', amount.toString());
 
         console.log(`Sending ${formattedAmount} ${selectedChain?.symbol || 'ETH'} to ${arcWalletAddress}`);
 
@@ -437,7 +480,10 @@ function startMonitoring(address: Address, chainId?: number) {
         // Success callback
         () => {
             console.log('Payment confirmed!');
-            goto('/activate/select-chain');
+            // Update payment status to show success message instead of redirecting
+            paymentStatus = 'payment_confirmed';
+            // Stop periodic verification if it's running
+            stopPeriodicVerification();
         },
         // Error callback
         (error) => {
@@ -498,8 +544,8 @@ async function reconnectWallet() {
         const account = getAccount(config);
         console.log('Account after reconnection:', account);
 
-        // Check activation status again
-        await checkWalletActivationStatus();
+        // Check activation status again but don't start verification
+        await checkWalletActivationStatus(false);
     } catch (error) {
         console.error('Error reconnecting wallet:', error);
         errorMessage = 'Failed to reconnect wallet. Please try connecting manually.';
@@ -509,12 +555,44 @@ async function reconnectWallet() {
 }
 
 // Check activation status on mount and clean up on destroy
-onMount(async () => {
+onMount(() => {
     // Load available chains first
-    await loadAvailableChains();
+    loadAvailableChains().then(() => {
+        // Try to reconnect wallet, then check activation status
+        reconnectWallet();
+    });
 
-    // Try to reconnect wallet, then check activation status
-    reconnectWallet();
+    // Set up a listener for chain changes in the wallet
+    const unwatch = watchChainId(config, {
+        onChange: (chainId) => {
+            console.log('Wallet chain changed to:', chainId);
+
+            // Find the matching chain in our available chains
+            const matchingChain = availableChains.find(chain => chain.chain_id === chainId);
+
+            if (matchingChain) {
+                // Update the selected chain in the UI
+                selectedChain = matchingChain;
+                selectedChainId = chainId;
+                console.log('Updated selected chain to match wallet:', selectedChain);
+
+                // Refresh activation status with the new chain but don't start verification
+                if (walletAddress) {
+                    checkWalletActivationStatus(false).catch(err => {
+                        console.error('Error checking wallet status after chain change:', err);
+                    });
+                }
+            } else {
+                console.log('Wallet switched to unsupported chain:', chainId);
+                // We could show a warning here if needed
+            }
+        }
+    });
+
+    // Clean up the listener when the component is destroyed
+    return () => {
+        if (unwatch) unwatch();
+    };
 });
 
 onDestroy(() => {
@@ -523,10 +601,17 @@ onDestroy(() => {
         stopPaymentMonitor(walletAddress);
         isMonitoring = false;
     }
+
+    // Clear any verification intervals
+    if (verificationInterval) {
+        console.log('Clearing verification interval...');
+        clearInterval(verificationInterval);
+        verificationInterval = null;
+    }
 });
 </script>
 
-<div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
+<div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative transition-opacity duration-200 {isVerifying ? 'opacity-95' : 'opacity-100'}">
     <!-- Close button -->
     <Button
         variant="outline"
@@ -551,13 +636,13 @@ onDestroy(() => {
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         {:else if errorMessage}
-            <div class="bg-destructive/10 text-destructive p-4 rounded-md mb-6">
+            <div class="bg-muted p-4 rounded-md mb-6">
                 <p>{errorMessage}</p>
             </div>
             <div class="flex flex-col gap-3">
                 <Button
                     class="w-full"
-                    on:click={checkWalletActivationStatus}
+                    on:click={() => checkWalletActivationStatus(false)}
                 >
                     Try Again
                 </Button>
@@ -588,6 +673,27 @@ onDestroy(() => {
                         Connect Manually
                     </Button>
                 {/if}
+            </div>
+        {:else if paymentStatus === 'payment_confirmed' || paymentStatus === 'payment_verified'}
+            <!-- Payment success message -->
+            <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded-lg p-6 mb-6 text-center">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-green-800 dark:text-green-300 mb-2">Payment Confirmed!</h3>
+                <p class="text-green-700 dark:text-green-400 mb-6">Your payment has been successfully verified. You can now continue to the next step.</p>
+
+                <Button
+                    class="w-full"
+                    variant="default"
+                    on:click={() => goto('/activate/choose-identity-type')}
+                >
+                    Continue to Next Step
+                </Button>
             </div>
         {:else if paymentStatus === 'awaiting_payment' || paymentStatus === 'registration_created'}
             <p class="text-lg mb-4">
@@ -688,10 +794,52 @@ onDestroy(() => {
 
                 <p class="text-xs text-muted-foreground">Make sure to send the exact amount from your connected wallet.</p>
 
+                <div class="mt-4">
+                    <div class="p-3 border border-border bg-card dark:bg-card rounded-md">
+                        <p class="text-sm font-medium mb-2">Already sent payment?</p>
+                        <div class="flex gap-2 mb-3">
+                            <input
+                                type="text"
+                                placeholder="Enter transaction hash (0x...)"
+                                class="flex-1 px-2 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
+                                bind:value={transactionHash}
+                                disabled={isVerifying}
+                            />
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="bg-background hover:bg-accent"
+                                disabled={isVerifying || !transactionHash || transactionHash.length < 10}
+                                on:click={startPeriodicVerification}
+                            >
+                                {#if isVerifying}
+                                    <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                                    Verifying...
+                                {:else}
+                                    Verify
+                                {/if}
+                            </Button>
+                        </div>
+
+                        {#if transactionHash && transactionHash.length >= 10}
+                            <div class="flex justify-end">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
+                                    on:click={() => window.open(`https://sepolia.etherscan.io/tx/${transactionHash}`, '_blank')}
+                                >
+                                    View on Etherscan →
+                                </Button>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+
                 {#if transactionHash}
                     <div class="mt-3 p-3 rounded-md
                         {transactionStatus === 'confirmed' ? 'bg-green-500/10 text-green-600' :
-                         transactionStatus === 'failed' ? 'bg-destructive/10 text-destructive' :
+                         transactionStatus === 'failed' ? 'bg-muted' :
                          'bg-primary/10 text-primary'}">
                         <div class="flex items-center gap-2 mb-1">
                             {#if transactionStatus === 'pending'}
@@ -732,7 +880,7 @@ onDestroy(() => {
                 {/if}
 
                 {#if transactionError}
-                    <div class="mt-3 p-3 bg-destructive/10 text-destructive rounded-md">
+                    <div class="mt-3 p-3 bg-muted rounded-md">
                         <p class="text-sm font-medium mb-1">Transaction Failed</p>
                         <p class="text-xs">{transactionError}</p>
                     </div>
@@ -745,7 +893,7 @@ onDestroy(() => {
                     <Button
                         class="w-full"
                         variant="default"
-                        on:click={() => goto('/activate/select-chain')}
+                        on:click={() => goto('/activate/choose-identity-type')}
                     >
                         Continue to Next Step
                     </Button>
@@ -754,36 +902,14 @@ onDestroy(() => {
                     <Button
                         class="w-full"
                         variant="default"
-                        disabled={isCheckingTransaction}
+                        disabled={isVerifying || isCheckingTransaction}
                         on:click={() => checkTransactionStatus(transactionHash as `0x${string}`)}
                     >
-                        {#if isCheckingTransaction}
+                        {#if isVerifying || isCheckingTransaction}
                             <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
                             Checking Status...
                         {:else}
                             Check Transaction Status
-                        {/if}
-                    </Button>
-
-                    <Button
-                        class="w-full"
-                        variant="outline"
-                        on:click={checkWalletActivationStatus}
-                    >
-                        I've Completed the Payment
-                    </Button>
-
-                    <Button
-                        class="w-full mt-2"
-                        variant="destructive"
-                        disabled={isManuallyVerifying}
-                        on:click={manuallyVerifyPayment}
-                    >
-                        {#if isManuallyVerifying}
-                            <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                            Verifying...
-                        {:else}
-                            Force Verification (Admin)
                         {/if}
                     </Button>
                 {:else}
@@ -801,29 +927,6 @@ onDestroy(() => {
                             Send {formatCryptoAmount(cryptoAmount)} {cryptoSymbol}
                         {/if}
                     </Button>
-
-                    <Button
-                        class="w-full"
-                        variant="outline"
-                        disabled={isSendingTransaction}
-                        on:click={checkWalletActivationStatus}
-                    >
-                        I've Sent the Payment Manually
-                    </Button>
-
-                    <Button
-                        class="w-full mt-2"
-                        variant="destructive"
-                        disabled={isManuallyVerifying}
-                        on:click={manuallyVerifyPayment}
-                    >
-                        {#if isManuallyVerifying}
-                            <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                            Verifying...
-                        {:else}
-                            Force Verification (Admin)
-                        {/if}
-                    </Button>
                 {/if}
             </div>
         {:else}
@@ -832,7 +935,7 @@ onDestroy(() => {
             </div>
             <Button
                 class="w-full"
-                on:click={checkWalletActivationStatus}
+                on:click={() => checkWalletActivationStatus(false)}
             >
                 Check Again
             </Button>
@@ -841,7 +944,7 @@ onDestroy(() => {
         <!-- Log out button -->
         <Button
           variant="ghost"
-          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
+          class="mt-4 mb-8 text-muted-foreground hover:text-foreground text-sm"
           on:click={handleLogout}
         >
           Disconnect Wallet
