@@ -35,7 +35,6 @@
     {:else}
       System:
     {/if}
-    
   </span>
   <button
     type="button"
