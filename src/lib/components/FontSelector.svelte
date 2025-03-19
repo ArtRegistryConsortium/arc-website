@@ -31,12 +31,15 @@
   // Subscribe to the font store
   fontStore.subscribe(value => {
     currentFont = value;
+    console.log('Current font:', currentFont); // Debug log
   });
 
   // Set the font
   function handleFontChange(event: Event) {
     const select = event.target as HTMLSelectElement;
-    fontStore.set(select.value as Font);
+    const newFont = select.value as Font;
+    console.log('Changing font to:', newFont); // Debug log
+    fontStore.set(newFont);
   }
 </script>
 

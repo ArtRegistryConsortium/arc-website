@@ -25,11 +25,17 @@
 				document.documentElement.classList.remove('dark');
 			}
 
-			// Apply font preference from localStorage
+			// Apply font preference from localStorage or use Noto Serif as default
 			const font = localStorage.getItem('font');
 			if (font && font !== 'system') {
+				// Apply the selected font
 				document.documentElement.classList.add(`font-${font}`);
+			} else if (!font) {
+				// Set Noto Serif as default if no font preference is stored
+				document.documentElement.classList.add('font-noto-serif');
+				localStorage.setItem('font', 'noto-serif');
 			}
+			// If font is 'system', don't add any class - the default font-family in Tailwind config will be used
 		</script>
 		%sveltekit.head%
 	</head>
