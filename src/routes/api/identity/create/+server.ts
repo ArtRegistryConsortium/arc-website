@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/supabase/server';
-import { ethers } from 'ethers';
+import { JsonRpcProvider, Contract, Wallet } from 'ethers';
 import { env } from '$env/dynamic/private';
 import type { CreateIdentityRequest } from '$lib/services/identityService';
 
@@ -91,11 +91,11 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     // Create a provider and wallet
-    const provider = new ethers.JsonRpcProvider(chainData.rpc_url);
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const provider = new JsonRpcProvider(chainData.rpc_url);
+    const wallet = new Wallet(privateKey, provider);
 
     // Create a contract instance
-    const identityContract = new ethers.Contract(identityContractAddress, IDENTITY_ABI, wallet);
+    const identityContract = new Contract(identityContractAddress, IDENTITY_ABI, wallet);
 
     // Prepare the parameters for the createIdentity function
     const description = requestData.description || '';
