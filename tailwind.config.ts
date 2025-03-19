@@ -67,9 +67,7 @@ const config: Config = {
 				sm: "calc(var(--radius) - 4px)"
 			},
 			fontFamily: {
-				// Set Noto Serif as the default font
-				sans: ['Noto Serif', ...fontFamily.serif],
-				serif: ['Noto Serif', ...fontFamily.serif],
+				sans: [...fontFamily.sans],
 				'dm-sans': ['DM Sans', ...fontFamily.sans],
 				'inter': ['Inter', ...fontFamily.sans],
 				'space-grotesk': ['Space Grotesk', ...fontFamily.sans],

@@ -28,7 +28,7 @@ export type Font =
 
 // Font display names for UI
 export const fontNames: Record<Font, string> = {
-  'system': 'Default (Noto Serif)',
+  'system': 'System Font',
   'dm-sans': 'DM Sans',
   'inter': 'Inter',
   'space-grotesk': 'Space Grotesk',
@@ -53,12 +53,12 @@ export const fontNames: Record<Font, string> = {
   'poppins': 'Poppins'
 };
 
-// Initialize font from localStorage or use Noto Serif as default
+// Initialize font from localStorage or use system font
 function getInitialFont(): Font {
-  if (!browser) return 'noto-serif';
+  if (!browser) return 'system';
 
   const storedFont = localStorage.getItem('font') as Font | null;
-  return storedFont || 'noto-serif';
+  return storedFont || 'system';
 }
 
 // Create the font store
@@ -67,8 +67,6 @@ const fontStore = writable<Font>(getInitialFont());
 // Function to update the document with the current font
 function updateFont(font: Font) {
   if (!browser) return;
-
-  console.log('Updating font to:', font);
 
   // Remove all font classes
   document.documentElement.classList.remove(
@@ -99,15 +97,7 @@ function updateFont(font: Font) {
   // Add the selected font class if not system
   if (font !== 'system') {
     document.documentElement.classList.add(`font-${font}`);
-    console.log(`Added class font-${font} to document`);
-  } else {
-    // For system font, we don't add any class, letting the browser use the default font-family
-    // which is set to Noto Serif in the Tailwind config
-    console.log('Using system font (Noto Serif)');
   }
-
-  // Log the current classes on the document element
-  console.log('Current document classes:', document.documentElement.className);
 
   localStorage.setItem('font', font);
 }
