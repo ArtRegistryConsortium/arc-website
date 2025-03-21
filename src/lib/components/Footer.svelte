@@ -21,6 +21,7 @@
           <li><a href="/standard" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/standard'}>The Standard</a></li>
           <li><a href="/blog" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/blog'}>Blog</a></li>
           <li><a href="/faq" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm" class:active={$page.url.pathname === '/faq'}>FAQ</a></li>
+          <li><a href="https://discord.gg/SW2SnTzVaf" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Support</a></li>
         </ul>
       </div>
 

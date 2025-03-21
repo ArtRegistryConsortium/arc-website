@@ -833,11 +833,11 @@ onDestroy(() => {
                 <div class="mt-4">
                     <div class="p-3 border border-border bg-card dark:bg-card rounded-md">
                         <p class="text-sm font-medium mb-2">Already sent payment?</p>
-                        <div class="flex gap-2 mb-3">
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
                             <input
                                 type="text"
                                 placeholder="Enter transaction hash (0x...)"
-                                class="flex-1 px-2 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
+                                class="w-full flex-1 px-2 py-2 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
                                 bind:value={transactionHash}
                                 on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
                                 disabled={isVerifying}
@@ -845,7 +845,7 @@ onDestroy(() => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                class="bg-background hover:bg-accent"
+                                class="bg-background hover:bg-accent w-full sm:w-auto"
                                 disabled={isVerifying || !transactionHash || transactionHash.length < 10}
                                 on:click={startPeriodicVerification}
                             >
@@ -989,10 +989,19 @@ onDestroy(() => {
             </Button>
         {/if}
 
+        <!-- Help button -->
+        <Button
+          variant="ghost"
+          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
+          on:click={() => window.open('https://discord.gg/SW2SnTzVaf', '_blank')}
+        >
+          Need help with payment?
+        </Button>
+
         <!-- Log out button -->
         <Button
           variant="ghost"
-          class="mt-4 mb-8 text-muted-foreground hover:text-foreground text-sm"
+          class="mt-2 mb-8 text-muted-foreground hover:text-foreground text-sm"
           on:click={handleLogout}
         >
           Disconnect Wallet
