@@ -649,14 +649,31 @@ onDestroy(() => {
         <h1 class="text-4xl font-bold mb-8">Activate Your Profile</h1>
 
         {#if isLoading}
-            <div class="flex justify-center items-center py-8">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div class="flex flex-col justify-center items-center py-8 relative">
+
+                <!-- SVG spinner -->
+                <svg class="animate-spin h-16 w-16 mb-9" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+
+                <!-- Loading message -->
+                <p class="text-lg font-medium text-primary/80">Loading payment interface...</p>
+                <p class="text-sm text-muted-foreground mt-2">This may take a moment</p>
             </div>
         {:else if statusMessage}
-            <div class="bg-muted p-4 rounded-md mb-6">
-                <p class="font-medium mb-2">{statusMessage}</p>
-                <div class="flex justify-center">
-                    <div class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+            <div class="bg-muted p-4 rounded-md mb-6 relative overflow-hidden">
+                <!-- Subtle gradient background animation -->
+                <div class="absolute inset-0 bg-gradient-to-r from-muted via-muted/80 to-muted bg-[length:200%_100%] animate-gradient-slow opacity-50"></div>
+
+                <div class="relative z-10">
+                    <p class="font-medium mb-3">{statusMessage}</p>
+                    <div class="flex justify-center">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
         {:else if errorMessage}
@@ -880,7 +897,7 @@ onDestroy(() => {
                          'bg-primary/10 text-primary'}">
                         <div class="flex items-center gap-2 mb-1">
                             {#if transactionStatus === 'pending'}
-                                <span class="inline-block h-3 w-3 animate-pulse rounded-full bg-primary"></span>
+                                <span class="inline-block h-3 w-3 rounded-full bg-primary"></span>
                                 <p class="text-sm font-medium">Transaction Pending</p>
                             {:else if transactionStatus === 'confirmed'}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -954,7 +971,10 @@ onDestroy(() => {
                         on:click={() => checkTransactionStatus(transactionHash as `0x${string}`)}
                     >
                         {#if isVerifying || isCheckingTransaction}
-                            <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                            <svg class="mr-2 animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                             Checking Status...
                         {:else}
                             Check Transaction Status
@@ -969,7 +989,10 @@ onDestroy(() => {
                         on:click={sendPayment}
                     >
                         {#if isSendingTransaction}
-                            <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                            <svg class="mr-2 animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                             Sending...
                         {:else}
                             Send {formatCryptoAmount(cryptoAmount)} {cryptoSymbol}
@@ -978,8 +1001,17 @@ onDestroy(() => {
                 {/if}
             </div>
         {:else}
-            <div class="bg-primary/10 text-primary p-4 rounded-md mb-6">
-                <p>Checking payment status...</p>
+            <div class="bg-primary/10 text-primary p-4 rounded-md mb-6 relative overflow-hidden">
+                <!-- Subtle gradient background animation -->
+                <div class="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 bg-[length:200%_100%] animate-gradient-slow opacity-50"></div>
+
+                <div class="relative z-10 flex items-center justify-center gap-3">
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>Checking payment status...</p>
+                </div>
             </div>
             <Button
                 class="w-full"

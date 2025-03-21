@@ -47,14 +47,33 @@
     <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">How ARC Works</h2>
 
     <div class="mb-6 md:mb-8">
-      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">1. Artist-Owned Smart Contracts</h3>
+      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">1. Identity Management</h3>
+      <p>
+        The ARC system begins with <strong>robust identity verification</strong> for all ecosystem participants. Each identity has a unique ID and is associated with a wallet address, ensuring proper authentication and authorization throughout the system.
+      </p>
+      <p class="mb-2">
+        ARC supports four types of identities:
+      </p>
+      <ul class="list-disc pl-5 md:pl-6 mb-2">
+        <li><strong>Artist:</strong> Creators who deploy their own ART Contracts and mint ARTs</li>
+        <li><strong>Gallery:</strong> Entities that represent artists and facilitate art sales</li>
+        <li><strong>Institution:</strong> Museums, foundations, and other organizations that exhibit or preserve art</li>
+        <li><strong>Collector:</strong> Individuals or entities who own artworks and their corresponding ARTs</li>
+      </ul>
+      <p>
+        This identity system ensures that all interactions within the ARC ecosystem are properly authenticated and that permissions are granted to the right participants, maintaining the integrity of the provenance record.
+      </p>
+    </div>
+
+    <div class="mb-6 md:mb-8">
+      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">2. Artist-Owned Smart Contracts</h3>
       <p>
         Each artist mints their works using an <strong>ARC contract</strong>, ensuring every record remains under their control while following the ARC standard. These contracts allow artists to <strong>mint, update, and verify</strong> their artworks independently.
       </p>
     </div>
 
     <div class="mb-6 md:mb-8">
-      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">2. Artwork Registry Token (ART)</h3>
+      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">3. Artwork Registry Token (ART)</h3>
       <p class="mb-2">
         Every physical artwork is paired with an <strong>ART</strong>, a blockchain-based certificate that holds essential metadata, including:
       </p>
@@ -69,14 +88,14 @@
     </div>
 
     <div class="mb-6 md:mb-8">
-      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">3. Connecting Physical & Digital</h3>
+      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">4. Connecting Physical & Digital</h3>
       <p>
         Each artwork must include an <strong>ART Stamp</strong>, linking it to its corresponding blockchain record. Artists can use <strong>NFC chips, QR codes, or direct inscriptions</strong> to ensure that the digital certificate remains inseparable from the physical piece. This prevents fraudulent claims and ensures that provenance is always accessible.
       </p>
     </div>
 
     <div class="mb-0 md:mb-8">
-      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">4. Transfer & Resale Integrity</h3>
+      <h3 class="text-lg md:text-xl font-bold mb-2 md:mb-3">5. Transfer & Resale Integrity</h3>
       <p>
         Whenever an artwork is sold or transferred, its <strong>ART</strong> must be updated on-chain. This guarantees that ownership changes are accurately documented and that provenance remains an unbroken chain of trust.
       </p>
@@ -118,4 +137,4 @@
       </a>
     </Button>
   </section>
-</div> 
+</div>
