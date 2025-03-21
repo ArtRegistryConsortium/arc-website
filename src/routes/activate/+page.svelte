@@ -837,15 +837,15 @@ onDestroy(() => {
                             <input
                                 type="text"
                                 placeholder="Enter transaction hash (0x...)"
-                                class="w-full flex-1 px-2 py-2 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
+                                class="w-full flex-1 px-3 py-2 h-9 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
                                 bind:value={transactionHash}
                                 on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
                                 disabled={isVerifying}
                             />
                             <Button
                                 variant="outline"
-                                size="sm"
-                                class="bg-background hover:bg-accent w-full sm:w-auto"
+                                size="default"
+                                class="bg-background hover:bg-accent w-full sm:w-auto py-2 h-9"
                                 disabled={isVerifying || !transactionHash || transactionHash.length < 10}
                                 on:click={startPeriodicVerification}
                             >
