@@ -793,8 +793,29 @@ async function reconnectWallet() {
     }
 }
 
+// Import getWalletSetupStatus function
+import { getWalletSetupStatus } from '$lib/services/walletService';
+
 // Check activation status on mount and clean up on destroy
-onMount(() => {
+onMount(async () => {
+    // Check if wallet is connected and setup is completed
+    const walletAddr = getWalletAddress();
+    if (walletAddr) {
+        try {
+            // Check wallet setup status
+            const setupStatus = await getWalletSetupStatus(walletAddr);
+
+            // If setup is completed, redirect to dashboard
+            if (setupStatus?.setup_completed) {
+                console.log('Wallet setup is already completed, redirecting to dashboard');
+                await goto('/dashboard');
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking wallet setup status:', error);
+        }
+    }
+
     // Show wallet options by default if no wallet is connected
     if (!isConnected) {
         showWalletOptions = true;

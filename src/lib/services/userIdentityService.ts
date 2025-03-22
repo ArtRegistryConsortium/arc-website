@@ -48,7 +48,8 @@ export async function getUserIdentities(walletAddress: Address): Promise<UserIde
     return result.identities;
   } catch (error) {
     console.error('Error fetching user identities:', error);
-    return [];
+    // Throw the error so it can be caught by the store
+    throw error;
   }
 }
 
@@ -60,11 +61,11 @@ export async function getUserIdentities(walletAddress: Address): Promise<UserIde
 export async function getPrimaryIdentity(walletAddress: Address): Promise<UserIdentity | null> {
   try {
     const identities = await getUserIdentities(walletAddress);
-    
+
     if (identities.length === 0) {
       return null;
     }
-    
+
     // Return the most recently created identity
     return identities[0];
   } catch (error) {

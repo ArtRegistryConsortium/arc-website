@@ -337,12 +337,12 @@
       errorMessage = '';
 
       // Setup is already marked as completed in the API endpoint
-      // Just close the dialog and redirect to home
-      console.log('Redirecting to homepage - setup already completed in database');
+      // Close the dialog and redirect to identities dashboard page
+      console.log('Redirecting to identities dashboard page - setup already completed in database');
       open = false;
-      await goto('/');
+      await goto('/dashboard/identities');
     } catch (error) {
-      console.error('Error navigating to homepage:', error);
+      console.error('Error navigating to identities dashboard:', error);
       errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     } finally {
       isProcessing = false;
@@ -549,7 +549,7 @@
                   {#if isProcessing}
                     <div class="flex items-center space-x-2">
                       <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                      <span class="text-sm">Redirecting to homepage...</span>
+                      <span class="text-sm">Redirecting to identities dashboard...</span>
                     </div>
                   {:else}
                     <Button
@@ -558,7 +558,7 @@
                       on:click={handleComplete}
                       disabled={isProcessing}
                     >
-                      Go to Homepage
+                      Go to Identities Dashboard
                     </Button>
                   {/if}
                 </div>

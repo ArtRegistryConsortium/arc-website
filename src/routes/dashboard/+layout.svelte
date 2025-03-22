@@ -14,7 +14,6 @@
   let { children } = $props();
   let isAuthenticated = false;
   let setupCompleted = false;
-  let isLoading = true;
   let walletAddress = $state<Address | null>(null);
   let chainId = $state<number | null>(null);
   let chainIcon = $state<string | null>(null);
@@ -33,7 +32,8 @@
 
     // Subscribe to user identity store
     const unsubscribeIdentity = userIdentityStore.subscribe(state => {
-      isLoading = state.isLoading;
+      // We don't want to set isLoading here anymore, as it's handled by each page
+      // This prevents the entire dashboard from showing loading when only identities are loading
     });
 
     // Get the connected wallet address
@@ -126,7 +126,7 @@
   }
 </script>
 
-<div class="flex h-screen bg-background pt-2 h-[calc(100vh-80px)]">
+<div class="flex h-screen bg-background pt-2 h-[calc(100vh-65px)]">
   <!-- Sidebar -->
   <div class="w-64 bg-background border-r border-gray-200 dark:border-gray-800 h-full pt-1">
     <div class="p-4 border-b border-gray-200 dark:border-gray-800 px-6">
@@ -191,15 +191,9 @@
 
   <!-- Main Content -->
   <div class="flex-1 overflow-auto h-full">
-    {#if isLoading}
-      <div class="flex items-center justify-center h-full">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    {:else}
-      <div class="p-6">
-        {@render children()}
-      </div>
-    {/if}
+    <div class="p-8 md:p-10">
+      {@render children()}
+    </div>
   </div>
 </div>
 
