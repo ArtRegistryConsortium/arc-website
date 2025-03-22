@@ -20,6 +20,11 @@ export interface UserIdentity {
   represented_by?: any | null;
 }
 
+export interface ChainIdentityStatus {
+  hasIdentity: boolean;
+  identity?: UserIdentity;
+}
+
 /**
  * Fetches all identities for a wallet address
  * @param walletAddress The wallet address to fetch identities for
@@ -71,5 +76,28 @@ export async function getPrimaryIdentity(walletAddress: Address): Promise<UserId
   } catch (error) {
     console.error('Error fetching primary identity:', error);
     return null;
+  }
+}
+
+/**
+ * Checks if a user already has an identity on a specific chain
+ * @param walletAddress The wallet address to check
+ * @param chainId The chain ID to check
+ * @returns Object with hasIdentity flag and the identity if it exists
+ */
+export async function hasIdentityOnChain(walletAddress: Address, chainId: number): Promise<ChainIdentityStatus> {
+  try {
+    const identities = await getUserIdentities(walletAddress);
+
+    // Find an identity with the matching chain ID
+    const existingIdentity = identities.find(identity => identity.chain_id === chainId);
+
+    return {
+      hasIdentity: !!existingIdentity,
+      identity: existingIdentity
+    };
+  } catch (error) {
+    console.error(`Error checking if user has identity on chain ${chainId}:`, error);
+    return { hasIdentity: false };
   }
 }

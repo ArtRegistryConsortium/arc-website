@@ -2,7 +2,7 @@
   import { Card } from '$lib/components/ui/card/index.js';
 </script>
 
-<div class="space-y-8">
+<div class="space-y-8 min-h-screen">
   <h1 class="text-2xl font-bold">My Collection</h1>
 
   <Card class="p-8">

@@ -117,10 +117,10 @@
   }
 </script>
 
-<div class="flex h-screen bg-background pt-2 h-[calc(100vh-65px)]">
+<div class="flex min-h-screen bg-background">
   <!-- Sidebar -->
-  <div class="w-64 bg-background border-r border-gray-200 dark:border-gray-800 h-full pt-1">
-    <div class="p-4 border-b border-gray-200 dark:border-gray-800 px-6">
+  <div class="w-64 bg-background border-r border-border sticky h-screen" style="top: 4.65rem;">
+    <div class="p-4 border-b border-border px-6">
       <h2 class="font-semibold text-gray-800 dark:text-white">Dashboard</h2>
     </div>
     <nav class="mt-4 flex flex-col justify-between h-[calc(100%-4rem)]">
@@ -128,7 +128,7 @@
         <a
           href="/dashboard/identities"
           class="flex items-center px-6 py-3 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white transition-colors duration-200"
-          class:active={$page.url.pathname === '/dashboard/identities'}
+          class:active={$page.url.pathname === '/dashboard/identities' || $page.url.pathname === '/dashboard/create-identity'}
         >
           Identities
         </a>
@@ -147,7 +147,7 @@
           My Collection
         </a>
         {#if walletAddress}
-          <hr class="mt-4 mb-6 border-gray-200 dark:border-gray-800" />
+          <hr class="mt-4 mb-6 border-border" />
           <div class="text-gray-500 dark:text-neutral-500 flex items-center mb-1 pl-6 text-sm">
             {#if chainIcon}
               <img
@@ -181,8 +181,8 @@
   </div>
 
   <!-- Main Content -->
-  <div class="flex-1 overflow-auto h-full">
-    <div class="p-8 md:p-10">
+  <div class="flex-1">
+    <div class="p-8 md:p-10 min-h-screen" >
       {@render children()}
     </div>
   </div>

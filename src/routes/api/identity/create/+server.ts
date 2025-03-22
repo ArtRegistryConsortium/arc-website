@@ -29,6 +29,22 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ success: false, error: 'Chain ID is required' }, { status: 400 });
     }
 
+    // Check if the user already has an identity on this chain
+    const { data: existingIdentity, error: existingIdentityError } = await supabaseAdmin
+      .from('identities')
+      .select('id, name')
+      .eq('wallet_address', walletAddress)
+      .eq('chain_id', chainId)
+      .maybeSingle();
+
+    if (existingIdentity) {
+      console.error('User already has an identity on this chain:', existingIdentity);
+      return json({
+        success: false,
+        error: `You already have an identity (${existingIdentity.name}) on this blockchain network.`
+      }, { status: 400 });
+    }
+
     // Check if payment is confirmed
     const { data: registrationData, error: registrationError } = await supabaseAdmin
       .from('user_wallet_registrations')

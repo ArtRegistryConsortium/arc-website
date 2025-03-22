@@ -189,7 +189,7 @@ function validateForm(): boolean {
     // Basic validation for required fields
     const isUsernameValid = validateUsername(username);
     const isDescriptionValid = description.trim().length > 0;
-    const isImageValid = !!imagePreview;
+    const isImageValid = !!imagePreview || !!identityImage;
 
     // Log validation state for debugging
     console.log('Validation results:', {
@@ -202,10 +202,10 @@ function validateForm(): boolean {
         hasIdentityImage: !!identityImage
     });
 
-    // Update the validation state
+    // Update the validation state - only name, description and image are required
     const newIsValid = isUsernameValid && isDescriptionValid && isImageValid;
     console.log('Final validation result:', newIsValid);
-    
+
     updateValidState(newIsValid);
     return newIsValid;
 }
@@ -458,11 +458,11 @@ async function handleLogout() {
 
         <!-- Links and Tags Section -->
         <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
-            <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Links & Tags</h2>
+            <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Links & Tags <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
             <!-- Links -->
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-1.5 text-foreground/80">Links</label>
+                <label class="block text-sm font-medium mb-1.5 text-foreground/80">Links <span class="text-muted-foreground">(Optional)</span></label>
                 <div class="space-y-2">
                     {#each links as link, i}
                         <div class="flex flex-col gap-2 mb-3 p-3 bg-white/50 dark:bg-neutral-800/20 rounded-lg border border-border/30">
@@ -515,7 +515,7 @@ async function handleLogout() {
 
             <!-- Tags -->
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-1.5 text-foreground/80">Tags</label>
+                <label class="block text-sm font-medium mb-1.5 text-foreground/80">Tags <span class="text-muted-foreground">(Optional)</span></label>
                 <div class="space-y-2">
                     {#each tags as tag, i}
                         <div class="flex gap-2">
@@ -557,11 +557,11 @@ async function handleLogout() {
         <!-- Type-specific Fields -->
         {#if identityType === 'artist'}
             <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
-                <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Artist Information</h2>
+                <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Artist Information <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
                 <!-- Date of Birth -->
                 <div class="mb-4">
-                    <label for="dob" class="block text-sm font-medium mb-1.5 text-foreground/80">Date of Birth</label>
+                    <label for="dob" class="block text-sm font-medium mb-1.5 text-foreground/80">Date of Birth <span class="text-muted-foreground">(Optional)</span></label>
                     <input
                         id="dob"
                         type="date"
@@ -574,7 +574,7 @@ async function handleLogout() {
 
                 <!-- Location -->
                 <div class="mb-4">
-                    <label for="location" class="block text-sm font-medium mb-1.5 text-foreground/80">Location</label>
+                    <label for="location" class="block text-sm font-medium mb-1.5 text-foreground/80">Location <span class="text-muted-foreground">(Optional)</span></label>
                     <input
                         id="location"
                         type="text"
@@ -590,11 +590,11 @@ async function handleLogout() {
             </div>
         {:else if identityType === 'gallery' || identityType === 'institution'}
             <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
-                <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">{identityType === 'gallery' ? 'Gallery' : 'Institution'} Information</h2>
+                <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">{identityType === 'gallery' ? 'Gallery' : 'Institution'} Information <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
                 <!-- Physical Addresses -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1.5 text-foreground/80">Physical Addresses</label>
+                    <label class="block text-sm font-medium mb-1.5 text-foreground/80">Physical Addresses <span class="text-muted-foreground">(Optional)</span></label>
                     <div class="space-y-2">
                         {#each addresses as address, i}
                             <div class="flex gap-2">

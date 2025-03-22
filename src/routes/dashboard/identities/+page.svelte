@@ -58,10 +58,10 @@
   });
 </script>
 
-<div class="space-y-8">
+<div class="space-y-8 min-h-screen">
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold">My Identities</h1>
-    <Button on:click={() => goto('/activate')}>Create New Identity</Button>
+    <Button on:click={() => goto('/dashboard/create-identity')}>Create New Identity</Button>
   </div>
 
   {#if isLoading}
@@ -132,7 +132,7 @@
           <h3 class="text-lg font-medium">No Identities Found</h3>
           <p class="text-gray-500 dark:text-gray-400 mt-2">You haven't created any identities yet.</p>
         </div>
-        <Button on:click={() => goto('/activate')}>Create Your First Identity</Button>
+        <Button on:click={() => goto('/dashboard/create-identity')}>Create Your First Identity</Button>
       </div>
     </div>
   {:else}
