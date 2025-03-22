@@ -12,6 +12,7 @@ import { updateSetupProgress } from '$lib/services/setupProgressService';
 import { createIdentity, mapIdentityType } from '$lib/services/identityService';
 import { onMount } from 'svelte';
 import type { Address } from 'viem';
+import { truncateAddress } from '$lib/utils/web3';
 
 let isProcessing = false;
 let isUpdatingProgress = false;
@@ -23,6 +24,16 @@ let identityId = 0;
 // Subscribe to the identity store
 let identityType = '';
 let username = '';
+let description = '';
+let identityImage = '';
+let links: string[] = [];
+let tags: string[] = [];
+let dob: number | undefined;
+let dod: number | undefined;
+let location = '';
+let addresses: string[] = [];
+let representedBy: any;
+let representedArtists: any;
 let chainName = '';
 let chainId = 0;
 
@@ -35,6 +46,16 @@ onMount(() => {
     unsubscribeStore = identityStore.subscribe(state => {
         identityType = state.identityType || '';
         username = state.username;
+        description = state.description || '';
+        identityImage = state.identityImage || '';
+        links = state.links || [];
+        tags = state.tags || [];
+        dob = state.dob;
+        dod = state.dod;
+        location = state.location || '';
+        addresses = state.addresses || [];
+        representedBy = state.representedBy;
+        representedArtists = state.representedArtists;
         chainName = state.selectedChain?.name || '';
         chainId = state.selectedChain?.chain_id || 0;
     });
@@ -91,9 +112,16 @@ async function handleActivate() {
             identityType: mapIdentityType(identityType),
             name: username,
             chainId,
-            description: `${username} on ${chainName}`,
-            links: [],
-            tags: [identityType]
+            description: description || `${username} on ${chainName}`,
+            identityImage: identityImage,
+            links: links,
+            tags: tags.length > 0 ? tags : [identityType],
+            dob: dob || 0,
+            dod: dod || 0,
+            location: location,
+            addresses: addresses,
+            representedBy: representedBy ? JSON.stringify(representedBy) : '',
+            representedArtists: representedArtists ? JSON.stringify(representedArtists) : ''
         });
 
         if (result.success) {
@@ -192,9 +220,101 @@ async function handleLogout() {
             </div>
 
             <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Username</p>
+                <p class="text-sm text-muted-foreground">Name</p>
                 <p class="text-lg font-bold">{username || 'Not set'}</p>
             </div>
+
+            <div class="p-4 rounded-lg border-2 border-border">
+                <p class="text-sm text-muted-foreground">Description</p>
+                <p class="text-lg">{description || 'Not set'}</p>
+            </div>
+
+            {#if identityImage}
+            <div class="p-4 rounded-lg border-2 border-border">
+                <p class="text-sm text-muted-foreground">Profile Image</p>
+                <div class="mt-2 w-24 h-24 mx-auto rounded-md overflow-hidden border border-border">
+                    <img src={identityImage} alt="Identity" class="w-full h-full object-cover" />
+                </div>
+            </div>
+            {/if}
+
+            {#if links && links.length > 0}
+            <div class="p-4 rounded-lg border-2 border-border">
+                <p class="text-sm text-muted-foreground">Links</p>
+                <ul class="mt-2 list-disc list-inside">
+                    {#each links.filter(l => l.trim()) as link}
+                        <li class="text-sm truncate">
+                            <a href={link} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                                {link}
+                            </a>
+                        </li>
+                    {/each}
+                </ul>
+            </div>
+            {/if}
+
+            {#if tags && tags.length > 0}
+            <div class="p-4 rounded-lg border-2 border-border">
+                <p class="text-sm text-muted-foreground">Tags</p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    {#each tags.filter(t => t.trim()) as tag}
+                        <span class="px-2 py-1 text-xs bg-muted rounded-full">{tag}</span>
+                    {/each}
+                </div>
+            </div>
+            {/if}
+
+            <!-- Artist-specific fields -->
+            {#if identityType === 'artist'}
+                {#if dob}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Date of Birth</p>
+                    <p class="text-lg">{new Date(dob * 1000).toLocaleDateString()}</p>
+                </div>
+                {/if}
+
+                {#if dod}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Date of Death</p>
+                    <p class="text-lg">{new Date(dod * 1000).toLocaleDateString()}</p>
+                </div>
+                {/if}
+
+                {#if location}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Location</p>
+                    <p class="text-lg">{location}</p>
+                </div>
+                {/if}
+
+                {#if representedBy}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Represented By</p>
+                    <pre class="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">{JSON.stringify(representedBy, null, 2)}</pre>
+                </div>
+                {/if}
+            {/if}
+
+            <!-- Gallery/Institution-specific fields -->
+            {#if identityType === 'gallery' || identityType === 'institution'}
+                {#if addresses && addresses.length > 0}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Physical Addresses</p>
+                    <ul class="mt-2 list-disc list-inside">
+                        {#each addresses.filter(a => a.trim()) as address}
+                            <li class="text-sm">{address}</li>
+                        {/each}
+                    </ul>
+                </div>
+                {/if}
+
+                {#if representedArtists}
+                <div class="p-4 rounded-lg border-2 border-border">
+                    <p class="text-sm text-muted-foreground">Represented Artists</p>
+                    <pre class="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">{JSON.stringify(representedArtists, null, 2)}</pre>
+                </div>
+                {/if}
+            {/if}
 
             <div class="p-4 rounded-lg border-2 border-border">
                 <p class="text-sm text-muted-foreground">Chain</p>
