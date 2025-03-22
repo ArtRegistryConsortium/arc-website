@@ -103,6 +103,9 @@ export function clearSession(): void {
   localStorage.removeItem('wallet_session_expiry');
   localStorage.removeItem('wallet_verified');
 
+  // Clear the wallet address cookie
+  document.cookie = 'wallet_address=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict';
+
   console.log('Wallet session cleared');
   walletAuthStore.set(initialState);
 }
@@ -146,6 +149,9 @@ export async function verifyWalletSignature(address: Address, signature: string,
 
     // Also store a flag to indicate this wallet has been verified
     localStorage.setItem('wallet_verified', 'true');
+
+    // Set the wallet address cookie
+    setWalletAddressCookie(address);
 
     console.log('Wallet verification successful, session created for:', address);
 
@@ -237,4 +243,19 @@ export function getWalletAddress(): Address | null {
   if (!sessionAddress) return null;
 
   return sessionAddress as Address;
+}
+
+// Set the wallet address cookie
+export function setWalletAddressCookie(address: Address): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Set a cookie with the wallet address that expires in 7 days
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 7);
+    document.cookie = `wallet_address=${address}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Strict`;
+    console.log('Wallet address cookie set from walletAuth:', address);
+  } catch (error) {
+    console.error('Error setting wallet address cookie from walletAuth:', error);
+  }
 }

@@ -7,7 +7,7 @@
   const steps = [
     { number: 1, label: "Payment", route: "/activate" },
     { number: 2, label: "Identity Type", route: "/activate/choose-identity-type" },
-    { number: 3, label: "Create Identity", route: "/activate/create-identity" },
+    { number: 3, label: "Identity Data", route: "/activate/identity-data" },
     { number: 4, label: "Select Chain", route: "/activate/select-chain" },
     { number: 5, label: "Confirmation", route: "/activate/confirmation" }
   ];
@@ -16,7 +16,7 @@
   // This ensures the UI shows the correct step based on the database value
   // 0: Payment (UI: 1)
   // 1: Identity Type (UI: 2)
-  // 2: Create Identity (UI: 3)
+  // 2: Identity Data (UI: 3)
   // 3: Select Chain (UI: 4)
   // 4: Confirmation (UI: 5)
 
@@ -33,9 +33,9 @@
       return;
     }
 
-    // Allow clicking on steps that have been completed, the current step, or the next step
-    // This ensures users can navigate to the next step after completing the current one
-    if (step.number <= currentStep + 1) {
+    // Only allow clicking on steps that have been completed or the current step
+    // This prevents users from skipping ahead to steps they haven't reached yet
+    if (step.number <= currentStep) {
       goto(step.route);
     }
   }
@@ -64,11 +64,11 @@
             on:click={() => handleStepClick(step)}
             class="w-12 h-12 rounded-full flex items-center justify-center font-bold transition-colors z-10
             {currentStep >= step.number ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
-            {step.number <= currentStep + 1 && step.number !== 1 ? 'cursor-pointer' : 'cursor-default'}"
-            disabled={step.number > currentStep + 1 || step.number === 1}
+            {step.number <= currentStep && step.number !== 1 ? 'cursor-pointer' : 'cursor-default'}"
+            disabled={step.number > currentStep || step.number === 1}
             aria-label={`Go to ${step.label} step`}
             title={step.number === 1 ? 'Cannot return to payment step' :
-                  step.number > currentStep + 1 ? 'Complete previous steps first' :
+                  step.number > currentStep ? 'Complete previous steps first' :
                   `Go to ${step.label}`}
           >
 
@@ -77,11 +77,11 @@
           <span
             class="text-xs text-center mt-2
             {currentStep >= step.number ? 'text-primary font-medium' : 'text-muted-foreground'}
-            {step.number <= currentStep + 1 && step.number !== 1 ? 'cursor-pointer' : ''}"
+            {step.number <= currentStep && step.number !== 1 ? 'cursor-pointer' : ''}"
             on:click={() => handleStepClick(step)}
-            role={step.number <= currentStep + 1 && step.number !== 1 ? 'button' : 'none'}
+            role={step.number <= currentStep && step.number !== 1 ? 'button' : 'none'}
             title={step.number === 1 ? 'Cannot return to payment step' :
-                  step.number > currentStep + 1 ? 'Complete previous steps first' :
+                  step.number > currentStep ? 'Complete previous steps first' :
                   `Go to ${step.label}`}
           >
             {step.label}

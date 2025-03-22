@@ -2,7 +2,7 @@
 import { Button } from "$lib/components/ui/button/index.js";
 import { goto } from '$app/navigation';
 import { setUserClosedActivatePage } from '$lib/stores/navigationState';
-import { disconnect, getAccount, reconnect, sendTransaction, waitForTransaction, getChainId, switchChain, watchChainId } from 'wagmi/actions';
+import { disconnect, getAccount, reconnect, sendTransaction, waitForTransaction, getChainId, switchChain, watchChainId, connect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
@@ -10,7 +10,15 @@ import { onMount, onDestroy } from 'svelte';
 import { parseEther, type Address } from 'viem';
 import { checkActivationStatus, formatCryptoAmount, fetchAvailableChains, type Chain } from '$lib/services/activationService';
 import { startPaymentMonitor, stopPaymentMonitor } from '$lib/services/paymentMonitorService';
-import { checkExistingSession } from '$lib/stores/walletAuth';
+import { checkExistingSession, getWalletAddress, setWalletAddressCookie } from '$lib/stores/walletAuth';
+import { updateSetupProgress } from '$lib/services/setupProgressService';
+import { web3Store } from '$lib/stores/web3';
+import { injected, walletConnect } from 'wagmi/connectors';
+import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
+import { truncateAddress } from '$lib/utils/web3';
+
+// Get WalletConnect project ID from environment variable
+const projectId = PUBLIC_WALLETCONNECT_ID || '';
 
 // State variables
 let cryptoAmount = 0;
@@ -34,6 +42,20 @@ let transactionStatus = ''; // 'pending', 'confirmed', 'failed'
 let isCheckingTransaction = false;
 let transactionCheckCount = 0;
 let transactionWasSent = false; // Track if transaction was sent using the button
+
+// Wallet connection state
+let showWalletOptions = false;
+let isConnected = false;
+
+// Subscribe to web3Store
+$: {
+    isConnected = $web3Store.isConnected;
+
+    // When wallet is connected, set the wallet address cookie
+    if (isConnected && $web3Store.address) {
+        setWalletAddressCookie($web3Store.address);
+    }
+}
 
 // Format the valid until date
 $: formattedValidUntil = validTo ? new Date(validTo).toLocaleString() : '';
@@ -266,6 +288,22 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             stopPeriodicVerification();
             // Set payment status to confirmed
             paymentStatus = 'payment_confirmed';
+
+            // Ensure setup_step is updated to 1 when payment is confirmed
+            if (walletAddress) {
+                try {
+                    console.log('Automatically updating setup progress to step 1 after payment confirmation');
+                    const progressResult = await updateSetupProgress(walletAddress, 1);
+                    if (!progressResult.success) {
+                        console.error('Failed to update setup progress after payment confirmation:', progressResult.error);
+                    } else {
+                        console.log('Setup progress updated successfully after payment confirmation');
+                    }
+                } catch (updateError) {
+                    console.error('Error updating setup progress after payment confirmation:', updateError);
+                }
+            }
+
             // Don't redirect automatically - show success message and continue button instead
         }
     } catch (error) {
@@ -321,6 +359,22 @@ async function checkTransactionStatus(hash: `0x${string}`) {
         if (receipt && Number(receipt.status) === 1) {
             console.log('Transaction confirmed successfully!');
             transactionStatus = 'confirmed';
+
+            // Ensure setup_step is updated to 1 when transaction is confirmed
+            const address = getWalletAddress();
+            if (address) {
+                try {
+                    console.log('Updating setup progress to step 1 after transaction confirmation');
+                    const progressResult = await updateSetupProgress(address, 1);
+                    if (!progressResult.success) {
+                        console.error('Failed to update setup progress after transaction confirmation:', progressResult.error);
+                    } else {
+                        console.log('Setup progress updated successfully after transaction confirmation');
+                    }
+                } catch (updateError) {
+                    console.error('Error updating setup progress after transaction confirmation:', updateError);
+                }
+            }
 
             // Check activation status to update UI
             await checkWalletActivationStatus();
@@ -495,12 +549,25 @@ function startMonitoring(address: Address, chainId?: number) {
     startPaymentMonitor(
         address,
         // Success callback
-        () => {
+        async () => {
             console.log('Payment confirmed!');
             // Update payment status to show success message instead of redirecting
             paymentStatus = 'payment_confirmed';
             // Stop periodic verification if it's running
             stopPeriodicVerification();
+
+            // Ensure setup_step is updated to 1 when payment is confirmed via monitor
+            try {
+                console.log('Updating setup progress to step 1 after payment monitor confirmation');
+                const progressResult = await updateSetupProgress(address, 1);
+                if (!progressResult.success) {
+                    console.error('Failed to update setup progress after payment monitor confirmation:', progressResult.error);
+                } else {
+                    console.log('Setup progress updated successfully after payment monitor confirmation');
+                }
+            } catch (updateError) {
+                console.error('Error updating setup progress after payment monitor confirmation:', updateError);
+            }
         },
         // Error callback
         (error) => {
@@ -511,6 +578,36 @@ function startMonitoring(address: Address, chainId?: number) {
         // Chain ID
         chainId
     );
+}
+
+// Using the setWalletAddressCookie function from walletAuth.ts
+
+// Function to handle continuing to the next step
+async function handleContinueToNextStep() {
+    try {
+        // Get the wallet address
+        const address = getWalletAddress();
+        if (!address) {
+            console.error('No wallet address found');
+            return;
+        }
+
+        console.log('Updating setup progress to step 1 (Identity Type)');
+
+        // Update the setup progress to step 1 (Identity Type)
+        const result = await updateSetupProgress(address, 1);
+
+        if (!result.success) {
+            console.error('Failed to update setup progress:', result.error);
+        } else {
+            console.log('Setup progress updated successfully:', result);
+        }
+
+        // Navigate to the next step
+        goto('/activate/choose-identity-type');
+    } catch (error) {
+        console.error('Error handling continue to next step:', error);
+    }
 }
 
 // Function to close the page and return to home
@@ -544,6 +641,46 @@ async function handleLogout() {
     }
 }
 
+// Function to connect wallet
+async function connectWallet(type: 'injected' | 'walletconnect') {
+    try {
+        console.log(`Connecting with ${type} on activate page...`);
+
+        // Store the connection promise
+        let connectPromise;
+
+        if (type === 'injected') {
+            connectPromise = connect(config, { connector: injected() });
+        } else {
+            connectPromise = connect(config, { connector: walletConnect({ projectId }) });
+        }
+
+        // Hide wallet options immediately
+        showWalletOptions = false;
+
+        // Wait for connection to complete
+        await connectPromise;
+
+        console.log(`${type} connection successful on activate page`);
+
+        // Get the connected wallet address and set the cookie
+        const account = getAccount(config);
+        if (account.isConnected && account.address) {
+            setWalletAddressCookie(account.address);
+        }
+
+        // Force a page reload to ensure all state is properly updated
+        // This is a more reliable approach than depending on reactive state
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    } catch (error) {
+        console.error(`Failed to connect with ${type}:`, error);
+        // Show wallet options again if connection failed
+        showWalletOptions = true;
+    }
+}
+
 // Function to manually reconnect wallet
 async function reconnectWallet() {
     try {
@@ -561,6 +698,11 @@ async function reconnectWallet() {
         const account = getAccount(config);
         console.log('Account after reconnection:', account);
 
+        // Set the wallet address cookie if connected
+        if (account.isConnected && account.address) {
+            setWalletAddressCookie(account.address);
+        }
+
         // Check activation status again but don't start verification
         await checkWalletActivationStatus(false);
     } catch (error) {
@@ -573,6 +715,11 @@ async function reconnectWallet() {
 
 // Check activation status on mount and clean up on destroy
 onMount(() => {
+    // Show wallet options by default if no wallet is connected
+    if (!isConnected) {
+        showWalletOptions = true;
+    }
+
     // Load available chains first
     loadAvailableChains().then(() => {
         // Try to reconnect wallet, then check activation status
@@ -641,11 +788,61 @@ onDestroy(() => {
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
     </Button>
-    <!-- Progress indicator -->
-    <ProgressSteps currentStep={1} />
 
-    <!-- Main content -->
-    <div class="w-full max-w-md text-center">
+    {#if !isConnected}
+        <!-- Wallet Connection UI -->
+        <div class="max-w-xl w-full mx-auto text-center">
+            <h1 class="text-3xl font-bold text-foreground mb-8">Connect Your Wallet</h1>
+            <p class="text-foreground mb-6">Connect your wallet to access the activation process</p>
+
+            {#if showWalletOptions}
+                <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6">
+                    <div class="space-y-3">
+                        <Button
+                            variant="ghost"
+                            class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+                            on:click={() => connectWallet('injected')}
+                        >
+                            <div class="flex items-center">
+                                <img src="/images/metamask-logo.png" alt="MetaMask" class="h-6 w-6 mr-2 object-contain" />
+                                <span class="text-sm font-medium">MetaMask</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+                            on:click={() => connectWallet('walletconnect')}
+                        >
+                            <div class="flex items-center">
+                                <img src="/images/walletconnect-logo.png" alt="WalletConnect" class="h-6 w-6 mr-2 object-contain" />
+                                <span class="text-sm font-medium">WalletConnect</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </Button>
+                    </div>
+                </div>
+            {:else}
+                <Button
+                    variant="default"
+                    class="w-full"
+                    on:click={() => showWalletOptions = true}
+                >
+                    Connect Wallet
+                </Button>
+            {/if}
+        </div>
+    {:else}
+        <!-- Progress indicator -->
+        <ProgressSteps currentStep={1} />
+
+        <!-- Main content -->
+        <div class="w-full max-w-md text-center">
         <h1 class="text-4xl font-bold mb-8">Activate Your Profile</h1>
 
         {#if isLoading}
@@ -743,7 +940,7 @@ onDestroy(() => {
                 <Button
                     class="w-full"
                     variant="default"
-                    on:click={() => goto('/activate/choose-identity-type')}
+                    on:click={handleContinueToNextStep}
                 >
                     Continue to Next Step
                 </Button>
@@ -958,7 +1155,7 @@ onDestroy(() => {
                     <Button
                         class="w-full"
                         variant="default"
-                        on:click={() => goto('/activate/choose-identity-type')}
+                        on:click={handleContinueToNextStep}
                     >
                         Continue to Next Step
                     </Button>
@@ -1039,6 +1236,7 @@ onDestroy(() => {
           Disconnect Wallet
         </Button>
     </div>
+    {/if}
 </div>
 
 <style>

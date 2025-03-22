@@ -6,6 +6,7 @@ import { disconnect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
+import PaymentCheck from '$lib/components/PaymentCheck.svelte';
 import { identityStore } from '$lib/stores/identityStore';
 import { updateSetupProgress } from '$lib/services/setupProgressService';
 import { onMount } from 'svelte';
@@ -17,8 +18,19 @@ let isLoading = true;
 let isUpdatingProgress = false;
 let errorMessage = '';
 
-// On mount, fetch available chains and update the setup progress
+// On mount, fetch available chains, update the setup progress, and load previous selection if available
 onMount(async () => {
+    // Load previously selected chain from store if available
+    const unsubscribe = identityStore.subscribe(state => {
+        if (state.selectedChain) {
+            selectedChainId = state.selectedChain.chain_id;
+            console.log('Loaded previously selected chain:', state.selectedChain.name);
+        }
+    });
+
+    // Unsubscribe to avoid memory leaks
+    unsubscribe();
+
     const walletAddress = getWalletAddress();
     if (walletAddress) {
         try {
@@ -118,6 +130,7 @@ async function handleLogout() {
 </script>
 
 <div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
+    <PaymentCheck currentStep={4} />
     <!-- Close button -->
     <Button
         variant="outline"

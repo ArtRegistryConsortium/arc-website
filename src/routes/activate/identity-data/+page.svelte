@@ -11,24 +11,19 @@ import { identityStore } from '$lib/stores/identityStore';
 import { updateSetupProgress } from '$lib/services/setupProgressService';
 import { onMount } from 'svelte';
 
-const identityTypes = [
-    { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
-    { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
-    { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
-    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
-];
-
-let selectedType: string | null = null;
+let username = '';
+let isValid = false;
 let isUpdatingProgress = false;
 let errorMessage = '';
 
-// On mount, update the setup progress and load previous selection if available
+// On mount, update the setup progress and load previous input if available
 onMount(async () => {
-    // Load previously selected identity type from store if available
+    // Load previously entered username from store if available
     const unsubscribe = identityStore.subscribe(state => {
-        if (state.identityType) {
-            selectedType = state.identityType;
-            console.log('Loaded previously selected identity type:', selectedType);
+        if (state.username) {
+            username = state.username;
+            isValid = validateUsername(username);
+            console.log('Loaded previously entered username:', username);
         }
     });
 
@@ -39,7 +34,7 @@ onMount(async () => {
     if (walletAddress) {
         try {
             isUpdatingProgress = true;
-            const result = await updateSetupProgress(walletAddress, 1);
+            const result = await updateSetupProgress(walletAddress, 2);
             if (!result.success) {
                 console.error('Failed to update setup progress:', result.error);
                 errorMessage = 'Failed to update setup progress. Please try again.';
@@ -53,16 +48,28 @@ onMount(async () => {
     }
 });
 
-async function handleContinue() {
-    if (selectedType) {
-        // Store the selected identity type in the store
-        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector');
+function validateUsername(value: string) {
+    // Only allow lowercase letters, numbers, and hyphens
+    const regex = /^[a-z0-9-]+$/;
+    return regex.test(value) && value.length >= 3 && value.length <= 20;
+}
 
-        // Update setup progress to the next step (2 - Identity Data)
+function handleInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    username = input.value.toLowerCase();
+    isValid = validateUsername(username);
+}
+
+async function handleContinue() {
+    if (isValid) {
+        // Store the username in the store
+        identityStore.setUsername(username);
+
+        // Update setup progress to the next step (3 - Select Chain)
         const walletAddress = getWalletAddress();
         if (walletAddress) {
             try {
-                const result = await updateSetupProgress(walletAddress, 2);
+                const result = await updateSetupProgress(walletAddress, 3);
                 if (!result.success) {
                     console.error('Failed to update setup progress:', result.error);
                 }
@@ -71,7 +78,7 @@ async function handleContinue() {
             }
         }
 
-        goto('/activate/identity-data');
+        goto('/activate/select-chain');
     }
 }
 
@@ -79,7 +86,7 @@ async function handleContinue() {
 async function closePage() {
     // Set the flag to prevent automatic redirection back to activate pages
     setUserClosedActivatePage(true);
-    console.log('Closing identity type page, flag set to prevent auto-redirect');
+    console.log('Closing identity-data page, flag set to prevent auto-redirect');
 
     // Use goto for cleaner navigation
     await goto('/');
@@ -97,7 +104,7 @@ async function handleLogout() {
         // Disconnect the wallet
         await disconnect(config);
 
-        console.log('Logged out from identity type page');
+        console.log('Logged out from identity-data page');
 
         // Navigate to home page
         await goto('/');
@@ -108,7 +115,7 @@ async function handleLogout() {
 </script>
 
 <div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
-    <PaymentCheck currentStep={2} />
+    <PaymentCheck currentStep={3} />
     <!-- Close button -->
     <Button
         variant="outline"
@@ -122,32 +129,34 @@ async function handleLogout() {
         </svg>
     </Button>
     <!-- Progress indicator -->
-    <ProgressSteps currentStep={2} />
+    <ProgressSteps currentStep={3} />
 
     <!-- Main content -->
     <div class="w-full max-w-md text-center">
-        <h1 class="text-4xl font-bold mb-8">Choose Identity Type</h1>
+        <h1 class="text-4xl font-bold mb-8">Identity Data</h1>
 
         <p class="text-lg mb-8">
-            Select the type of identity you want to create
+            Choose your username for your on-chain identity
         </p>
 
-        <div class="grid gap-4 mb-8">
-            {#each identityTypes as type}
-                <button
-                    class="w-full p-4 rounded-lg border-2 transition-all flex flex-col items-start text-left
-                        {selectedType === type.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
-                    on:click={() => selectedType = type.id}
-                >
-                    <span class="text-xl font-medium mb-1">{type.name}</span>
-                    <span class="text-sm text-muted-foreground">{type.description}</span>
-                </button>
-            {/each}
+        <div class="mb-8">
+            <input
+                type="text"
+                placeholder="username"
+                class="w-full p-4 text-lg rounded-lg border-2 bg-background
+                    {isValid ? 'border-primary' : 'border-border'}
+                    focus:outline-none focus:border-primary transition-colors"
+                value={username}
+                on:input={handleInput}
+            />
+            <p class="text-sm text-muted-foreground mt-2">
+                3-20 characters, lowercase letters, numbers, and hyphens only
+            </p>
         </div>
 
         <Button
             class="w-full"
-            disabled={!selectedType}
+            disabled={!isValid}
             on:click={handleContinue}
         >
             Continue
@@ -156,7 +165,7 @@ async function handleLogout() {
         <!-- Log out button -->
         <Button
           variant="ghost"
-          class="mt-4 mb-8 text-muted-foreground hover:text-foreground text-sm"
+          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
           on:click={handleLogout}
         >
           Disconnect Wallet

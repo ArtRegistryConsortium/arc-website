@@ -6,6 +6,7 @@ import { disconnect } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
+import PaymentCheck from '$lib/components/PaymentCheck.svelte';
 import { identityStore } from '$lib/stores/identityStore';
 import { updateSetupProgress } from '$lib/services/setupProgressService';
 import { createIdentity, mapIdentityType } from '$lib/services/identityService';
@@ -25,35 +26,46 @@ let username = '';
 let chainName = '';
 let chainId = 0;
 
-// On mount, update the setup progress and get identity info from store
-onMount(async () => {
-    const walletAddress = getWalletAddress();
-    if (walletAddress) {
-        try {
-            isUpdatingProgress = true;
-            const result = await updateSetupProgress(walletAddress, 4);
-            if (!result.success) {
-                console.error('Failed to update setup progress:', result.error);
-                errorMessage = 'Failed to update setup progress. Please try again.';
-            }
-        } catch (error) {
-            console.error('Error updating setup progress:', error);
-            errorMessage = 'An error occurred. Please try again.';
-        } finally {
-            isUpdatingProgress = false;
-        }
-    }
+// Subscribe to the identity store
+let unsubscribeStore: () => void;
 
+// On mount, update the setup progress and get identity info from store
+onMount(() => {
     // Get identity info from store
-    const unsubscribe = identityStore.subscribe(state => {
+    unsubscribeStore = identityStore.subscribe(state => {
         identityType = state.identityType || '';
         username = state.username;
         chainName = state.selectedChain?.name || '';
         chainId = state.selectedChain?.chain_id || 0;
     });
 
-    // Unsubscribe when component is destroyed
-    return unsubscribe;
+    // Update setup progress
+    const updateProgress = async () => {
+        const walletAddress = getWalletAddress();
+        if (walletAddress) {
+            try {
+                isUpdatingProgress = true;
+                const result = await updateSetupProgress(walletAddress, 4);
+                if (!result.success) {
+                    console.error('Failed to update setup progress:', result.error);
+                    errorMessage = 'Failed to update setup progress. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error updating setup progress:', error);
+                errorMessage = 'An error occurred. Please try again.';
+            } finally {
+                isUpdatingProgress = false;
+            }
+        }
+    };
+
+    // Call the async function
+    updateProgress();
+
+    // Return cleanup function
+    return () => {
+        if (unsubscribeStore) unsubscribeStore();
+    };
 });
 
 async function handleActivate() {
@@ -137,6 +149,7 @@ async function handleLogout() {
 </script>
 
 <div class="min-h-screen bg-background flex flex-col items-center justify-start pt-16 px-4 relative">
+    <PaymentCheck currentStep={5} />
     <!-- Close button -->
     <Button
         variant="outline"

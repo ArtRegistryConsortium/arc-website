@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .from('wallets')
       .update({
         setup_step: setupStep,
-        setup_completed: setupStep === 4, // Mark as completed if step is 4 (confirmation)
+        // No longer automatically setting setup_completed to true
         updated_at: now
       })
       .eq('wallet_address', walletAddress)

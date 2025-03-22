@@ -15,8 +15,20 @@ let isValid = false;
 let isUpdatingProgress = false;
 let errorMessage = '';
 
-// On mount, update the setup progress
+// On mount, update the setup progress and load previous input if available
 onMount(async () => {
+    // Load previously entered username from store if available
+    const unsubscribe = identityStore.subscribe(state => {
+        if (state.username) {
+            username = state.username;
+            isValid = validateUsername(username);
+            console.log('Loaded previously entered username:', username);
+        }
+    });
+
+    // Unsubscribe to avoid memory leaks
+    unsubscribe();
+
     const walletAddress = getWalletAddress();
     if (walletAddress) {
         try {
@@ -119,7 +131,7 @@ async function handleLogout() {
 
     <!-- Main content -->
     <div class="w-full max-w-md text-center">
-        <h1 class="text-4xl font-bold mb-8">Create Identity</h1>
+        <h1 class="text-4xl font-bold mb-8">Identity Data</h1>
 
         <p class="text-lg mb-8">
             Choose your username for your on-chain identity

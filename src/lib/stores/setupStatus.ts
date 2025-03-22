@@ -64,8 +64,8 @@ export function getSetupRedirectUrl(status: WalletSetupStatus): string {
     case 1: // Identity Type
       redirectUrl = '/activate/choose-identity-type';
       break;
-    case 2: // Create Identity
-      redirectUrl = '/activate/create-identity';
+    case 2: // Identity Data
+      redirectUrl = '/activate/identity-data';
       break;
     case 3: // Select Chain
       redirectUrl = '/activate/select-chain';
