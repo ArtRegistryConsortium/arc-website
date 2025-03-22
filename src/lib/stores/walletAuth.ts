@@ -1,9 +1,11 @@
 import { writable } from 'svelte/store';
 import type { Address } from 'viem';
-import { signMessage } from 'wagmi/actions';
+import { signMessage, disconnect } from 'wagmi/actions';
 import { config } from '../web3/config';
 import { ensureWalletExists, getWalletSetupStatus } from '../services/walletService';
-import { checkSetupStatus } from './setupStatus';
+import { checkSetupStatus, resetSetupStatus } from './setupStatus';
+import { setDisconnected } from './web3';
+import { userIdentityStore } from './userIdentityStore';
 
 // Define the authentication state interface
 interface WalletAuthState {
@@ -257,5 +259,30 @@ export function setWalletAddressCookie(address: Address): void {
     console.log('Wallet address cookie set from walletAuth:', address);
   } catch (error) {
     console.error('Error setting wallet address cookie from walletAuth:', error);
+  }
+}
+
+// Disconnect wallet and clear session
+export async function disconnectWallet(): Promise<void> {
+  try {
+    // First clear the auth session
+    clearSession();
+
+    // Reset setup status
+    resetSetupStatus();
+
+    // Reset user identity store
+    userIdentityStore.reset();
+
+    // Update web3 store
+    setDisconnected();
+
+    // Then disconnect the wallet
+    await disconnect(config);
+
+    console.log('Wallet disconnected successfully');
+  } catch (error) {
+    console.error('Failed to disconnect wallet:', error);
+    throw error;
   }
 }

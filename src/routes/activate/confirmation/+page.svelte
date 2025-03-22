@@ -7,35 +7,18 @@ import { config } from '$lib/web3/config';
 import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
 import PaymentCheck from '$lib/components/PaymentCheck.svelte';
-import { identityStore } from '$lib/stores/identityStore';
+import { identityStore, type IdentityInfo } from '$lib/stores/identityStore';
 import { updateSetupProgress } from '$lib/services/setupProgressService';
-import { createIdentity, mapIdentityType } from '$lib/services/identityService';
 import { onMount } from 'svelte';
 import type { Address } from 'viem';
-import { truncateAddress } from '$lib/utils/web3';
+import ActivationDialog from '$lib/components/ActivationDialog.svelte';
 
-let isProcessing = false;
 let isUpdatingProgress = false;
 let errorMessage = '';
-let successMessage = '';
-let transactionHash = '';
-let identityId = 0;
+let dialogOpen = false;
 
-// Subscribe to the identity store
-let identityType = '';
-let username = '';
-let description = '';
-let identityImage = '';
-let links: { name: string; url: string }[] = [];
-let tags: string[] = [];
-let dob: number | undefined;
-let dod: number | undefined;
-let location = '';
-let addresses: string[] = [];
-let representedBy: any;
-let representedArtists: any;
-let chainName = '';
-let chainId = 0;
+// Identity data from store
+let identityData: IdentityInfo;
 
 // Subscribe to the identity store
 let unsubscribeStore: () => void;
@@ -44,20 +27,7 @@ let unsubscribeStore: () => void;
 onMount(() => {
     // Get identity info from store
     unsubscribeStore = identityStore.subscribe(state => {
-        identityType = state.identityType || '';
-        username = state.username;
-        description = state.description || '';
-        identityImage = state.identityImage || '';
-        links = state.links || [];
-        tags = state.tags || [];
-        dob = state.dob;
-        dod = state.dod;
-        location = state.location || '';
-        addresses = state.addresses || [];
-        representedBy = state.representedBy;
-        representedArtists = state.representedArtists;
-        chainName = state.selectedChain?.name || '';
-        chainId = state.selectedChain?.chain_id || 0;
+        identityData = state;
     });
 
     // Update setup progress
@@ -65,11 +35,31 @@ onMount(() => {
         const walletAddress = getWalletAddress();
         if (walletAddress) {
             try {
-                isUpdatingProgress = true;
-                const result = await updateSetupProgress(walletAddress, 4);
-                if (!result.success) {
-                    console.error('Failed to update setup progress:', result.error);
-                    errorMessage = 'Failed to update setup progress. Please try again.';
+                // First get the current setup step
+                const response = await fetch('/api/wallet/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ walletAddress })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Only update if current step is less than this page's step (4)
+                if (result.success && result.data && result.data.setup_step < 4) {
+                    isUpdatingProgress = true;
+                    const updateResult = await updateSetupProgress(walletAddress, 4);
+                    if (!updateResult.success) {
+                        console.error('Failed to update setup progress:', updateResult.error);
+                        errorMessage = 'Failed to update setup progress. Please try again.';
+                    }
+                } else {
+                    console.log('Not updating setup step as current step is already at or beyond this page\'s step');
                 }
             } catch (error) {
                 console.error('Error updating setup progress:', error);
@@ -89,66 +79,9 @@ onMount(() => {
     };
 });
 
-async function handleActivate() {
-    const walletAddress = getWalletAddress() as Address;
-    if (!walletAddress) {
-        errorMessage = 'Wallet address not found. Please reconnect your wallet.';
-        return;
-    }
-
-    if (!identityType || !username || !chainId) {
-        errorMessage = 'Missing identity information. Please go back and complete all steps.';
-        return;
-    }
-
-    try {
-        isProcessing = true;
-        errorMessage = '';
-        successMessage = '';
-
-        // Format links for the contract (convert from {name, url} format to string format)
-        const formattedLinks = links.filter(link => link.url.trim().length > 0)
-            .map(link => {
-                // Format as "name|url" or just "url" if name is empty
-                return link.name.trim() ? `${link.name.trim()}|${link.url.trim()}` : link.url.trim();
-            });
-
-        // Create the identity
-        const result = await createIdentity({
-            walletAddress,
-            identityType: mapIdentityType(identityType),
-            name: username,
-            chainId,
-            description: description || `${username} on ${chainName}`,
-            identityImage: identityImage,
-            links: formattedLinks,
-            tags: tags.length > 0 ? tags : [identityType],
-            dob: dob || 0,
-            dod: dod || 0,
-            location: location,
-            addresses: addresses,
-            representedBy: representedBy ? JSON.stringify(representedBy) : '',
-            representedArtists: representedArtists ? JSON.stringify(representedArtists) : ''
-        });
-
-        if (result.success) {
-            successMessage = 'Identity created successfully!';
-            transactionHash = result.transactionHash || '';
-            identityId = result.identityId || 0;
-
-            // Wait 3 seconds before redirecting to home
-            setTimeout(() => {
-                goto('/');
-            }, 3000);
-        } else {
-            errorMessage = result.error || 'Failed to create identity. Please try again.';
-        }
-    } catch (error) {
-        console.error('Error creating identity:', error);
-        errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    } finally {
-        isProcessing = false;
-    }
+function handleActivate() {
+    // Open the activation dialog
+    dialogOpen = true;
 }
 
 // Function to close the page and return to home
@@ -211,23 +144,13 @@ async function handleLogout() {
             </div>
         {/if}
 
-        {#if successMessage}
-            <div class="p-4 mb-6 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded-lg">
-                <p>{successMessage}</p>
-                {#if transactionHash}
-                    <p class="mt-2 text-sm">Transaction: {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}</p>
-                {/if}
-                <p class="mt-2 text-sm">Redirecting to home page...</p>
-            </div>
-        {/if}
-
         <div class="space-y-8 mb-8 text-left">
             <!-- Step 1: Identity Type -->
             <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Type</h3>
                 <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                     <p class="text-sm text-muted-foreground">Type</p>
-                    <p class="text-base font-medium capitalize">{identityType || 'Not selected'}</p>
+                    <p class="text-base font-medium capitalize">{identityData?.identityType || 'Not selected'}</p>
                 </div>
             </div>
 
@@ -236,26 +159,26 @@ async function handleLogout() {
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Data</h3>
 
                 <!-- Basic Information Section -->
-                <div class="{(links && links.filter(l => l.url.trim()).length > 0) || (tags && tags.filter(t => t.trim()).length > 0) ||
-                    (identityType === 'artist' && (dob || location)) ||
-                    ((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                <div class="{(identityData?.links && identityData.links.filter(l => l.url.trim()).length > 0) || (identityData?.tags && identityData.tags.filter(t => t.trim()).length > 0) ||
+                    (identityData?.identityType === 'artist' && (identityData?.dob || identityData?.location)) ||
+                    ((identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') && identityData?.addresses && identityData.addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Basic Information</h4>
                     <div class="space-y-3">
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Name</p>
-                            <p class="text-base font-medium">{username || 'Not set'}</p>
+                            <p class="text-base font-medium">{identityData?.username || 'Not set'}</p>
                         </div>
 
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Description</p>
-                            <p class="text-base">{description || 'Not set'}</p>
+                            <p class="text-base">{identityData?.description || 'Not set'}</p>
                         </div>
 
-                        {#if identityImage}
+                        {#if identityData?.identityImage}
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Profile Image</p>
                             <div class="mt-2 w-24 h-24 rounded-md overflow-hidden border border-border/50">
-                                <img src={identityImage} alt="Identity" class="w-full h-full object-cover" />
+                                <img src={identityData.identityImage} alt="Identity" class="w-full h-full object-cover" />
                             </div>
                         </div>
                         {/if}
@@ -263,16 +186,16 @@ async function handleLogout() {
                 </div>
 
                 <!-- Links & Tags Section -->
-                {#if (links && links.filter(l => l.url.trim()).length > 0) || (tags && tags.filter(t => t.trim()).length > 0)}
-                <div class="{(identityType === 'artist' && (dob || location)) ||
-                    ((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                {#if (identityData?.links && identityData.links.filter(l => l.url.trim()).length > 0) || (identityData?.tags && identityData.tags.filter(t => t.trim()).length > 0)}
+                <div class="{(identityData?.identityType === 'artist' && (identityData?.dob || identityData?.location)) ||
+                    ((identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') && identityData?.addresses && identityData.addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Links & Tags</h4>
                     <div class="space-y-3">
-                        {#if links && links.filter(l => l.url.trim()).length > 0}
+                        {#if identityData?.links && identityData.links.filter(l => l.url.trim()).length > 0}
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Links</p>
                             <ul class="mt-2 list-disc list-inside">
-                                {#each links.filter(l => l.url.trim()) as link}
+                                {#each identityData.links.filter(l => l.url.trim()) as link}
                                     <li class="text-sm truncate">
                                         <a href={link.url} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
                                             {link.name ? `${link.name}: ${link.url}` : link.url}
@@ -283,11 +206,11 @@ async function handleLogout() {
                         </div>
                         {/if}
 
-                        {#if tags && tags.filter(t => t.trim()).length > 0}
+                        {#if identityData?.tags && identityData.tags.filter(t => t.trim()).length > 0}
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Tags</p>
                             <div class="mt-2 flex flex-wrap gap-2">
-                                {#each tags.filter(t => t.trim()) as tag}
+                                {#each identityData.tags.filter(t => t.trim()) as tag}
                                     <span class="px-2 py-1 text-xs bg-muted rounded-full">{tag}</span>
                                 {/each}
                             </div>
@@ -298,35 +221,35 @@ async function handleLogout() {
                 {/if}
 
                 <!-- Type-Specific Information -->
-                {#if identityType === 'artist' && (dob || location)}
+                {#if identityData?.identityType === 'artist' && (identityData?.dob || identityData?.location)}
                 <div class="mb-0">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Artist Information</h4>
                     <div class="space-y-3">
-                        {#if dob}
+                        {#if identityData?.dob}
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Date of Birth</p>
-                            <p class="text-base">{new Date(dob * 1000).toLocaleDateString()}</p>
+                            <p class="text-base">{new Date(identityData.dob * 1000).toLocaleDateString()}</p>
                         </div>
                         {/if}
 
-                        {#if location}
+                        {#if identityData?.location}
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Location</p>
-                            <p class="text-base">{location}</p>
+                            <p class="text-base">{identityData.location}</p>
                         </div>
                         {/if}
                     </div>
                 </div>
                 {/if}
 
-                {#if (identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0}
+                {#if (identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') && identityData?.addresses && identityData.addresses.filter(a => a.trim()).length > 0}
                 <div class="mb-0">
-                    <h4 class="text-sm font-medium text-muted-foreground mb-2">{identityType === 'gallery' ? 'Gallery' : 'Institution'} Information</h4>
+                    <h4 class="text-sm font-medium text-muted-foreground mb-2">{identityData.identityType === 'gallery' ? 'Gallery' : 'Institution'} Information</h4>
                     <div class="space-y-3">
                         <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Physical Addresses</p>
                             <ul class="mt-2 list-disc list-inside">
-                                {#each addresses.filter(a => a.trim()) as address}
+                                {#each identityData.addresses.filter(a => a.trim()) as address}
                                     <li class="text-sm">{address}</li>
                                 {/each}
                             </ul>
@@ -341,22 +264,17 @@ async function handleLogout() {
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Chain Selection</h3>
                 <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                     <p class="text-sm text-muted-foreground">Selected Chain</p>
-                    <p class="text-base font-medium">{chainName || 'Not selected'}</p>
+                    <p class="text-base font-medium">{identityData?.selectedChain?.name || 'Not selected'}</p>
                 </div>
             </div>
         </div>
 
         <Button
-            class="w-full {!(isProcessing || !identityType || !username || !chainId || !!successMessage) ? 'bg-primary hover:bg-primary/90' : ''}"
-            disabled={isProcessing || !identityType || !username || !chainId || !!successMessage}
+            class="w-full {!(isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id) ? 'bg-primary hover:bg-primary/90' : ''}"
+            disabled={isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id}
             on:click={handleActivate}
         >
-            {#if isProcessing}
-                <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
-                Creating Identity...
-            {:else}
-                Activate Profile
-            {/if}
+            Activate Profile
         </Button>
 
         <!-- Log out button -->
@@ -376,3 +294,8 @@ async function handleLogout() {
         padding: 0;
     }
 </style>
+
+<!-- Activation Dialog -->
+{#if identityData}
+<ActivationDialog bind:open={dialogOpen} identityData={identityData} />
+{/if}

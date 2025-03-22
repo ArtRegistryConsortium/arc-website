@@ -38,11 +38,31 @@ onMount(async () => {
     const walletAddress = getWalletAddress();
     if (walletAddress) {
         try {
-            isUpdatingProgress = true;
-            const result = await updateSetupProgress(walletAddress, 1);
-            if (!result.success) {
-                console.error('Failed to update setup progress:', result.error);
-                errorMessage = 'Failed to update setup progress. Please try again.';
+            // First get the current setup step
+            const response = await fetch('/api/wallet/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ walletAddress })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            // Only update if current step is less than this page's step (1)
+            if (result.success && result.data && result.data.setup_step < 1) {
+                isUpdatingProgress = true;
+                const updateResult = await updateSetupProgress(walletAddress, 1);
+                if (!updateResult.success) {
+                    console.error('Failed to update setup progress:', updateResult.error);
+                    errorMessage = 'Failed to update setup progress. Please try again.';
+                }
+            } else {
+                console.log('Not updating setup step as current step is already at or beyond this page\'s step');
             }
         } catch (error) {
             console.error('Error updating setup progress:', error);

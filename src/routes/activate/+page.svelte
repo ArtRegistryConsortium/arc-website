@@ -292,12 +292,32 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             // Ensure setup_step is updated to 1 when payment is confirmed
             if (walletAddress) {
                 try {
-                    console.log('Automatically updating setup progress to step 1 after payment confirmation');
-                    const progressResult = await updateSetupProgress(walletAddress, 1);
-                    if (!progressResult.success) {
-                        console.error('Failed to update setup progress after payment confirmation:', progressResult.error);
+                    // First get the current setup step
+                    const response = await fetch('/api/wallet/status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ walletAddress })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+
+                    const statusResult = await response.json();
+
+                    // Only update if current step is less than 1
+                    if (statusResult.success && statusResult.data && statusResult.data.setup_step < 1) {
+                        console.log('Automatically updating setup progress to step 1 after payment confirmation');
+                        const progressResult = await updateSetupProgress(walletAddress, 1);
+                        if (!progressResult.success) {
+                            console.error('Failed to update setup progress after payment confirmation:', progressResult.error);
+                        } else {
+                            console.log('Setup progress updated successfully after payment confirmation');
+                        }
                     } else {
-                        console.log('Setup progress updated successfully after payment confirmation');
+                        console.log('Not updating setup step as current step is already at or beyond step 1');
                     }
                 } catch (updateError) {
                     console.error('Error updating setup progress after payment confirmation:', updateError);
@@ -364,12 +384,32 @@ async function checkTransactionStatus(hash: `0x${string}`) {
             const address = getWalletAddress();
             if (address) {
                 try {
-                    console.log('Updating setup progress to step 1 after transaction confirmation');
-                    const progressResult = await updateSetupProgress(address, 1);
-                    if (!progressResult.success) {
-                        console.error('Failed to update setup progress after transaction confirmation:', progressResult.error);
+                    // First get the current setup step
+                    const response = await fetch('/api/wallet/status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ walletAddress: address })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+
+                    const statusResult = await response.json();
+
+                    // Only update if current step is less than 1
+                    if (statusResult.success && statusResult.data && statusResult.data.setup_step < 1) {
+                        console.log('Updating setup progress to step 1 after transaction confirmation');
+                        const progressResult = await updateSetupProgress(address, 1);
+                        if (!progressResult.success) {
+                            console.error('Failed to update setup progress after transaction confirmation:', progressResult.error);
+                        } else {
+                            console.log('Setup progress updated successfully after transaction confirmation');
+                        }
                     } else {
-                        console.log('Setup progress updated successfully after transaction confirmation');
+                        console.log('Not updating setup step as current step is already at or beyond step 1');
                     }
                 } catch (updateError) {
                     console.error('Error updating setup progress after transaction confirmation:', updateError);
@@ -558,12 +598,32 @@ function startMonitoring(address: Address, chainId?: number) {
 
             // Ensure setup_step is updated to 1 when payment is confirmed via monitor
             try {
-                console.log('Updating setup progress to step 1 after payment monitor confirmation');
-                const progressResult = await updateSetupProgress(address, 1);
-                if (!progressResult.success) {
-                    console.error('Failed to update setup progress after payment monitor confirmation:', progressResult.error);
+                // First get the current setup step
+                const response = await fetch('/api/wallet/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ walletAddress: address })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+                const statusResult = await response.json();
+
+                // Only update if current step is less than 1
+                if (statusResult.success && statusResult.data && statusResult.data.setup_step < 1) {
+                    console.log('Updating setup progress to step 1 after payment monitor confirmation');
+                    const progressResult = await updateSetupProgress(address, 1);
+                    if (!progressResult.success) {
+                        console.error('Failed to update setup progress after payment monitor confirmation:', progressResult.error);
+                    } else {
+                        console.log('Setup progress updated successfully after payment monitor confirmation');
+                    }
                 } else {
-                    console.log('Setup progress updated successfully after payment monitor confirmation');
+                    console.log('Not updating setup step as current step is already at or beyond step 1');
                 }
             } catch (updateError) {
                 console.error('Error updating setup progress after payment monitor confirmation:', updateError);
@@ -592,15 +652,35 @@ async function handleContinueToNextStep() {
             return;
         }
 
-        console.log('Updating setup progress to step 1 (Identity Type)');
+        console.log('Checking current setup step before updating to step 1 (Identity Type)');
 
-        // Update the setup progress to step 1 (Identity Type)
-        const result = await updateSetupProgress(address, 1);
+        // First get the current setup step
+        const response = await fetch('/api/wallet/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ walletAddress: address })
+        });
 
-        if (!result.success) {
-            console.error('Failed to update setup progress:', result.error);
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+
+        const statusResult = await response.json();
+
+        // Only update if current step is less than 1
+        if (statusResult.success && statusResult.data && statusResult.data.setup_step < 1) {
+            console.log('Updating setup progress to step 1 (Identity Type)');
+            const result = await updateSetupProgress(address, 1);
+
+            if (!result.success) {
+                console.error('Failed to update setup progress:', result.error);
+            } else {
+                console.log('Setup progress updated successfully:', result);
+            }
         } else {
-            console.log('Setup progress updated successfully:', result);
+            console.log('Not updating setup step as current step is already at or beyond step 1');
         }
 
         // Navigate to the next step

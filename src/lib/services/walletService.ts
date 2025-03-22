@@ -182,3 +182,34 @@ export async function getWalletSetupStatus(walletAddress: Address): Promise<Wall
     return null;
   }
 }
+
+/**
+ * Mark a wallet's setup as completed
+ * @param walletAddress The wallet address to update
+ * @returns True if the wallet was updated successfully, false otherwise
+ */
+export async function completeWalletSetup(walletAddress: Address): Promise<boolean> {
+  try {
+    console.log('Marking wallet setup as completed for:', walletAddress);
+
+    const response = await fetch('/api/wallet/complete-setup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Wallet setup completion result:', result);
+
+    return result.success;
+  } catch (error) {
+    console.error('Failed to complete wallet setup:', error);
+    return false;
+  }
+}

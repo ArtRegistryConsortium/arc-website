@@ -48,14 +48,14 @@ onMount(async () => {
 });
 
 function validateUsername(value: string) {
-    // Only allow lowercase letters, numbers, and hyphens
-    const regex = /^[a-z0-9-]+$/;
+    // Allow letters (both uppercase and lowercase), numbers, and hyphens
+    const regex = /^[a-zA-Z0-9-]+$/;
     return regex.test(value) && value.length >= 3 && value.length <= 20;
 }
 
 function handleInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    username = input.value.toLowerCase();
+    username = input.value;
     isValid = validateUsername(username);
 }
 

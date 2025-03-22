@@ -208,11 +208,12 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 500 });
     }
 
-    // Update the wallet's setup step only (not setting setup_completed to true)
+    // Update the wallet's setup step only and explicitly set setup_completed to false
     const { error: updateError } = await supabaseAdmin
       .from('wallets')
       .update({
-        // Not setting setup_completed to true as requested
+        // Explicitly setting setup_completed to false as requested
+        setup_completed: false,
         setup_step: 4,
         updated_at: now
       })

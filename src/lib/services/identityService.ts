@@ -29,6 +29,7 @@ export interface CreateIdentityRequest {
   addresses?: string[]; // Only for Galleries/Institutions
   representedBy?: string; // JSON string, only for Artists
   representedArtists?: string; // JSON string, only for Galleries
+  onChainIdentityId?: number; // The identity ID from the blockchain
 }
 
 /**

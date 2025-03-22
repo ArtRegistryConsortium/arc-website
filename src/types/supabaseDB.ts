@@ -265,7 +265,7 @@ export type Database = {
       }
       identities: {
         Row: {
-          addresses: string[] | null
+          addresses: Json | null
           chain_id: number | null
           created_at: string | null
           description: string | null
@@ -274,7 +274,7 @@ export type Database = {
           exhibition_history: Json | null
           id: number
           identity_image: string | null
-          links: string[] | null
+          links: Json | null
           location: string | null
           name: string
           represented_artists: Json | null
@@ -285,7 +285,7 @@ export type Database = {
           wallet_address: string
         }
         Insert: {
-          addresses?: string[] | null
+          addresses?: Json | null
           chain_id?: number | null
           created_at?: string | null
           description?: string | null
@@ -294,7 +294,7 @@ export type Database = {
           exhibition_history?: Json | null
           id: number
           identity_image?: string | null
-          links?: string[] | null
+          links?: Json | null
           location?: string | null
           name: string
           represented_artists?: Json | null
@@ -305,7 +305,7 @@ export type Database = {
           wallet_address: string
         }
         Update: {
-          addresses?: string[] | null
+          addresses?: Json | null
           chain_id?: number | null
           created_at?: string | null
           description?: string | null
@@ -314,7 +314,7 @@ export type Database = {
           exhibition_history?: Json | null
           id?: number
           identity_image?: string | null
-          links?: string[] | null
+          links?: Json | null
           location?: string | null
           name?: string
           represented_artists?: Json | null

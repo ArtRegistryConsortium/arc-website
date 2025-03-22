@@ -54,7 +54,8 @@ function formatLinksForContract(links: { name: string; url: string }[]): string[
 // Reactive statement to validate form when required fields change
 $: {
     console.log('Reactive validation check - fields:', { username, description, imagePreview: !!imagePreview });
-    validateForm();
+    const valid = validateForm();
+    updateValidState(valid);
 }
 
 // On mount, update the setup progress and load previous input if available
@@ -123,17 +124,39 @@ onMount(async () => {
     // Use a slightly longer timeout to ensure everything is rendered
     setTimeout(() => {
         console.log('Initial validation after mount');
-        validateForm();
+        const valid = validateForm();
+        updateValidState(valid);
+        console.log('Initial validation result:', valid);
     }, 300);
 
     const walletAddress = getWalletAddress();
     if (walletAddress) {
         try {
-            isUpdatingProgress = true;
-            const result = await updateSetupProgress(walletAddress, 2);
-            if (!result.success) {
-                console.error('Failed to update setup progress:', result.error);
-                errorMessage = 'Failed to update setup progress. Please try again.';
+            // First get the current setup step
+            const response = await fetch('/api/wallet/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ walletAddress })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            // Only update if current step is less than this page's step (2)
+            if (result.success && result.data && result.data.setup_step < 2) {
+                isUpdatingProgress = true;
+                const updateResult = await updateSetupProgress(walletAddress, 2);
+                if (!updateResult.success) {
+                    console.error('Failed to update setup progress:', updateResult.error);
+                    errorMessage = 'Failed to update setup progress. Please try again.';
+                }
+            } else {
+                console.log('Not updating setup step as current step is already at or beyond this page\'s step');
             }
         } catch (error) {
             console.error('Error updating setup progress:', error);
@@ -145,51 +168,59 @@ onMount(async () => {
 });
 
 function validateUsername(value: string): boolean {
-    // Only allow lowercase letters, numbers, and hyphens
-    const regex = /^[a-z0-9-]+$/;
-    return regex.test(value) && value.length >= 3 && value.length <= 20;
+    // Only check if not empty and not more than 100 characters
+    const isValid = value.trim().length > 0 && value.length <= 100;
+    console.log('Username validation:', {
+        value,
+        length: value.length,
+        isValid
+    });
+    return isValid;
 }
 
 function validateForm(): boolean {
-    console.log('Running validateForm()');
-
-    // SIMPLIFIED VALIDATION: Only check the three required fields
-    const isUsernameValid = validateUsername(username);
-    const isDescriptionValid = description.trim().length > 0;
-    const isImageValid = !!imagePreview; // Check if image preview exists
-
-    // Log validation state for debugging
-    console.log('Basic validation:', {
+    console.log('Running validateForm() with current values:', {
         username,
         description,
         imagePreview: !!imagePreview,
-        isUsernameValid,
-        isDescriptionValid,
-        isImageValid
+        identityImage: !!identityImage
     });
 
-    // SIMPLIFIED: Only check basic fields, ignore type-specific validation for now
-    const newIsValid = isUsernameValid && isDescriptionValid && isImageValid;
+    // Basic validation for required fields
+    const isUsernameValid = validateUsername(username);
+    const isDescriptionValid = description.trim().length > 0;
+    const isImageValid = !!imagePreview;
+
+    // Log validation state for debugging
+    console.log('Validation results:', {
+        isUsernameValid,
+        isDescriptionValid,
+        isImageValid,
+        usernameLength: username.length,
+        descriptionLength: description.trim().length,
+        hasImagePreview: !!imagePreview,
+        hasIdentityImage: !!identityImage
+    });
 
     // Update the validation state
-    if (isValid !== newIsValid) {
-        console.log(`Validation state changed: ${isValid} -> ${newIsValid}`);
-        isValid = newIsValid;
-    }
-
-    console.log('Final validation result:', isValid);
-    return isValid;
+    const newIsValid = isUsernameValid && isDescriptionValid && isImageValid;
+    console.log('Final validation result:', newIsValid);
+    
+    updateValidState(newIsValid);
+    return newIsValid;
 }
 
 function handleUsernameInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    username = input.value.toLowerCase();
+    username = input.value;
+    console.log('Username changed:', username);
     validateForm();
 }
 
 function handleDescriptionInput(event: Event) {
     const input = event.target as HTMLTextAreaElement;
     description = input.value;
+    console.log('Description changed:', description);
     validateForm();
 }
 
@@ -197,27 +228,19 @@ function handleImageUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
         const file = input.files[0];
+        console.log('Image file selected:', file.name);
         const reader = new FileReader();
         reader.onload = (e) => {
             if (e.target && typeof e.target.result === 'string') {
-                // Set the image values
                 identityImage = e.target.result;
                 imagePreview = e.target.result;
-
-                // Force validation after a short delay to ensure reactivity
-                setTimeout(() => {
-                    console.log('Image uploaded, forcing validation');
-                    validateForm();
-
-                    // Double-check validation after a short delay
-                    setTimeout(() => {
-                        console.log('Double-checking validation after image upload');
-                        validateForm();
-                    }, 100);
-                }, 50);
+                console.log('Image loaded successfully, preview set');
+                validateForm();
             }
         };
         reader.readAsDataURL(file);
+    } else {
+        console.log('No file selected or file input is null');
     }
 }
 

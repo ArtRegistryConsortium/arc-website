@@ -4,13 +4,19 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import WalletConnectButton from './WalletConnectButton.svelte';
+  import UserMenu from './UserMenu.svelte';
   import { setupStatusStore, getSetupRedirectUrl } from '../stores/setupStatus';
-  import { walletAuthStore } from '../stores/walletAuth';
+  import { walletAuthStore, getWalletAddress } from '../stores/walletAuth';
   import { setUserClosedActivatePage } from '../stores/navigationState';
+  import { userIdentityStore } from '../stores/userIdentityStore';
+  import type { UserIdentity } from '$lib/services/userIdentityService';
+  import type { Address } from 'viem';
 
   let mobileMenuOpen = false;
   let isAuthenticated = false;
   let setupStatus: import('../services/walletService').WalletSetupStatus | null = null;
+  let primaryIdentity: UserIdentity | null = null;
+  let isLoadingIdentity = true;
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -44,12 +50,26 @@
     }
   }
 
+  // Function to load user identities
+  async function loadUserIdentities() {
+    const walletAddress = getWalletAddress() as Address;
+    if (walletAddress) {
+      isLoadingIdentity = true;
+      await userIdentityStore.loadIdentities(walletAddress);
+    }
+  }
+
   onMount(() => {
     document.addEventListener('click', handleClickOutside);
 
     // Subscribe to wallet auth store
     const unsubscribeAuth = walletAuthStore.subscribe(state => {
       isAuthenticated = state.isVerified;
+
+      // When authenticated, load user identities
+      if (state.isVerified) {
+        loadUserIdentities();
+      }
     });
 
     // Subscribe to setup status store
@@ -57,10 +77,17 @@
       setupStatus = state.status;
     });
 
+    // Subscribe to user identity store
+    const unsubscribeIdentity = userIdentityStore.subscribe(state => {
+      primaryIdentity = state.primaryIdentity;
+      isLoadingIdentity = state.isLoading;
+    });
+
     return () => {
       document.removeEventListener('click', handleClickOutside);
       if (unsubscribeAuth) unsubscribeAuth();
       if (unsubscribeSetup) unsubscribeSetup();
+      if (unsubscribeIdentity) unsubscribeIdentity();
     };
   });
 </script>
@@ -134,7 +161,7 @@
       </svg>
     </button>
 
-    <!-- Wallet Connect Button or Complete Setup Button -->
+    <!-- Wallet Connect Button, Complete Setup Button, or User Menu -->
     {#if isAuthenticated && setupStatus && !setupStatus.setup_completed}
       <Button variant="default" class="shadow-sm" on:click={handleCompleteSetup}>
         <div class="flex items-center">
@@ -144,6 +171,8 @@
           Complete Setup
         </div>
       </Button>
+    {:else if isAuthenticated && setupStatus && setupStatus.setup_completed}
+      <UserMenu {primaryIdentity} isLoading={isLoadingIdentity} />
     {:else}
       <WalletConnectButton />
     {/if}
@@ -202,6 +231,45 @@
       >
         Contact
       </a>
+
+      {#if isAuthenticated && setupStatus && setupStatus.setup_completed}
+        <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div class="py-2 px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Dashboard</div>
+          <a
+            href="/dashboard/identities"
+            on:click={closeMobileMenu}
+            class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200 flex items-center"
+            class:active={$page.url.pathname === '/dashboard/identities'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Identities
+          </a>
+          <a
+            href="/dashboard/catalogue"
+            on:click={closeMobileMenu}
+            class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200 flex items-center"
+            class:active={$page.url.pathname === '/dashboard/catalogue'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Catalogue Raisonné
+          </a>
+          <a
+            href="/dashboard/collection"
+            on:click={closeMobileMenu}
+            class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200 flex items-center"
+            class:active={$page.url.pathname === '/dashboard/collection'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            My Collection
+          </a>
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
