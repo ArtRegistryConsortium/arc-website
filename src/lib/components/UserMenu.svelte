@@ -3,8 +3,11 @@
   import { goto } from '$app/navigation';
   import { getWalletAddress, disconnectWallet } from '$lib/stores/walletAuth';
   import { userIdentityStore } from '$lib/stores/userIdentityStore';
+  import { web3Store } from '$lib/stores/web3';
   import type { UserIdentity } from '$lib/services/userIdentityService';
   import type { Address } from 'viem';
+  import { getChainId, watchChainId } from 'wagmi/actions';
+  import { config } from '$lib/web3/config';
 
   // Define props using $props() for Svelte 5 runes mode
   let { primaryIdentity = null, isLoading = true } = $props<{
@@ -15,6 +18,10 @@
   let isOpen = $state(false);
   let menuRef: HTMLDivElement;
   let buttonRef: HTMLButtonElement;
+  let walletAddress = $state<string | null>(null);
+  let chainId = $state<number | null>(null);
+  let chainIcon = $state<string | null>(null);
+  let chainName = $state<string | null>(null);
 
   // Function to toggle dropdown
   function toggleDropdown() {
@@ -59,6 +66,9 @@
     document.addEventListener('keydown', handleKeydown);
     document.addEventListener('touchstart', handleTouchOutside);
 
+    // Get the connected wallet address
+    walletAddress = getWalletAddress() as string;
+
     // If primaryIdentity is not provided, load it from the store
     if (!primaryIdentity) {
       // Subscribe to user identity store
@@ -80,6 +90,67 @@
         document.removeEventListener('touchstart', handleTouchOutside);
       };
     }
+
+    // Return cleanup function for when primaryIdentity is provided
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('touchstart', handleTouchOutside);
+    };
+  });
+
+  // Handle async operations separately
+  onMount(() => {
+    let unwatch: (() => void) | undefined;
+
+    // Set up chain watcher
+    const setupChainWatcher = async () => {
+      try {
+        chainId = await getChainId(config);
+        console.log('Current chain ID:', chainId);
+
+        // Fetch chain information
+        if (chainId) {
+          const response = await fetch(`/api/chains/info?chainId=${chainId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.chain) {
+              chainIcon = data.chain.icon_url || null;
+              chainName = data.chain.name || null;
+              console.log('Chain info:', data.chain);
+            }
+          }
+        }
+
+        // Set up chain change watcher
+        unwatch = watchChainId(config, {
+          onChange: async (newChainId) => {
+            console.log('Chain changed to:', newChainId);
+            chainId = newChainId;
+
+            // Fetch updated chain information
+            const response = await fetch(`/api/chains/info?chainId=${newChainId}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.chain) {
+                chainIcon = data.chain.icon_url || null;
+                chainName = data.chain.name || null;
+                console.log('Updated chain info:', data.chain);
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error getting chain ID:', error);
+      }
+    };
+
+    setupChainWatcher();
+
+    // Return cleanup function
+    return () => {
+      if (unwatch) unwatch();
+    };
   });
 </script>
 
@@ -183,6 +254,27 @@
 
       <!-- Logout Section -->
       <div class="py-2 border-t border-gray-100 dark:border-neutral-800">
+        {#if walletAddress}
+          <div class="px-5 py-2 text-xs text-gray-500 dark:text-neutral-500 font-mono flex items-center">
+            {#if chainIcon}
+              <img
+                src={chainIcon}
+                alt={chainName || 'Chain'}
+                class="w-4 h-4 mr-2"
+                on:error={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.onerror = null;
+                  img.src = `https://placehold.co/16x16/svg?text=${chainId}`;
+                }}
+              />
+            {:else if chainId}
+              <div class="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px] mr-2">
+                {chainId}
+              </div>
+            {/if}
+            <span>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+          </div>
+        {/if}
         <button
           type="button"
           class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center"

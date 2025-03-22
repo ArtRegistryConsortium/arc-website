@@ -2,15 +2,23 @@
   import { page } from '$app/stores';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { walletAuthStore, getWalletAddress } from '$lib/stores/walletAuth';
+  import { walletAuthStore, getWalletAddress, disconnectWallet } from '$lib/stores/walletAuth';
   import { setupStatusStore } from '$lib/stores/setupStatus';
   import { userIdentityStore } from '$lib/stores/userIdentityStore';
+  import { web3Store } from '$lib/stores/web3';
+  import { truncateAddress } from '$lib/utils/web3';
   import type { Address } from 'viem';
+  import { getChainId, watchChainId } from 'wagmi/actions';
+  import { config } from '$lib/web3/config';
 
   let { children } = $props();
   let isAuthenticated = false;
   let setupCompleted = false;
   let isLoading = true;
+  let walletAddress = $state<Address | null>(null);
+  let chainId = $state<number | null>(null);
+  let chainIcon = $state<string | null>(null);
+  let chainName = $state<string | null>(null);
 
   onMount(() => {
     // Subscribe to wallet auth store
@@ -28,11 +36,14 @@
       isLoading = state.isLoading;
     });
 
+    // Get the connected wallet address
+    walletAddress = getWalletAddress() as Address;
+
     // Load user identities if authenticated
     if (isAuthenticated) {
-      const walletAddress = getWalletAddress() as Address;
-      if (walletAddress) {
-        userIdentityStore.loadIdentities(walletAddress);
+      const walletAddr = getWalletAddress() as Address;
+      if (walletAddr) {
+        userIdentityStore.loadIdentities(walletAddr);
       }
     }
 
@@ -53,54 +64,128 @@
       unsubscribeIdentity();
     };
   });
+
+  // Handle async operations separately
+  onMount(() => {
+    let unwatch: (() => void) | undefined;
+
+    // Set up chain watcher
+    const setupChainWatcher = async () => {
+      try {
+        chainId = await getChainId(config);
+        console.log('Current chain ID:', chainId);
+
+        // Fetch chain information
+        if (chainId) {
+          const response = await fetch(`/api/chains/info?chainId=${chainId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.chain) {
+              chainIcon = data.chain.icon_url || null;
+              chainName = data.chain.name || null;
+              console.log('Chain info:', data.chain);
+            }
+          }
+        }
+
+        // Set up chain change watcher
+        unwatch = watchChainId(config, {
+          onChange: async (newChainId) => {
+            console.log('Chain changed to:', newChainId);
+            chainId = newChainId;
+
+            // Fetch updated chain information
+            const response = await fetch(`/api/chains/info?chainId=${newChainId}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.chain) {
+                chainIcon = data.chain.icon_url || null;
+                chainName = data.chain.name || null;
+                console.log('Updated chain info:', data.chain);
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error getting chain ID:', error);
+      }
+    };
+
+    setupChainWatcher();
+
+    // Return cleanup function
+    return () => {
+      if (unwatch) unwatch();
+    };
+  });
+
+  // Function to handle logout
+  async function handleLogout() {
+    await disconnectWallet();
+    goto('/');
+  }
 </script>
 
-<div class="flex h-screen bg-gray-100 dark:bg-gray-900 pt-16 md:pt-20">
+<div class="flex h-screen bg-background pt-2 h-[calc(100vh-80px)]">
   <!-- Sidebar -->
-  <div class="w-64 bg-white dark:bg-gray-800 shadow-md h-full">
-    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-      <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Dashboard</h2>
+  <div class="w-64 bg-background border-r border-gray-200 dark:border-gray-800 h-full pt-1">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-800 px-6">
+      <h2 class="font-semibold text-gray-800 dark:text-white">Dashboard</h2>
     </div>
-    <nav class="mt-4">
-      <a
-        href="/dashboard/identities"
-        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-        class:active={$page.url.pathname === '/dashboard/identities'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        Identities
-      </a>
-      <a
-        href="/dashboard/catalogue"
-        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-        class:active={$page.url.pathname === '/dashboard/catalogue'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        Catalogue Raisonné
-      </a>
-      <a
-        href="/dashboard/collection"
-        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-        class:active={$page.url.pathname === '/dashboard/collection'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        My Collection
-      </a>
-      <a
-        href="/"
-        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        Back to Home
-      </a>
+    <nav class="mt-4 flex flex-col justify-between h-[calc(100%-4rem)]">
+      <div>
+        <a
+          href="/dashboard/identities"
+          class="flex items-center px-6 py-3 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white transition-colors duration-200"
+          class:active={$page.url.pathname === '/dashboard/identities'}
+        >
+          Identities
+        </a>
+        <a
+          href="/dashboard/catalogue"
+          class="flex items-center px-6 py-3 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white transition-colors duration-200"
+          class:active={$page.url.pathname === '/dashboard/catalogue'}
+        >
+          Catalogue Raisonné
+        </a>
+        <a
+          href="/dashboard/collection"
+          class="flex items-center px-6 py-3 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white transition-colors duration-200"
+          class:active={$page.url.pathname === '/dashboard/collection'}
+        >
+          My Collection
+        </a>
+        {#if walletAddress}
+          <hr class="mt-4 mb-6 border-gray-200 dark:border-gray-800" />
+          <div class="text-gray-500 dark:text-neutral-500 flex items-center mb-1 pl-6 text-sm">
+            {#if chainIcon}
+              <img
+                src={chainIcon}
+                alt={chainName || 'Chain'}
+                class="w-4 h-4 mr-2"
+                on:error={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.onerror = null;
+                  img.src = `https://placehold.co/16x16/svg?text=${chainId}`;
+                }}
+              />
+            {:else if chainId}
+              <div class="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px] mr-2">
+                {chainId}
+              </div>
+            {/if}
+            <span>{truncateAddress(walletAddress)}</span>
+          </div>
+          <button
+            type="button"
+            class="w-full text-left text-sm px-6 py-2 text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-md transition-colors duration-200"
+            on:click={handleLogout}
+          >
+            Disconnect Wallet
+          </button>
+        {/if}
+      </div>
+
     </nav>
   </div>
 
@@ -120,8 +205,11 @@
 
 <style>
   .active {
-    background-color: hsl(var(--primary) / 0.1);
     color: hsl(var(--primary));
-    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+    font-weight: 600;
   }
 </style>
+

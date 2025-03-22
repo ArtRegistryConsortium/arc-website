@@ -27,7 +27,7 @@
   <section class="md:mb-12 pt-12 md:pt-20">
     <div class="mb-10 md:mb-16">
       <h1 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">ARC Blog</h1>
-      <p class="text-lg md:text-xl max-w-4xl mx-auto text-muted-foreground">
+      <p class="">
         Insights, updates, and perspectives on art provenance and the future of art documentation.
       </p>
     </div>
