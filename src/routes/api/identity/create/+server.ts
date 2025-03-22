@@ -167,6 +167,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const now = new Date().toISOString();
 
     const identityData = {
+      id: identityId,
       wallet_address: walletAddress,
       chain_id: chainId,
       name: name,

@@ -132,6 +132,8 @@ export const POST: RequestHandler = async ({ request }) => {
       .eq('chain_id', selectedChainId)
       .maybeSingle()
 
+    console.log(`Fetching ARC wallet for chain ID ${selectedChainId}:`, arcWalletData || 'Not found')
+
     // Declare the wallet address variable
     let arcWalletAddress: Address;
 
@@ -212,13 +214,28 @@ export const POST: RequestHandler = async ({ request }) => {
       let verificationError: string | undefined;
 
       if (transactionHash) {
+        // Double-check that we have the correct ARC wallet address for this chain
+        const { data: confirmArcWallet, error: confirmArcWalletError } = await supabaseAdmin
+          .from('arc_wallets')
+          .select('wallet_address')
+          .eq('chain_id', selectedChainId)
+          .maybeSingle();
+
+        if (confirmArcWallet && !confirmArcWalletError) {
+          // Use the confirmed wallet address from the database
+          arcWalletAddress = confirmArcWallet.wallet_address as Address;
+          console.log(`Using confirmed ARC wallet address for chain ${selectedChainId}:`, arcWalletAddress);
+        } else {
+          console.log(`No change to ARC wallet address for chain ${selectedChainId}:`, arcWalletAddress);
+        }
+
         console.log('Transaction hash provided, verifying directly:', transactionHash);
         const verificationResult = await verifyEthTransaction(
           walletAddress as Address,
           arcWalletAddress,
           cryptoAmount,
           transactionHash as `0x${string}`,
-          chainId // Pass the chain ID to use the correct network
+          selectedChainId // Pass the selected chain ID to use the correct network
         );
 
         paymentVerified = verificationResult.success;
@@ -238,10 +255,12 @@ export const POST: RequestHandler = async ({ request }) => {
           try {
             // Determine the correct Etherscan API URL based on the network
             let apiUrl = 'https://api.etherscan.io/api';
-            if (chainId === 11155111) {
+            if (selectedChainId === 11155111) {
               apiUrl = 'https://api-sepolia.etherscan.io/api';
-            } else if (chainId === 5) {
+            } else if (selectedChainId === 5) {
               apiUrl = 'https://api-goerli.etherscan.io/api';
+            } else if (selectedChainId === 421614) {
+              apiUrl = 'https://api-sepolia.arbiscan.io/api';
             }
 
             // Build the API request URL
@@ -270,16 +289,17 @@ export const POST: RequestHandler = async ({ request }) => {
             console.log('Transaction recipient check:', {
               transactionTo: data.result.to?.toLowerCase(),
               expectedArcWallet: arcWalletAddress.toLowerCase(),
+              chainId: selectedChainId,
               match: data.result.to?.toLowerCase() === arcWalletAddress.toLowerCase()
             });
 
             if (data.result.to && data.result.to.toLowerCase() === arcWalletAddress.toLowerCase()) {
               console.log('Transaction found on Etherscan and recipient matches!');
 
-              // Success! Transaction verified with Etherscan
+              // Success! Transaction verified with Etherscan API
               console.log('Transaction verified successfully with Etherscan API');
               paymentVerified = true;
-              verifiedOnChain = chainId || 1; // Use the provided chain ID or default to mainnet
+              verifiedOnChain = selectedChainId || 1; // Use the selected chain ID or default to mainnet
             } else {
               // In development, we can optionally bypass the recipient check
               const bypassRecipientCheck = env.NODE_ENV === 'development' && env.BYPASS_RECIPIENT_CHECK === 'true';
@@ -288,7 +308,7 @@ export const POST: RequestHandler = async ({ request }) => {
                 console.log('WARNING: Bypassing recipient check in development mode!');
                 console.log('Transaction verification forced to succeed despite recipient mismatch');
                 paymentVerified = true;
-                verifiedOnChain = chainId || 1;
+                verifiedOnChain = selectedChainId || 1;
               } else {
                 throw new Error('Transaction found on Etherscan but recipient does not match');
               }

@@ -8,7 +8,7 @@
   // Removed completeWalletSetup import as it's no longer needed
   import { getWalletAddress } from '$lib/stores/walletAuth';
   import { getContractInfo, IDENTITY_ABI } from '$lib/services/contractService';
-  import { writeContract, waitForTransaction, getAccount } from 'wagmi/actions';
+  import { writeContract, readContract, waitForTransaction, getAccount } from 'wagmi/actions';
   import { config } from '$lib/web3/config';
   import { parseEther, type Address } from 'viem';
   import type { IdentityInfo } from '$lib/stores/identityStore';
@@ -173,28 +173,32 @@
 
       console.log('Transaction confirmed:', receipt);
 
-      // Extract the identity ID from the transaction receipt
-      // The IdentityCreated event has the ID as the first indexed parameter (topics[1])
+      // Always get the identity ID by calling getIdentityByAddress
       let onChainIdentityId = 0;
-      if (receipt && receipt.logs) {
-        // Find the IdentityCreated event log
-        const identityCreatedLog = receipt.logs.find(log =>
-          // The event signature is the first topic (topics[0])
-          // We're looking for the IdentityCreated event
-          // This is the keccak256 hash of "IdentityCreated(uint256,address,uint8)"
-          log.topics?.[0] === '0x73a2ef2f2c42f1c7a272ca2dfa8d5fc4cad5090daa4c9c2c2604a14b50a0d91f'
-        );
 
-        if (identityCreatedLog?.topics?.[1]) {
-          // The identity ID is the first indexed parameter (topics[1])
-          // It's a hex string that needs to be converted to a number
-          onChainIdentityId = parseInt(identityCreatedLog.topics[1], 16);
-          console.log('Extracted on-chain identity ID:', onChainIdentityId);
+      // Call getIdentityByAddress to get the identity ID
+      try {
+        console.log('Getting identity ID by calling getIdentityByAddress');
+        const onChainIdentityData = await readContract(config, {
+          address: contractInfo.identity_contract_address as Address,
+          abi: IDENTITY_ABI,
+          functionName: 'getIdentityByAddress',
+          args: [account.address],
+          chainId: identityData.selectedChain.chain_id as 1 | 11155111 | 10 | 42161 | 8453
+        });
+
+        if (onChainIdentityData && typeof onChainIdentityData === 'object' && 'id' in onChainIdentityData) {
+          onChainIdentityId = Number(onChainIdentityData.id);
+          console.log('Retrieved on-chain identity ID from getIdentityByAddress:', onChainIdentityId);
+        } else {
+          console.error('Failed to get identity ID from getIdentityByAddress, unexpected response format:', onChainIdentityData);
         }
+      } catch (error) {
+        console.error('Error calling getIdentityByAddress:', error);
       }
 
       if (!onChainIdentityId) {
-        console.warn('Could not extract identity ID from transaction logs');
+        console.error('Failed to retrieve identity ID from blockchain');
       }
 
       // Create an entry in the database
@@ -337,10 +341,14 @@
       errorMessage = '';
 
       // Setup is already marked as completed in the API endpoint
-      // Close the dialog and redirect to identities dashboard page
       console.log('Redirecting to identities dashboard page - setup already completed in database');
+
+      // Close the dialog first
       open = false;
-      await goto('/dashboard/identities');
+
+      // Force a page reload to ensure server-side checks are performed
+      // This is more reliable than using goto() which might not trigger server-side checks
+      window.location.href = '/dashboard/identities';
     } catch (error) {
       console.error('Error navigating to identities dashboard:', error);
       errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

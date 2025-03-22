@@ -1,5 +1,5 @@
 import { createPublicClient, http, parseEther, formatEther, type Address } from 'viem';
-import { mainnet, sepolia, goerli, optimism, arbitrum, base } from 'viem/chains';
+import { mainnet, sepolia, goerli, optimism, arbitrum, arbitrumSepolia, base } from 'viem/chains';
 import { env } from '$env/dynamic/private';
 
 // Create public clients for different networks
@@ -47,6 +47,11 @@ const baseClient = createPublicClient({
   transport: http('https://mainnet.base.org')
 });
 
+const arbitrumSepoliaClient = createPublicClient({
+  chain: arbitrumSepolia,
+  transport: http('https://sepolia-rollup.arbitrum.io/rpc')
+});
+
 // Public RPC fallbacks
 const publicRpcClients = {
   1: createPublicClient({ chain: mainnet, transport: http('https://eth.llamarpc.com') }),
@@ -54,7 +59,8 @@ const publicRpcClients = {
   10: optimismClient,
   42161: arbitrumClient,
   8453: baseClient,
-  11155111: createPublicClient({ chain: sepolia, transport: http('https://rpc.sepolia.org') })
+  11155111: createPublicClient({ chain: sepolia, transport: http('https://rpc.sepolia.org') }),
+  421614: createPublicClient({ chain: arbitrumSepolia, transport: http('https://sepolia-rollup.arbitrum.io/rpc') })
 };
 
 // Function to get the appropriate client based on chain ID
@@ -76,6 +82,8 @@ function getPublicClient(chainId?: number) {
       return baseClient;
     case 11155111: // Sepolia Testnet
       return sepoliaClient;
+    case 421614: // Arbitrum Sepolia
+      return arbitrumSepoliaClient;
     default:
       console.log(`No specific client for chain ID ${chainId}, using mainnet client`);
       return mainnetClient;
@@ -137,6 +145,13 @@ export async function verifyEthTransaction(
     chainId: chainId || 'Not provided (using mainnet)'
   });
 
+  // Log the addresses in different formats for debugging
+  console.log('Address formats for verification:', {
+    fromAddressLower: fromAddress.toLowerCase(),
+    toAddressLower: toAddress.toLowerCase(),
+    chainId
+  });
+
   // If no transaction hash is provided, we can't verify
   if (!transactionHash) {
     console.log('No transaction hash provided, cannot verify');
@@ -154,6 +169,7 @@ export async function verifyEthTransaction(
       { id: 5, name: 'Goerli Testnet' },
       { id: 10, name: 'Optimism' },
       { id: 42161, name: 'Arbitrum' },
+      { id: 421614, name: 'Arbitrum Sepolia' },
       { id: 8453, name: 'Base' }
     ];
 
@@ -224,6 +240,7 @@ export async function verifyEthTransaction(
         console.log(`Transaction recipient check on ${network.name}:`, {
           transactionTo: tx.to?.toLowerCase(),
           expectedAddress: toAddress.toLowerCase(),
+          chainId: chainId,
           match: tx.to?.toLowerCase() === toAddress.toLowerCase()
         });
 

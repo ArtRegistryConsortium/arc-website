@@ -17,11 +17,26 @@ export const GET: RequestHandler = async ({ url }) => {
       }, { status: 400 });
     }
     
+    // Get chain information from the database
+    const { data: chain, error: chainError } = await supabaseAdmin
+      .from('chains')
+      .select('*')
+      .eq('chain_id', parseInt(chainId))
+      .single();
+
+    if (chainError) {
+      console.error('Error fetching chain information:', chainError);
+      return json({ 
+        success: false, 
+        error: 'Chain not found for the specified chain' 
+      }, { status: 404 });
+    }
+
     // Get contract information from the database
     const { data: contract, error: contractError } = await supabaseAdmin
       .from('contracts')
       .select('*')
-      .eq('chain_id', chainId)
+      .eq('chain_id', parseInt(chainId))
       .single();
 
     if (contractError) {

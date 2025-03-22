@@ -11,10 +11,10 @@
   import { getChainId, watchChainId } from 'wagmi/actions';
   import { config } from '$lib/web3/config';
 
-  let { children } = $props();
-  let isAuthenticated = false;
-  let setupCompleted = false;
-  let walletAddress = $state<Address | null>(null);
+  let { children, data } = $props();
+  let isAuthenticated = true; // We assume authentication is valid since server-side check passed
+  let setupCompleted = true; // We assume setup is completed since server-side check passed
+  let walletAddress = $state<Address | null>(data.walletAddress as Address || null);
   let chainId = $state<number | null>(null);
   let chainIcon = $state<string | null>(null);
   let chainName = $state<string | null>(null);
@@ -36,27 +36,18 @@
       // This prevents the entire dashboard from showing loading when only identities are loading
     });
 
-    // Get the connected wallet address
-    walletAddress = getWalletAddress() as Address;
-
-    // Load user identities if authenticated
-    if (isAuthenticated) {
-      const walletAddr = getWalletAddress() as Address;
-      if (walletAddr) {
-        userIdentityStore.loadIdentities(walletAddr);
-      }
+    // If we don't have a wallet address from server data, try to get it from the store
+    if (!walletAddress) {
+      walletAddress = getWalletAddress() as Address;
     }
 
-    // Check if user is authenticated and setup is completed
-    if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to home');
-      goto('/');
-    } else if (!setupCompleted) {
-      console.log('Setup not completed, redirecting to home');
-      goto('/');
-    } else {
-      console.log('User authenticated and setup completed, showing dashboard');
+    // Load user identities
+    if (walletAddress) {
+      userIdentityStore.loadIdentities(walletAddress);
     }
+
+    // We don't need client-side redirects anymore since we have server-side protection
+    console.log('Dashboard loaded with wallet address:', walletAddress);
 
     return () => {
       unsubscribeAuth();

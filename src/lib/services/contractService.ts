@@ -101,6 +101,76 @@ export const IDENTITY_ABI = [
     "stateMutability": "view",
     "type": "function"
   },
+  // getIdentityById function
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "identityId", "type": "uint256" }
+    ],
+    "name": "getIdentityById",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "address", "name": "walletAddress", "type": "address" },
+          { "internalType": "uint8", "name": "identityType", "type": "uint8" },
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "identityImage", "type": "string" },
+          { "internalType": "string", "name": "links", "type": "string" },
+          { "internalType": "string[]", "name": "tags", "type": "string[]" },
+          { "internalType": "uint256", "name": "dob", "type": "uint256" },
+          { "internalType": "uint256", "name": "dod", "type": "uint256" },
+          { "internalType": "string", "name": "location", "type": "string" },
+          { "internalType": "string", "name": "addresses", "type": "string" },
+          { "internalType": "string", "name": "representedBy", "type": "string" },
+          { "internalType": "string", "name": "representedArtists", "type": "string" }
+        ],
+        "internalType": "struct IIdentity.Identity",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  // getAllIdentities function
+  {
+    "inputs": [],
+    "name": "getAllIdentities",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "address", "name": "walletAddress", "type": "address" },
+          { "internalType": "uint8", "name": "identityType", "type": "uint8" },
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "identityImage", "type": "string" },
+          { "internalType": "string", "name": "links", "type": "string" },
+          { "internalType": "string[]", "name": "tags", "type": "string[]" },
+          { "internalType": "uint256", "name": "dob", "type": "uint256" },
+          { "internalType": "uint256", "name": "dod", "type": "uint256" },
+          { "internalType": "string", "name": "location", "type": "string" },
+          { "internalType": "string", "name": "addresses", "type": "string" },
+          { "internalType": "string", "name": "representedBy", "type": "string" },
+          { "internalType": "string", "name": "representedArtists", "type": "string" }
+        ],
+        "internalType": "struct IIdentity.Identity[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  // getIdentityCount function
+  {
+    "inputs": [],
+    "name": "getIdentityCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
   // IdentityCreated event
   {
     "anonymous": false,

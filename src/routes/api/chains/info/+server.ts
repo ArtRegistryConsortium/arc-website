@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ url }) => {
     const { data: chain, error: chainError } = await supabaseAdmin
       .from('chains')
       .select('*')
-      .eq('chain_id', chainId)
+      .eq('chain_id', parseInt(chainId))
       .single();
 
     if (chainError) {

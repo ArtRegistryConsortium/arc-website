@@ -143,8 +143,9 @@ async function handleChainSelect(chainId: number) {
             }
         }
 
-        // Refresh activation status with the new chain but don't start verification
+        // Refresh activation status with the new chain to get the correct ARC wallet address
         if (walletAddress) {
+            console.log(`Checking activation status for chain ${chainId} to get the correct ARC wallet address`);
             await checkWalletActivationStatus(false);
         }
     } catch (error) {
@@ -266,7 +267,8 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             console.log('Payment details updated:', {
                 cryptoAmount,
                 validTo,
-                arcWalletAddress: arcWalletAddress
+                arcWalletAddress: arcWalletAddress,
+                chainId: selectedChainId
             });
 
             // Log the ARC wallet address in different formats for debugging
@@ -274,7 +276,8 @@ async function checkWalletActivationStatus(startPeriodic = false) {
                 original: arcWalletAddress,
                 lowercase: arcWalletAddress.toLowerCase(),
                 checksummed: arcWalletAddress,
-                length: arcWalletAddress.length
+                length: arcWalletAddress.length,
+                chainId: selectedChainId
             });
 
             // Start monitoring for payment if not already monitoring
@@ -482,6 +485,12 @@ async function sendPayment() {
         transactionError = 'ARC wallet address not found. Please refresh the page.';
         return;
     }
+
+    // Log the ARC wallet address and chain ID for debugging
+    console.log('Sending payment to ARC wallet:', {
+        arcWalletAddress,
+        chainId: selectedChainId
+    });
 
     if (cryptoAmount <= 0) {
         transactionError = `Invalid amount: ${cryptoAmount}. Please refresh the page.`;
@@ -841,8 +850,9 @@ onMount(async () => {
                 selectedChainId = chainId;
                 console.log('Updated selected chain to match wallet:', selectedChain);
 
-                // Refresh activation status with the new chain but don't start verification
+                // Refresh activation status with the new chain to get the correct ARC wallet address
                 if (walletAddress) {
+                    console.log(`Checking activation status for chain ${chainId} to get the correct ARC wallet address`);
                     checkWalletActivationStatus(false).catch(err => {
                         console.error('Error checking wallet status after chain change:', err);
                     });

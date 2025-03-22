@@ -108,12 +108,12 @@ export const POST: RequestHandler = async ({ request }) => {
         dob: dob,
         dod: dod,
         location: location,
-        represented_by: representedBy ? JSON.parse(representedBy) : null
+        represented_by: representedBy
       });
     } else if (identityType === 1 || identityType === 2) { // Gallery or Institution
       Object.assign(identityData, {
         addresses: addresses,
-        represented_artists: representedArtists ? JSON.parse(representedArtists) : null
+        represented_artists: representedArtists
       });
     }
 

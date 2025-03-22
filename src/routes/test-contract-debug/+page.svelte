@@ -3,7 +3,7 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import { Card } from '$lib/components/ui/card/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
-  import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select/index.js';
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '$lib/components/ui/select/index.js';
   import { web3Store } from '$lib/stores/web3';
   import { walletAuthStore, getWalletAddress } from '$lib/stores/walletAuth';
   import { connect, disconnect, getAccount, getChainId, switchChain, readContract, writeContract, waitForTransaction } from 'wagmi/actions';
@@ -41,10 +41,11 @@
 
   // Common contract functions
   const commonFunctions = [
-    { name: 'createIdentity', args: '[0, "Test Name", "Test Description", "https://example.com/image.jpg", [], [], 0, 0, "", [], "", ""]' },
-    { name: 'getIdentity', args: '1' },
-    { name: 'getIdentityCount', args: '' },
-    { name: 'getIdentitiesByOwner', args: '' }
+    { name: 'createIdentity', args: '[0, "Test Name", "Test Description", "https://example.com/image.jpg", "", [], 0, 0, "", "", "", ""]' },
+    { name: 'getIdentityById', args: '1' },
+    { name: 'getIdentityByAddress', args: '"0x0000000000000000000000000000000000000000"' },
+    { name: 'getAllIdentities', args: '' },
+    { name: 'getIdentityCount', args: '' }
   ];
 
   // Subscribe to web3 store
@@ -157,8 +158,10 @@
         args
       });
 
-      contractResponse = result;
-      appendToDebug(`Contract response: ${JSON.stringify(result, null, 2)}`);
+      // Serialize BigInt values before storing and displaying
+      const serializedResult = serializeBigInt(result);
+      contractResponse = serializedResult;
+      appendToDebug(`Contract response: ${JSON.stringify(serializedResult, null, 2)}`);
     } catch (error) {
       appendToDebug(`Error reading from contract: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -208,13 +211,40 @@
         confirmations: 1
       });
 
-      transactionReceipt = receipt;
-      appendToDebug(`Transaction mined: ${JSON.stringify(receipt, null, 2)}`);
+      // Serialize BigInt values before storing and displaying
+      const serializedReceipt = serializeBigInt(receipt);
+      transactionReceipt = serializedReceipt;
+      appendToDebug(`Transaction mined: ${JSON.stringify(serializedReceipt, null, 2)}`);
     } catch (error) {
       appendToDebug(`Error writing to contract: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       isLoading = false;
     }
+  }
+
+  // Helper function to handle BigInt serialization
+  function serializeBigInt(data: any): any {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    if (typeof data === 'bigint') {
+      return data.toString();
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => serializeBigInt(item));
+    }
+
+    if (typeof data === 'object') {
+      const result: Record<string, any> = {};
+      for (const key in data) {
+        result[key] = serializeBigInt(data[key]);
+      }
+      return result;
+    }
+
+    return data;
   }
 
   // Function to append to debug output
@@ -313,7 +343,7 @@
             <p class="text-sm font-medium mb-2">Select Chain</p>
             <Select on:valueChange={handleSwitchChain}>
               <SelectTrigger>
-                <span>{chainName || 'Select a chain'}</span>
+                <SelectValue placeholder="Select a chain" />
               </SelectTrigger>
               <SelectContent>
                 {#each chains as chain}
@@ -344,7 +374,7 @@
             <p class="text-sm font-medium mb-2">Common Functions</p>
             <Select on:valueChange={selectCommonFunction}>
               <SelectTrigger>
-                <span>{functionName || 'Select a function'}</span>
+                <SelectValue placeholder="Select a function" />
               </SelectTrigger>
               <SelectContent>
                 {#each commonFunctions as func}
