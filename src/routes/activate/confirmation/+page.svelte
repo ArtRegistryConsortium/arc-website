@@ -299,7 +299,7 @@ async function handleLogout() {
 
                 <!-- Type-Specific Information -->
                 {#if identityType === 'artist' && (dob || location)}
-                <div class="{((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                <div class="mb-0">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Artist Information</h4>
                     <div class="space-y-3">
                         {#if dob}
