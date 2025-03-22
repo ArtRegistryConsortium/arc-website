@@ -26,7 +26,7 @@ let identityType = '';
 let username = '';
 let description = '';
 let identityImage = '';
-let links: string[] = [];
+let links: { name: string; url: string }[] = [];
 let tags: string[] = [];
 let dob: number | undefined;
 let dod: number | undefined;
@@ -106,6 +106,13 @@ async function handleActivate() {
         errorMessage = '';
         successMessage = '';
 
+        // Format links for the contract (convert from {name, url} format to string format)
+        const formattedLinks = links.filter(link => link.url.trim().length > 0)
+            .map(link => {
+                // Format as "name|url" or just "url" if name is empty
+                return link.name.trim() ? `${link.name.trim()}|${link.url.trim()}` : link.url.trim();
+            });
+
         // Create the identity
         const result = await createIdentity({
             walletAddress,
@@ -114,7 +121,7 @@ async function handleActivate() {
             chainId,
             description: description || `${username} on ${chainName}`,
             identityImage: identityImage,
-            links: links,
+            links: formattedLinks,
             tags: tags.length > 0 ? tags : [identityType],
             dob: dob || 0,
             dod: dod || 0,
@@ -194,8 +201,9 @@ async function handleLogout() {
     <ProgressSteps currentStep={5} />
 
     <!-- Main content -->
-    <div class="w-full max-w-md text-center">
-        <h1 class="text-4xl font-bold mb-8">Ready to Activate</h1>
+    <div class="w-full max-w-md md:max-w-lg text-center bg-white dark:bg-neutral-950/80">
+        <h1 class="text-3xl md:text-4xl font-bold mb-4">Ready to Activate</h1>
+        <p class="text-base md:text-lg mb-8 text-muted-foreground">Review your identity information before activation</p>
 
         {#if errorMessage}
             <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg">
@@ -213,117 +221,133 @@ async function handleLogout() {
             </div>
         {/if}
 
-        <div class="space-y-6 mb-8 text-left">
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Identity Type</p>
-                <p class="text-lg font-bold capitalize">{identityType || 'Not selected'}</p>
-            </div>
-
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Name</p>
-                <p class="text-lg font-bold">{username || 'Not set'}</p>
-            </div>
-
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Description</p>
-                <p class="text-lg">{description || 'Not set'}</p>
-            </div>
-
-            {#if identityImage}
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Profile Image</p>
-                <div class="mt-2 w-24 h-24 mx-auto rounded-md overflow-hidden border border-border">
-                    <img src={identityImage} alt="Identity" class="w-full h-full object-cover" />
+        <div class="space-y-8 mb-8 text-left">
+            <!-- Step 1: Identity Type -->
+            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+                <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Type</h3>
+                <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                    <p class="text-sm text-muted-foreground">Type</p>
+                    <p class="text-base font-medium capitalize">{identityType || 'Not selected'}</p>
                 </div>
             </div>
-            {/if}
 
-            {#if links && links.length > 0}
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Links</p>
-                <ul class="mt-2 list-disc list-inside">
-                    {#each links.filter(l => l.trim()) as link}
-                        <li class="text-sm truncate">
-                            <a href={link} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
-                                {link}
-                            </a>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-            {/if}
+            <!-- Step 2: Identity Data -->
+            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+                <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Data</h3>
 
-            {#if tags && tags.length > 0}
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Tags</p>
-                <div class="mt-2 flex flex-wrap gap-2">
-                    {#each tags.filter(t => t.trim()) as tag}
-                        <span class="px-2 py-1 text-xs bg-muted rounded-full">{tag}</span>
-                    {/each}
+                <!-- Basic Information Section -->
+                <div class="{(links && links.filter(l => l.url.trim()).length > 0) || (tags && tags.filter(t => t.trim()).length > 0) ||
+                    (identityType === 'artist' && (dob || location)) ||
+                    ((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                    <h4 class="text-sm font-medium text-muted-foreground mb-2">Basic Information</h4>
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Name</p>
+                            <p class="text-base font-medium">{username || 'Not set'}</p>
+                        </div>
+
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Description</p>
+                            <p class="text-base">{description || 'Not set'}</p>
+                        </div>
+
+                        {#if identityImage}
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Profile Image</p>
+                            <div class="mt-2 w-24 h-24 rounded-md overflow-hidden border border-border/50">
+                                <img src={identityImage} alt="Identity" class="w-full h-full object-cover" />
+                            </div>
+                        </div>
+                        {/if}
+                    </div>
                 </div>
-            </div>
-            {/if}
 
-            <!-- Artist-specific fields -->
-            {#if identityType === 'artist'}
-                {#if dob}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Date of Birth</p>
-                    <p class="text-lg">{new Date(dob * 1000).toLocaleDateString()}</p>
+                <!-- Links & Tags Section -->
+                {#if (links && links.filter(l => l.url.trim()).length > 0) || (tags && tags.filter(t => t.trim()).length > 0)}
+                <div class="{(identityType === 'artist' && (dob || location)) ||
+                    ((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                    <h4 class="text-sm font-medium text-muted-foreground mb-2">Links & Tags</h4>
+                    <div class="space-y-3">
+                        {#if links && links.filter(l => l.url.trim()).length > 0}
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Links</p>
+                            <ul class="mt-2 list-disc list-inside">
+                                {#each links.filter(l => l.url.trim()) as link}
+                                    <li class="text-sm truncate">
+                                        <a href={link.url} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                                            {link.name ? `${link.name}: ${link.url}` : link.url}
+                                        </a>
+                                    </li>
+                                {/each}
+                            </ul>
+                        </div>
+                        {/if}
+
+                        {#if tags && tags.filter(t => t.trim()).length > 0}
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Tags</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                {#each tags.filter(t => t.trim()) as tag}
+                                    <span class="px-2 py-1 text-xs bg-muted rounded-full">{tag}</span>
+                                {/each}
+                            </div>
+                        </div>
+                        {/if}
+                    </div>
                 </div>
                 {/if}
 
-                {#if dod}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Date of Death</p>
-                    <p class="text-lg">{new Date(dod * 1000).toLocaleDateString()}</p>
+                <!-- Type-Specific Information -->
+                {#if identityType === 'artist' && (dob || location)}
+                <div class="{((identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
+                    <h4 class="text-sm font-medium text-muted-foreground mb-2">Artist Information</h4>
+                    <div class="space-y-3">
+                        {#if dob}
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Date of Birth</p>
+                            <p class="text-base">{new Date(dob * 1000).toLocaleDateString()}</p>
+                        </div>
+                        {/if}
+
+                        {#if location}
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Location</p>
+                            <p class="text-base">{location}</p>
+                        </div>
+                        {/if}
+                    </div>
                 </div>
                 {/if}
 
-                {#if location}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Location</p>
-                    <p class="text-lg">{location}</p>
+                {#if (identityType === 'gallery' || identityType === 'institution') && addresses && addresses.filter(a => a.trim()).length > 0}
+                <div class="mb-0">
+                    <h4 class="text-sm font-medium text-muted-foreground mb-2">{identityType === 'gallery' ? 'Gallery' : 'Institution'} Information</h4>
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground">Physical Addresses</p>
+                            <ul class="mt-2 list-disc list-inside">
+                                {#each addresses.filter(a => a.trim()) as address}
+                                    <li class="text-sm">{address}</li>
+                                {/each}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 {/if}
+            </div>
 
-                {#if representedBy}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Represented By</p>
-                    <pre class="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">{JSON.stringify(representedBy, null, 2)}</pre>
+            <!-- Step 3: Chain Selection -->
+            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+                <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Chain Selection</h3>
+                <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                    <p class="text-sm text-muted-foreground">Selected Chain</p>
+                    <p class="text-base font-medium">{chainName || 'Not selected'}</p>
                 </div>
-                {/if}
-            {/if}
-
-            <!-- Gallery/Institution-specific fields -->
-            {#if identityType === 'gallery' || identityType === 'institution'}
-                {#if addresses && addresses.length > 0}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Physical Addresses</p>
-                    <ul class="mt-2 list-disc list-inside">
-                        {#each addresses.filter(a => a.trim()) as address}
-                            <li class="text-sm">{address}</li>
-                        {/each}
-                    </ul>
-                </div>
-                {/if}
-
-                {#if representedArtists}
-                <div class="p-4 rounded-lg border-2 border-border">
-                    <p class="text-sm text-muted-foreground">Represented Artists</p>
-                    <pre class="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">{JSON.stringify(representedArtists, null, 2)}</pre>
-                </div>
-                {/if}
-            {/if}
-
-            <div class="p-4 rounded-lg border-2 border-border">
-                <p class="text-sm text-muted-foreground">Chain</p>
-                <p class="text-lg font-bold">{chainName || 'Not selected'}</p>
             </div>
         </div>
 
         <Button
-            class="w-full"
+            class="w-full {!(isProcessing || !identityType || !username || !chainId || !!successMessage) ? 'bg-primary hover:bg-primary/90' : ''}"
             disabled={isProcessing || !identityType || !username || !chainId || !!successMessage}
             on:click={handleActivate}
         >
@@ -338,7 +362,7 @@ async function handleLogout() {
         <!-- Log out button -->
         <Button
           variant="ghost"
-          class="mt-4 text-muted-foreground hover:text-foreground text-sm"
+          class="mt-4 mb-8 text-muted-foreground hover:text-foreground text-sm"
           on:click={handleLogout}
         >
           Disconnect Wallet

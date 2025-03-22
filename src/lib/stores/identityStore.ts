@@ -6,7 +6,7 @@ export interface IdentityInfo {
   username: string;
   description: string;
   identityImage: string;
-  links: string[];
+  links: { name: string; url: string }[];
   tags: string[];
   // Artist-specific fields
   dob?: number; // Date of birth (timestamp)
@@ -65,7 +65,7 @@ const createIdentityStore = () => {
     },
 
     // Set the links
-    setLinks: (links: string[]) => {
+    setLinks: (links: { name: string; url: string }[]) => {
       update(state => ({ ...state, links }));
     },
 
