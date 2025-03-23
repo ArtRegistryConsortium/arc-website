@@ -436,22 +436,24 @@ async function handleLogout() {
             <!-- Image Upload -->
             <div class="mb-4">
                 <label for="image" class="block text-sm font-medium mb-1.5 text-foreground/80">Profile Image <span class="text-foreground/60">*</span></label>
-                <div class="flex items-start gap-4">
-                    <div class="flex-1">
-                        <input
-                            id="image"
-                            type="file"
-                            accept="image/*"
-                            class="w-full p-2 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
-                                focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                            on:change={handleImageUpload}
-                        />
-                    </div>
+                <div class="mt-1 flex items-center gap-4">
                     {#if imagePreview}
-                        <div class="w-16 h-16 rounded-md overflow-hidden border border-border/50 shadow-sm ring-1 ring-primary/10">
-                            <img src={imagePreview} alt="Preview" class="w-full h-full object-cover" />
+                        <div>
+                            <img src={imagePreview} alt="Preview" class="w-24 h-24 object-cover rounded-md" />
                         </div>
                     {/if}
+                    <div>
+                        <Button variant="outline" class="relative overflow-hidden" type="button">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                on:change={handleImageUpload}
+                                class="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                            {imagePreview ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                        <p class="text-xs text-muted-foreground mt-1">Recommended: Square image, 500x500px or larger</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -635,18 +637,28 @@ async function handleLogout() {
         {/if}
 
         <!-- Continue Button -->
+        <div class="flex flex-col gap-3">
+            <Button
+                class="w-full {isValid ? 'bg-primary hover:bg-primary/90' : ''}"
+                disabled={!isValid}
+                on:click={handleContinue}
+            >
+                {#if isValid}
+                    Continue to Next Step
+                {:else}
+                    Please Complete Required Fields
+                {/if}
+            </Button>
 
-        <Button
-            class="w-full {isValid ? 'bg-primary hover:bg-primary/90' : ''}"
-            disabled={!isValid}
-            on:click={handleContinue}
-        >
-            {#if isValid}
-                Continue to Next Step
-            {:else}
-                Please Complete Required Fields
-            {/if}
-        </Button>
+            <!-- Mobile Back Button -->
+            <Button
+                variant="outline"
+                class="w-full md:hidden"
+                on:click={() => goto('/activate/choose-identity-type')}
+            >
+                Back
+            </Button>
+        </div>
 
         {#if errorMessage}
             <div class="text-red-500 mb-4">{errorMessage}</div>

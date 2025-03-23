@@ -153,7 +153,7 @@
   <div class="flex md:min-h-[calc(100vh-56px)] md:min-h-screen">
     <!-- Sidebar - Hidden on mobile by default, shown when menu is open -->
     <div
-      class="bg-background border-r border-border fixed md:sticky md:h-screen z-20 transition-all duration-300 transform
+      class="bg-background border-r border-border fixed md:sticky md:h-screen z-10 transition-all duration-300 transform
              md:transform-none md:translate-x-0 md:w-72 w-72 top-[65px] md:top-[4.65rem] right-0
              {isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}"
     >

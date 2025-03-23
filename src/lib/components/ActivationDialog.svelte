@@ -419,7 +419,7 @@
                   {:else}
                     <Button
                       size="sm"
-                      class="mt-2"
+                      class="mt-2 w-full"
                       on:click={handleUploadToArweave}
                       disabled={isProcessing}
                     >
@@ -519,7 +519,7 @@
 
                     <Button
                       size="sm"
-                      class="mt-2"
+                      class="mt-2 w-full"
                       on:click={handleCreateIdentity}
                       disabled={isProcessing}
                     >

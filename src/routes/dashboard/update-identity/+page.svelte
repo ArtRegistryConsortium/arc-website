@@ -193,11 +193,8 @@ async function loadIdentityData() {
             console.error('Error parsing links:', e);
             links = [];
         }
-    }
-
-    // Ensure there's at least one empty link for the form
-    if (links.length === 0) {
-        links = [{ name: '', url: '' }];
+    } else {
+        links = [];
     }
 
     // Parse tags
@@ -316,7 +313,7 @@ function removeLink(index: number) {
 function handleLinkInput(index: number, field: 'name' | 'url', value: string) {
     links[index][field] = value;
     links = [...links]; // Force reactivity
-    identityStore.setLinks(links);
+    identityStore.setLinks([...links]); // Create a new array to ensure reactivity
     validateForm();
 }
 
@@ -359,15 +356,13 @@ function removeAddress(index: number) {
 function handleAddressInput(index: number, value: string) {
     addresses[index] = value;
     addresses = [...addresses]; // Force reactivity
-    identityStore.setAddresses(addresses);
+    identityStore.setAddresses([...addresses]); // Create a new array to ensure reactivity
     validateForm();
 }
 
 // Handle date of birth input
 function handleDobInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    dob = input.value;
-
+    // dob is already bound to the input value via bind:value
     // Convert date to timestamp
     if (dob) {
         const timestamp = Math.floor(new Date(dob).getTime() / 1000);
@@ -381,8 +376,7 @@ function handleDobInput(event: Event) {
 
 // Handle location input
 function handleLocationInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    location = input.value;
+    // location is already bound to the input value via bind:value
     identityStore.setLocation(location);
     validateForm();
 }
@@ -423,6 +417,18 @@ function validateForm(): boolean {
 // Function to handle form submission
 async function handleSubmit() {
     if (validateForm()) {
+        console.log('Form submitted with values:', {
+            selectedType,
+            username,
+            description,
+            identityImage,
+            links,
+            tags,
+            dob,
+            location,
+            addresses
+        });
+
         // Store all the data in the store
         identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector');
         identityStore.setUsername(username);
@@ -445,9 +451,10 @@ async function handleSubmit() {
             // Create a new object that combines IdentityInfo with the identityId
             const dialogData = {
                 ...identityData!,
-                identityId: currentIdentity.id
+                identityId: Number(currentIdentity.id) // Ensure it's a valid number
             };
             identityData = dialogData;
+            console.log('Setting identityId for dialog:', dialogData.identityId, typeof dialogData.identityId);
         }
 
         // Open the activation dialog
@@ -514,7 +521,7 @@ async function handleSubmit() {
                             <input
                                 id="username"
                                 type="text"
-                                value={username}
+                                bind:value={username}
                                 on:input={() => {
                                     identityStore.setUsername(username);
                                     validateForm();
@@ -532,7 +539,7 @@ async function handleSubmit() {
                             <Label for="description">Description <span class="text-red-500">*</span></Label>
                             <textarea
                                 id="description"
-                                value={description}
+                                bind:value={description}
                                 on:input={() => {
                                     identityStore.setDescription(description);
                                     validateForm();
@@ -549,19 +556,6 @@ async function handleSubmit() {
                                 {#if imagePreview}
                                     <div class="relative">
                                         <img src={imagePreview} alt="Preview" class="w-24 h-24 object-cover rounded-md" />
-                                        <button
-                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                                            on:click={() => {
-                                                imagePreview = '';
-                                                identityImage = '';
-                                                identityStore.setIdentityImage('');
-                                                validateForm();
-                                            }}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
                                     </div>
                                 {/if}
                                 <div>
@@ -596,14 +590,14 @@ async function handleSubmit() {
                                         <div class="flex gap-2">
                                             <Input
                                                 placeholder="Platform (e.g., Instagram)"
-                                                value={link.name}
-                                                on:input={(e) => handleLinkInput(i, 'name', (e.target as HTMLInputElement).value)}
+                                                bind:value={link.name}
+                                                on:input={(e) => handleLinkInput(i, 'name', link.name)}
                                                 class="flex-1"
                                             />
                                             <Input
                                                 placeholder="URL"
-                                                value={link.url}
-                                                on:input={(e) => handleLinkInput(i, 'url', (e.target as HTMLInputElement).value)}
+                                                bind:value={link.url}
+                                                on:input={(e) => handleLinkInput(i, 'url', link.url)}
                                                 class="flex-1"
                                             />
                                             <Button
@@ -639,10 +633,9 @@ async function handleSubmit() {
                                         <div class="flex gap-2">
                                             <Input
                                                 placeholder="Tag (e.g., Contemporary Art)"
-                                                value={tag}
-                                                on:input={(e) => {
-                                                    tags[i] = (e.target as HTMLInputElement).value;
-                                                    identityStore.setTags(tags);
+                                                bind:value={tags[i]}
+                                                on:input={() => {
+                                                    identityStore.setTags([...tags]); // Create a new array to ensure reactivity
                                                     validateForm();
                                                 }}
                                                 class="flex-1"
@@ -683,7 +676,7 @@ async function handleSubmit() {
                                     <Input
                                         id="dob"
                                         type="date"
-                                        value={dob}
+                                        bind:value={dob}
                                         on:input={handleDobInput}
                                         class="mt-1"
                                     />
@@ -692,7 +685,7 @@ async function handleSubmit() {
                                     <Label for="location">Location <span class="text-muted-foreground text-sm font-normal">(Optional)</span></Label>
                                     <Input
                                         id="location"
-                                        value={location}
+                                        bind:value={location}
                                         on:input={handleLocationInput}
                                         placeholder="City, Country"
                                         class="mt-1"
@@ -709,7 +702,7 @@ async function handleSubmit() {
                                             <div class="flex gap-2">
                                                 <Input
                                                     placeholder="Address"
-                                                    value={address}
+                                                    bind:value={addresses[i]}
                                                     on:input={(e) => handleAddressInput(i, (e.target as HTMLInputElement).value)}
                                                     class="flex-1"
                                                 />

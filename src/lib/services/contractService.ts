@@ -69,6 +69,27 @@ export const IDENTITY_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  // updateIdentity function
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "identityId", "type": "uint256" },
+      { "internalType": "string", "name": "name", "type": "string" },
+      { "internalType": "string", "name": "description", "type": "string" },
+      { "internalType": "string", "name": "identityImage", "type": "string" },
+      { "internalType": "string", "name": "links", "type": "string" },
+      { "internalType": "string[]", "name": "tags", "type": "string[]" },
+      { "internalType": "uint256", "name": "dob", "type": "uint256" },
+      { "internalType": "uint256", "name": "dod", "type": "uint256" },
+      { "internalType": "string", "name": "location", "type": "string" },
+      { "internalType": "string", "name": "addresses", "type": "string" },
+      { "internalType": "string", "name": "representedBy", "type": "string" },
+      { "internalType": "string", "name": "representedArtists", "type": "string" }
+    ],
+    "name": "updateIdentity",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   // getIdentityByAddress function
   {
     "inputs": [
@@ -180,6 +201,16 @@ export const IDENTITY_ABI = [
       { "indexed": false, "internalType": "uint8", "name": "identityType", "type": "uint8" }
     ],
     "name": "IdentityCreated",
+    "type": "event"
+  },
+  // IdentityUpdated event
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "id", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "walletAddress", "type": "address" }
+    ],
+    "name": "IdentityUpdated",
     "type": "event"
   }
 ];

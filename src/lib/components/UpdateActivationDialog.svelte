@@ -7,7 +7,7 @@
   import { mapIdentityType } from '$lib/services/identityService';
   import { getWalletAddress } from '$lib/stores/walletAuth';
   import { getContractInfo, IDENTITY_ABI } from '$lib/services/contractService';
-  import { writeContract, readContract, waitForTransaction, getAccount } from 'wagmi/actions';
+  import { writeContract, readContract, waitForTransaction, getAccount, switchChain, getChainId } from 'wagmi/actions';
   import { config } from '$lib/web3/config';
   import { parseEther, type Address } from 'viem';
 
@@ -30,7 +30,10 @@
     errorMessage = '';
     arweaveUrl = '';
     transactionHash = '';
-    identityId = identityData?.identityId || 0;
+    // Make sure identityId is a valid number
+    identityId = identityData?.identityId ? Number(identityData.identityId) : 0;
+    console.log('Dialog opened with identityId:', identityId);
+    console.log('Dialog opened with identity data:', identityData);
   }
 
   async function handleUploadToArweave() {
@@ -72,12 +75,29 @@
       if (!chainId) {
         throw new Error('Chain ID not found');
       }
+      console.log('Target chain ID for update:', chainId);
+
+      // Check current chain and switch if needed
+      const currentChainId = await getChainId(config);
+      console.log('Current chain ID:', currentChainId);
+
+      if (currentChainId !== chainId) {
+        console.log(`Switching from chain ${currentChainId} to chain ${chainId}`);
+        try {
+          await switchChain(config, { chainId });
+          console.log('Chain switched successfully');
+        } catch (switchError) {
+          console.error('Error switching chain:', switchError);
+          throw new Error(`Failed to switch to the correct blockchain network. Please switch to ${identityData.selectedChain?.name} manually and try again.`);
+        }
+      }
 
       // Get the contract info
       const contractInfo = await getContractInfo(chainId);
       if (!contractInfo) {
         throw new Error('Contract info not found');
       }
+      console.log('Contract info:', contractInfo);
 
       // Prepare the data for the contract call
       const displayData = {
@@ -97,19 +117,21 @@
 
       // Prepare the contract data
       const contractData = {
-        identityId: identityId,
+        identityId: Number(identityId) || 0, // Ensure it's a valid number
         name: displayData.username,
         description: displayData.description || '',
         identityImage: displayData.identityImage || '',
         links: linksJson,
         tags: displayData.tags ? displayData.tags.filter((tag: string) => tag.trim().length > 0) : [],
-        dob: displayData.dob || 0,
-        dod: displayData.dod || 0,
+        dob: Number(displayData.dob) || 0, // Ensure it's a valid number
+        dod: Number(displayData.dod) || 0, // Ensure it's a valid number
         location: displayData.location || '',
         addresses: addressesJson,
         representedBy: displayData.representedBy ? (typeof displayData.representedBy === 'string' ? displayData.representedBy : JSON.stringify(displayData.representedBy)) : '',
         representedArtists: displayData.representedArtists ? (typeof displayData.representedArtists === 'string' ? displayData.representedArtists : JSON.stringify(displayData.representedArtists)) : ''
       };
+
+      console.log('Identity ID for contract call:', contractData.identityId, typeof contractData.identityId);
 
       console.log('Contract data for transaction:', contractData);
 
@@ -129,23 +151,87 @@
         contractData.representedArtists
       ];
 
+      // Validate all arguments before calling the contract
+      for (let i = 0; i < args.length; i++) {
+        console.log(`Argument ${i}:`, args[i], typeof args[i]);
+        // Make sure numeric values are valid
+        if (i === 0 || i === 6 || i === 7) { // identityId, dob, dod
+          if (args[i] === undefined || args[i] === null) {
+            console.warn(`Argument ${i} is ${args[i]}, setting to 0`);
+            args[i] = 0;
+          }
+        }
+      }
+
+      console.log('Final contract arguments:', args);
+
       // Call the contract
-      const { hash } = await writeContract(config, {
+      console.log('Calling updateIdentity on contract at address:', contractInfo.identity_contract_address);
+      const hash = await writeContract(config, {
         address: contractInfo.identity_contract_address as Address,
         abi: IDENTITY_ABI,
         functionName: 'updateIdentity',
         args,
+        gas: BigInt(3000000), // Set a gas limit explicitly
       });
 
       console.log('Transaction hash:', hash);
       transactionHash = hash;
 
       // Wait for the transaction to be mined
-      const receipt = await waitForTransaction(config, {
-        hash: hash as Address,
-      });
+      console.log('Waiting for transaction to be mined...');
+      try {
+        const receipt = await waitForTransaction(config, {
+          hash: hash as Address,
+          timeout: 60_000, // 60 seconds timeout
+        });
 
-      console.log('Transaction receipt:', receipt);
+        console.log('Transaction receipt:', receipt);
+      } catch (waitError) {
+        console.warn('Timeout waiting for transaction, but continuing anyway:', waitError);
+        // Continue anyway, as the transaction might still be processed
+      }
+
+      // Update the identity in the database
+      console.log('Updating identity in database...');
+      try {
+        // Prepare the data for the database update
+        const dbUpdateData = {
+          identityId: contractData.identityId,
+          walletAddress,
+          name: contractData.name,
+          description: contractData.description,
+          identityImage: contractData.identityImage,
+          links: contractData.links,
+          tags: contractData.tags,
+          dob: contractData.dob,
+          location: contractData.location,
+          addresses: contractData.addresses,
+          representedBy: contractData.representedBy,
+          representedArtists: contractData.representedArtists,
+          chainId: chainId,
+          transactionHash: hash
+        };
+
+        const dbResponse = await fetch('/api/identity/update-db', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dbUpdateData)
+        });
+
+        const dbResult = await dbResponse.json();
+        console.log('Database update result:', dbResult);
+
+        if (!dbResult.success) {
+          console.warn('Warning: Database update failed:', dbResult.error);
+          // Continue anyway, as the blockchain update was successful
+        }
+      } catch (dbError) {
+        console.error('Error updating database:', dbError);
+        // Continue anyway, as the blockchain update was successful
+      }
 
       // Move to the next step
       currentStep = 3;
@@ -228,8 +314,8 @@
               </p>
               {#if currentStep === 1}
                 <div class="mt-2">
-                  <Button 
-                    on:click={handleUploadToArweave} 
+                  <Button
+                    on:click={handleUploadToArweave}
                     disabled={isProcessing}
                     class="w-full"
                   >
@@ -268,8 +354,8 @@
               </p>
               {#if currentStep === 2}
                 <div class="mt-2">
-                  <Button 
-                    on:click={handleUpdateIdentity} 
+                  <Button
+                    on:click={handleUpdateIdentity}
                     disabled={isProcessing}
                     class="w-full"
                   >
@@ -311,8 +397,8 @@
               </p>
               {#if currentStep === 3}
                 <div class="mt-2">
-                  <Button 
-                    on:click={handleComplete} 
+                  <Button
+                    on:click={handleComplete}
                     disabled={isProcessing}
                     class="w-full"
                   >

@@ -204,13 +204,24 @@ async function handleLogout() {
                 {/each}
             </div>
 
-            <Button
-                class="w-full"
-                disabled={!selectedChainId}
-                on:click={handleContinue}
-            >
-                Continue
-            </Button>
+            <div class="flex flex-col gap-3">
+                <Button
+                    class="w-full"
+                    disabled={!selectedChainId}
+                    on:click={handleContinue}
+                >
+                    Continue
+                </Button>
+
+                <!-- Mobile Back Button -->
+                <Button
+                    variant="outline"
+                    class="w-full md:hidden"
+                    on:click={() => goto('/activate/identity-data')}
+                >
+                    Back
+                </Button>
+            </div>
         {/if}
 
         <!-- Log out button -->

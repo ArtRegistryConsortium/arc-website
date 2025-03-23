@@ -269,13 +269,24 @@ async function handleLogout() {
             </div>
         </div>
 
-        <Button
-            class="w-full {!(isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id) ? 'bg-primary hover:bg-primary/90' : ''}"
-            disabled={isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id}
-            on:click={handleActivate}
-        >
-            Activate Profile
-        </Button>
+        <div class="flex flex-col gap-3">
+            <Button
+                class="w-full {!(isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id) ? 'bg-primary hover:bg-primary/90' : ''}"
+                disabled={isUpdatingProgress || !identityData?.identityType || !identityData?.username || !identityData?.selectedChain?.chain_id}
+                on:click={handleActivate}
+            >
+                Activate Profile
+            </Button>
+
+            <!-- Mobile Back Button -->
+            <Button
+                variant="outline"
+                class="w-full md:hidden"
+                on:click={() => goto('/activate/select-chain')}
+            >
+                Back
+            </Button>
+        </div>
 
         <!-- Log out button -->
         <Button
