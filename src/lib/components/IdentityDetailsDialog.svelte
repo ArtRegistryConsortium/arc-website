@@ -55,7 +55,7 @@
 
     function handleEdit() {
         if (identity) {
-            goto(`/dashboard/update-identity?id=${identity.id}`);
+            goto(`/dashboard/update-identity?id=${identity.id}&chainId=${identity.chain_id}`);
         }
     }
 </script>
@@ -160,6 +160,12 @@
                                 <p class="text-sm font-medium text-muted-foreground">Date of Birth</p>
                                 <p class="text-base font-semibold">
                                     {identity.dob ? new Date(identity.dob * 1000).toLocaleDateString() : '-'}
+                                </p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-muted-foreground">Date of Death</p>
+                                <p class="text-base font-semibold">
+                                    {identity.dod && identity.dod > 0 ? new Date(identity.dod * 1000).toLocaleDateString() : '-'}
                                 </p>
                             </div>
                             <div class="space-y-2">

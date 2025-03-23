@@ -28,10 +28,12 @@ let identityImage = '';
 let links: { name: string; url: string }[] = [];
 let tags: string[] = [];
 let dob = '';
+let dod = '';
 let location = '';
 let addresses: string[] = [];
 let selectedChain: Chain | null = null;
 let identityId: number | null = null;
+let chainId: number | null = null;
 
 // Form state
 let isValid = false;
@@ -69,16 +71,20 @@ function handleTypeSelect(type: string) {
     // Reset type-specific fields when changing type
     if (type === 'artist') {
         dob = '';
+        dod = '';
         location = '';
         addresses = [];
         identityStore.setDob(undefined);
+        identityStore.setDod(undefined);
         identityStore.setLocation('');
         identityStore.setAddresses([]);
     } else if (type === 'gallery' || type === 'institution') {
         dob = '';
+        dod = '';
         location = '';
         addresses = [''];
         identityStore.setDob(undefined);
+        identityStore.setDod(undefined);
         identityStore.setLocation('');
         identityStore.setAddresses(['']);
     }
@@ -100,12 +106,17 @@ onMount(async () => {
             throw new Error('Wallet address not found');
         }
 
-        // Get identity ID from URL
+        // Get identity ID and chain ID from URL
         const idParam = $page.url.searchParams.get('id');
+        const chainParam = $page.url.searchParams.get('chainId');
         if (!idParam) {
             throw new Error('Identity ID not found in URL');
         }
+        if (!chainParam) {
+            throw new Error('Chain ID not found in URL');
+        }
         identityId = parseInt(idParam);
+        chainId = parseInt(chainParam);
 
         // Reset the identity store
         console.log('Resetting identity store...');
@@ -146,16 +157,16 @@ onDestroy(() => {
 
 // Load the identity data
 async function loadIdentityData() {
-    if (!walletAddress || !identityId) {
-        throw new Error('Wallet address or identity ID not found');
+    if (!walletAddress || !identityId || !chainId) {
+        throw new Error('Wallet address, identity ID, or chain ID not found');
     }
 
     // Get the identity data
     const identities = await getUserIdentities(walletAddress);
-    currentIdentity = identities.find(identity => identity.id === identityId) || null;
+    currentIdentity = identities.find(identity => identity.id === identityId && identity.chain_id === chainId) || null;
 
     if (!currentIdentity) {
-        throw new Error('Identity not found');
+        throw new Error('Identity not found with the specified ID and chain ID');
     }
 
     // Set the identity type
@@ -203,6 +214,7 @@ async function loadIdentityData() {
     // Set type-specific fields
     if (selectedType === 'artist') {
         dob = currentIdentity.dob ? new Date(currentIdentity.dob * 1000).toISOString().split('T')[0] : '';
+        dod = currentIdentity.dod ? new Date(currentIdentity.dod * 1000).toISOString().split('T')[0] : '';
         location = currentIdentity.location || '';
     } else if (selectedType === 'gallery' || selectedType === 'institution') {
         if (currentIdentity.addresses) {
@@ -230,7 +242,7 @@ async function loadIdentityData() {
 
     // Get the chain information
     try {
-        const response = await fetch(`/api/chains/info?chainId=${currentIdentity.chain_id}`);
+        const response = await fetch(`/api/chains/info?chainId=${chainId}`);
         if (response.ok) {
             const data = await response.json();
             if (data.success && data.chain) {
@@ -251,6 +263,7 @@ async function loadIdentityData() {
 
     if (selectedType === 'artist') {
         identityStore.setDob(currentIdentity.dob || undefined);
+        identityStore.setDod(currentIdentity.dod || undefined);
         identityStore.setLocation(location);
     } else if (selectedType === 'gallery' || selectedType === 'institution') {
         identityStore.setAddresses(addresses);
@@ -374,6 +387,20 @@ function handleDobInput(event: Event) {
     validateForm();
 }
 
+// Handle date of death input
+function handleDodInput(event: Event) {
+    // dod is already bound to the input value via bind:value
+    // Convert date to timestamp
+    if (dod) {
+        const timestamp = Math.floor(new Date(dod).getTime() / 1000);
+        identityStore.setDod(timestamp);
+    } else {
+        identityStore.setDod(undefined);
+    }
+
+    validateForm();
+}
+
 // Handle location input
 function handleLocationInput(event: Event) {
     // location is already bound to the input value via bind:value
@@ -425,6 +452,7 @@ async function handleSubmit() {
             links,
             tags,
             dob,
+            dod,
             location,
             addresses
         });
@@ -439,8 +467,10 @@ async function handleSubmit() {
 
         // Store type-specific data
         if (selectedType === 'artist') {
-            const timestamp = dob ? Math.floor(new Date(dob).getTime() / 1000) : 0;
-            identityStore.setDob(timestamp);
+            const dobTimestamp = dob ? Math.floor(new Date(dob).getTime() / 1000) : 0;
+            const dodTimestamp = dod ? Math.floor(new Date(dod).getTime() / 1000) : 0;
+            identityStore.setDob(dobTimestamp);
+            identityStore.setDod(dodTimestamp);
             identityStore.setLocation(location);
         } else if (selectedType === 'gallery' || selectedType === 'institution') {
             identityStore.setAddresses(addresses.filter(addr => addr.trim().length > 0));
@@ -452,6 +482,7 @@ async function handleSubmit() {
             const dialogData = {
                 ...identityData!,
                 identityId: Number(currentIdentity.id), // Ensure it's a valid number
+                chainId: Number(currentIdentity.chain_id), // Pass the chain ID
                 originalImageUrl: currentIdentity.identity_image || '' // Pass the original image URL for comparison
             };
             identityData = dialogData;
@@ -680,6 +711,16 @@ async function handleSubmit() {
                                         type="date"
                                         bind:value={dob}
                                         on:input={handleDobInput}
+                                        class="mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium mb-2">Date of death</h3>
+                                    <Input
+                                        id="dod"
+                                        type="date"
+                                        bind:value={dod}
+                                        on:input={handleDodInput}
                                         class="mt-1"
                                     />
                                 </div>

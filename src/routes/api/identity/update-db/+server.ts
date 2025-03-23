@@ -19,6 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
       links,
       tags,
       dob,
+      dod,
       location,
       addresses,
       representedBy,
@@ -46,6 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
       tags: any[];
       type?: string; // Add type field
       dob: number | null;
+      dod: number | null;
       location: string;
       addresses: string;
       represented_by: string;
@@ -58,6 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
       links: typeof links === 'string' ? links : JSON.stringify(links),
       tags: Array.isArray(tags) ? tags : [],
       dob: dob ? new Date(dob).getTime() : null,
+      dod: dod ? Number(dod) : null,
       location: location || '',
       addresses: typeof addresses === 'string' ? addresses : JSON.stringify(addresses),
       represented_by: representedBy || '',

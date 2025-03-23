@@ -22,6 +22,7 @@
   let arweaveUrl = '';
   let transactionHash = '';
   let identityId = 0;
+  let chainId = 0;
   let originalImageUrl = '';
 
   // Reset state when dialog opens
@@ -31,11 +32,13 @@
     errorMessage = '';
     arweaveUrl = '';
     transactionHash = '';
-    // Make sure identityId is a valid number
+    // Make sure identityId and chainId are valid numbers
     identityId = identityData?.identityId ? Number(identityData.identityId) : 0;
+    chainId = identityData?.chainId ? Number(identityData.chainId) : 0;
     // Store the original image URL for comparison
     originalImageUrl = identityData?.originalImageUrl || '';
     console.log('Dialog opened with identityId:', identityId);
+    console.log('Dialog opened with chainId:', chainId);
     console.log('Dialog opened with identity data:', identityData);
     console.log('Original image URL:', originalImageUrl);
   }
@@ -101,10 +104,13 @@
         throw new Error('Wallet address not found');
       }
 
-      // Get the chain ID
-      const chainId = identityData.selectedChain?.chain_id;
+      // Get the chain ID from the identity data
       if (!chainId) {
-        throw new Error('Chain ID not found');
+        // Fallback to selectedChain if chainId is not directly provided
+        chainId = identityData.selectedChain?.chain_id;
+        if (!chainId) {
+          throw new Error('Chain ID not found');
+        }
       }
       console.log('Target chain ID for update:', chainId);
 
@@ -115,7 +121,7 @@
       if (currentChainId !== chainId) {
         console.log(`Switching from chain ${currentChainId} to chain ${chainId}`);
         try {
-          await switchChain(config, { chainId });
+          await switchChain(config, { chainId: chainId as 1 | 11155111 | 10 | 42161 | 421614 | 8453 });
           console.log('Chain switched successfully');
         } catch (switchError) {
           console.error('Error switching chain:', switchError);
@@ -239,6 +245,7 @@
           links: contractData.links,
           tags: contractData.tags,
           dob: contractData.dob,
+          dod: contractData.dod,
           location: contractData.location,
           addresses: contractData.addresses,
           representedBy: contractData.representedBy,

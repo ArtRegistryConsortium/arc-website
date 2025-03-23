@@ -222,14 +222,14 @@
                 <div class="truncate">
                   <div class="font-medium truncate text-sm sm:text-base">{identity.name}</div>
                   {#if identity.tags && identity.tags.length > 0}
-                    <div class="hidden sm:flex flex-wrap gap-1 mt-1">
+                    <div class="hidden sm:flex flex-wrap gap-1.5 mt-1.5">
                       {#each identity.tags.slice(0, 2) as tag}
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary truncate max-w-[80px]">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-foreground/70 hover:bg-primary/20 transition-colors duration-200">
                           {tag}
                         </span>
                       {/each}
                       {#if identity.tags.length > 2}
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground/70 hover:bg-muted/80 transition-colors duration-200">
                           +{identity.tags.length - 2}
                         </span>
                       {/if}
@@ -287,7 +287,7 @@
               <!-- Actions -->
               <div class="col-span-3 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
                 <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target" on:click={() => handleViewDetails(identity)}>View</Button>
-                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target" on:click={() => goto(`/dashboard/update-identity?id=${identity.id}`)}>Edit</Button>
+                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target" on:click={() => goto(`/dashboard/update-identity?id=${identity.id}&chainId=${identity.chain_id}`)}>Edit</Button>
               </div>
             </div>
           </div>
