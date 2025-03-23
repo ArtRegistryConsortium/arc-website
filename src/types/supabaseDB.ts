@@ -43,34 +43,27 @@ export type Database = {
       }
       art_contracts: {
         Row: {
-          artist_identity_id: number
           chain_id: number
           contract_address: string
           created_at: string | null
           id: number
+          identity_id: number | null
         }
         Insert: {
-          artist_identity_id: number
           chain_id: number
           contract_address: string
           created_at?: string | null
           id?: number
+          identity_id?: number | null
         }
         Update: {
-          artist_identity_id?: number
           chain_id?: number
           contract_address?: string
           created_at?: string | null
           id?: number
+          identity_id?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "art_contracts_artist_identity_id_fkey"
-            columns: ["artist_identity_id"]
-            isOneToOne: false
-            referencedRelation: "identities"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "art_contracts_chain_id_fkey"
             columns: ["chain_id"]
@@ -78,12 +71,18 @@ export type Database = {
             referencedRelation: "chains"
             referencedColumns: ["chain_id"]
           },
+          {
+            foreignKeyName: "art_contracts_identity_id_chain_id_fkey"
+            columns: ["identity_id", "chain_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id", "chain_id"]
+          },
         ]
       }
       art_tokens: {
         Row: {
           art_contract_id: number
-          artist_identity_id: number
           artist_statement: string | null
           bibliography: Json | null
           catalogue_inventory: string | null
@@ -111,7 +110,6 @@ export type Database = {
         }
         Insert: {
           art_contract_id: number
-          artist_identity_id: number
           artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
@@ -139,7 +137,6 @@ export type Database = {
         }
         Update: {
           art_contract_id?: number
-          artist_identity_id?: number
           artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
@@ -171,13 +168,6 @@ export type Database = {
             columns: ["art_contract_id"]
             isOneToOne: false
             referencedRelation: "art_contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "art_tokens_artist_identity_id_fkey"
-            columns: ["artist_identity_id"]
-            isOneToOne: false
-            referencedRelation: "identities"
             referencedColumns: ["id"]
           },
           {
@@ -266,7 +256,7 @@ export type Database = {
       identities: {
         Row: {
           addresses: Json | null
-          chain_id: number | null
+          chain_id: number
           created_at: string | null
           description: string | null
           dob: number | null
@@ -286,7 +276,7 @@ export type Database = {
         }
         Insert: {
           addresses?: Json | null
-          chain_id?: number | null
+          chain_id: number
           created_at?: string | null
           description?: string | null
           dob?: number | null
@@ -306,7 +296,7 @@ export type Database = {
         }
         Update: {
           addresses?: Json | null
-          chain_id?: number | null
+          chain_id?: number
           created_at?: string | null
           description?: string | null
           dob?: number | null
@@ -335,7 +325,7 @@ export type Database = {
           {
             foreignKeyName: "identities_wallet_address_fkey"
             columns: ["wallet_address"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "wallets"
             referencedColumns: ["wallet_address"]
           },
@@ -439,18 +429,11 @@ export type Database = {
             referencedColumns: ["wallet_address"]
           },
           {
-            foreignKeyName: "roles_chain_id_fkey"
-            columns: ["chain_id"]
-            isOneToOne: false
-            referencedRelation: "chains"
-            referencedColumns: ["chain_id"]
-          },
-          {
-            foreignKeyName: "roles_identity_id_fkey"
-            columns: ["identity_id"]
+            foreignKeyName: "roles_identity_id_chain_id_fkey"
+            columns: ["identity_id", "chain_id"]
             isOneToOne: false
             referencedRelation: "identities"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "chain_id"]
           },
         ]
       }
