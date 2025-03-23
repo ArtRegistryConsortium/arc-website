@@ -209,7 +209,7 @@
             <div class="grid grid-cols-12 gap-2 sm:gap-4 items-center">
               <!-- Name and image -->
               <div class="col-span-6 sm:col-span-4 flex items-center gap-2 sm:gap-3">
-                <div class="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                <div class="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center border border-primary/20">
                   {#if identity.identity_image}
                     <img src={identity.identity_image} alt={identity.name} class="w-full h-full object-cover" />
                   {:else}

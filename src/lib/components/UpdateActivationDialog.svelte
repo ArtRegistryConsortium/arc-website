@@ -41,19 +41,41 @@
       isProcessing = true;
       errorMessage = '';
 
-      // If we have an image, upload it to Arweave
+      // If we have an image, upload it to Arweave via server-side API
       if (identityData?.identityImage) {
+        console.log('Uploading image to Arweave via server API...');
         arweaveUrl = await uploadImageToArweave(identityData.identityImage);
+        console.log('Image uploaded successfully:', arweaveUrl);
       } else {
         // If no image, use the ARC favicon as default
-        arweaveUrl = 'https://www.artregistryconsortium.com/favicon.jpg';
+        console.log('No image provided, using default image');
+        arweaveUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
       }
 
       // Move to the next step
       currentStep = 2;
     } catch (error) {
       console.error('Error uploading to Arweave:', error);
-      errorMessage = error instanceof Error ? error.message : 'Failed to upload to Arweave';
+
+      // Format error message for better user experience
+      if (error instanceof Error) {
+        const errorMsg = error.message;
+
+        if (errorMsg.includes('File size exceeds')) {
+          errorMessage = errorMsg; // Already formatted nicely
+        } else if (errorMsg.includes('File type not supported')) {
+          errorMessage = errorMsg; // Already formatted nicely
+        } else if (errorMsg.includes('Server configuration error')) {
+          errorMessage = 'The server is not properly configured for image uploads. Please check the server logs and ensure the ARWEAVE_WALLET_KEY is properly set.';
+        } else if (errorMsg.length > 200) {
+          // If error message is too long, truncate it
+          errorMessage = 'Upload error: ' + errorMsg.substring(0, 200) + '...';
+        } else {
+          errorMessage = errorMsg;
+        }
+      } else {
+        errorMessage = 'Failed to upload image to Arweave. Please try again or use a different image.';
+      }
     } finally {
       isProcessing = false;
     }

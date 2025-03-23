@@ -40,8 +40,11 @@
 		"@wagmi/connectors": "^5.7.9",
 		"@wagmi/core": "^2.16.5",
 		"@web3modal/wagmi": "^5.1.11",
+		"arweave": "^1.15.5",
+		"buffer": "^6.0.3",
 		"dotenv": "^16.4.7",
 		"ethers": "^6.13.5",
+		"express-rate-limit": "^7.5.0",
 		"svelte-radix": "^2.0.1",
 		"viem": "^2.23.10",
 		"wagmi": "^2.14.13"
