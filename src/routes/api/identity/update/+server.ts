@@ -5,6 +5,12 @@ import { JsonRpcProvider, Contract, Wallet } from 'ethers';
 import { env } from '$env/dynamic/private';
 import type { UpdateIdentityRequest } from '$lib/services/identityService';
 
+// Define interface for contract data
+interface ContractData {
+  identity_contract_address: string;
+  rpc_url: string;
+}
+
 // ABI for the Identity contract's updateIdentity function
 const IDENTITY_ABI = [
   "function updateIdentity(uint256 identityId, uint8 identityType, string name, string description, string identityImage, string links, string[] tags, uint256 dob, uint256 dod, string location, string addresses, string representedBy, string representedArtists) external"
@@ -34,7 +40,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .from('contracts')
       .select('identity_contract_address, rpc_url')
       .eq('chain_id', chainId)
-      .single();
+      .single() as { data: ContractData | null, error: any };
 
     if (contractError || !contractData) {
       console.error('Error fetching contract address:', contractError);
@@ -72,16 +78,16 @@ export const POST: RequestHandler = async ({ request }) => {
     const representedBy = requestData.representedBy || '';
     const representedArtists = requestData.representedArtists || '';
 
-    // Get the identity type from the database
-    const { data: identityData, error: identityError } = await supabaseAdmin
+    // Get the initial identity type from the database
+    const { data: initialIdentityData, error: initialIdentityError } = await supabaseAdmin
       .from('identities')
       .select('type')
       .eq('id', identityId)
       .eq('wallet_address', walletAddress)
       .single();
 
-    if (identityError || !identityData) {
-      console.error('Error fetching identity type:', identityError);
+    if (initialIdentityError || !initialIdentityData) {
+      console.error('Error fetching identity type:', initialIdentityError);
       return json({
         success: false,
         error: 'Failed to fetch identity type from database.'
@@ -90,7 +96,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // Map the identity type to the enum value
     let identityType = 0; // Default to Artist (0)
-    switch (identityData.type) {
+    switch (initialIdentityData.type) {
       case 'artist':
         identityType = 0;
         break;
@@ -148,16 +154,16 @@ export const POST: RequestHandler = async ({ request }) => {
     // Update the entry in the Supabase Identities table
     const now = new Date().toISOString();
 
-    // Get the identity type from the database
-    const { data: identityData, error: identityError } = await supabaseAdmin
+    // Get the final identity type from the database
+    const { data: finalIdentityData, error: finalIdentityError } = await supabaseAdmin
       .from('identities')
       .select('type')
       .eq('id', identityId)
       .eq('wallet_address', walletAddress)
       .single();
 
-    if (identityError || !identityData) {
-      console.error('Error fetching identity type:', identityError);
+    if (finalIdentityError || !finalIdentityData) {
+      console.error('Error fetching identity type:', finalIdentityError);
       return json({
         success: false,
         error: 'Failed to fetch identity type from database.'
