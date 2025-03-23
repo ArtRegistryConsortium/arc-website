@@ -130,15 +130,17 @@ export const POST: RequestHandler = async (event) => {
     // Parse wallet key
     let wallet;
     try {
+      // The wallet key should be a JSON string, parse it to get the wallet object
+      console.log('Attempting to parse wallet key as JSON');
       // Log the first few characters of the key for debugging (don't log the full key for security)
-      console.log('Attempting to parse wallet key, starts with:', walletKey.substring(0, 15) + '...');
+      console.log('Wallet key starts with:', walletKey.substring(0, 15) + '...');
       wallet = JSON.parse(walletKey);
-      console.log('Wallet key parsed successfully, contains keys:', Object.keys(wallet).join(', '));
+      console.log('Wallet key processed successfully');
     } catch (error) {
-      console.error('Error parsing Arweave wallet key:', error);
+      console.error('Error processing Arweave wallet key:', error);
 
       if (env.NODE_ENV === 'development') {
-        console.warn('Using fallback image URL in development mode due to wallet key parsing error');
+        console.warn('Using fallback image URL in development mode due to wallet key processing error');
         return json({
           success: true,
           url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
@@ -156,6 +158,8 @@ export const POST: RequestHandler = async (event) => {
     let transaction;
     try {
       console.log('Creating Arweave transaction...');
+      console.log('Wallet object type:', typeof wallet);
+      console.log('Wallet object has keys:', wallet ? Object.keys(wallet).join(', ') : 'null');
       transaction = await arweave.createTransaction({ data: buffer }, wallet);
       console.log('Transaction created successfully');
 
