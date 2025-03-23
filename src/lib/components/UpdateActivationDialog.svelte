@@ -354,17 +354,67 @@
               </p>
               {#if currentStep === 2}
                 <div class="mt-2">
-                  <Button
-                    on:click={handleUpdateIdentity}
-                    disabled={isProcessing}
-                    class="w-full"
-                  >
-                    {#if isProcessing}
-                      Updating...
-                    {:else}
+                  {#if isProcessing}
+                    <div class="flex items-center space-x-2">
+                      <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                      <span class="text-sm">Updating...</span>
+                    </div>
+                  {:else}
+                    <!-- Display contract data for verification -->
+                    <div class="mt-2 mb-4 p-3 bg-neutral-100 dark:bg-neutral-800 rounded-md text-xs font-mono overflow-auto max-h-60">
+                      <h4 class="text-sm font-medium mb-2">Contract Data Preview:</h4>
+                      <div class="mb-2 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+                        <h5 class="text-xs font-medium mb-1">Database Data (JSONB Format):</h5>
+                        <pre class="whitespace-pre-wrap break-all">{JSON.stringify({
+                          identityId: Number(identityId) || 0,
+                          identityType: mapIdentityType(identityData?.identityType || 'artist'),
+                          name: identityData?.username || '',
+                          description: identityData?.description || `${identityData?.username || ''} on ${identityData?.selectedChain?.name || ''}`,
+                          identityImage: arweaveUrl || identityData?.identityImage || 'https://www.artregistryconsortium.com/favicon.jpg',
+                          // Links stored as JSON objects in database (JSONB)
+                          links: identityData?.links || [],
+                          tags: identityData?.tags?.length > 0 ? identityData.tags : [],
+                          dob: identityData?.dob || 0,
+                          dod: identityData?.dod || 0,
+                          location: identityData?.location || '',
+                          // Addresses stored as JSON objects in database (JSONB)
+                          addresses: identityData?.addresses || [],
+                          representedBy: identityData?.representedBy,
+                          representedArtists: identityData?.representedArtists
+                        }, null, 2)}</pre>
+                      </div>
+
+                      <div>
+                        <h5 class="text-xs font-medium mb-1">Contract Data (Blockchain Format):</h5>
+                        <pre class="whitespace-pre-wrap break-all">{JSON.stringify({
+                          identityId: Number(identityId) || 0,
+                          identityType: mapIdentityType(identityData?.identityType || 'artist'),
+                          name: identityData?.username || '',
+                          description: identityData?.description || `${identityData?.username || ''} on ${identityData?.selectedChain?.name || ''}`,
+                          identityImage: arweaveUrl || identityData?.identityImage || 'https://www.artregistryconsortium.com/favicon.jpg',
+                          // Links converted to JSON string for contract
+                          links: JSON.stringify(identityData?.links || []),
+                          tags: identityData?.tags?.length > 0 ? identityData.tags : [],
+                          dob: identityData?.dob || 0,
+                          dod: identityData?.dod || 0,
+                          location: identityData?.location || '',
+                          // Addresses as JSON string for contract
+                          addresses: JSON.stringify(identityData?.addresses || []),
+                          representedBy: identityData?.representedBy ? (typeof identityData.representedBy === 'string' ? identityData.representedBy : JSON.stringify(identityData.representedBy)) : '',
+                          representedArtists: identityData?.representedArtists ? (typeof identityData.representedArtists === 'string' ? identityData.representedArtists : JSON.stringify(identityData.representedArtists)) : ''
+                        }, null, 2)}</pre>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      class="mt-2 w-full"
+                      on:click={handleUpdateIdentity}
+                      disabled={isProcessing}
+                    >
                       Update Identity
-                    {/if}
-                  </Button>
+                    </Button>
+                  {/if}
                 </div>
               {/if}
               {#if transactionHash && currentStep > 2}
