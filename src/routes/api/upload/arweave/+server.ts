@@ -48,8 +48,12 @@ console.log(`Arweave upload rate limit: ${RATE_LIMIT_MAX} uploads per ${RATE_LIM
  */
 export const POST: RequestHandler = async (event) => {
   // Apply rate limiting
+  console.log('Applying rate limiting to Arweave upload request');
   const rateLimitResult = await arweaveRateLimit(event);
-  if (rateLimitResult) return rateLimitResult;
+  if (rateLimitResult) {
+    console.log('Rate limit applied, returning response');
+    return rateLimitResult;
+  }
 
   const { request } = event;
   try {

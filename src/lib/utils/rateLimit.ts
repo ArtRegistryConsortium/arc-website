@@ -1,6 +1,7 @@
-import rateLimit from 'express-rate-limit';
+// No longer using express-rate-limit as we're implementing our own SvelteKit-compatible rate limiter
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
+// Explicitly import Response for type checking
 
 /**
  * Rate limiting configuration options
@@ -43,19 +44,19 @@ const ipRequestCounts = new Map<string, { count: number; resetTime: number }>();
  */
 export function createRateLimit(customOptions: Partial<RateLimitOptions> = {}): RequestHandler {
   const options = { ...defaultOptions, ...customOptions };
-  
+
   return async ({ request, getClientAddress }) => {
     // Skip rate limiting in development mode if configured
     if (options.skipInDevelopment && process.env.NODE_ENV === 'development') {
       return;
     }
-    
+
     const ip = getClientAddress();
     const now = Date.now();
-    
+
     // Get or create rate limit data for this IP
     let limitData = ipRequestCounts.get(ip);
-    
+
     if (!limitData || now > limitData.resetTime) {
       // If no data exists or the window has expired, create new data
       limitData = {
@@ -63,18 +64,18 @@ export function createRateLimit(customOptions: Partial<RateLimitOptions> = {}): 
         resetTime: now + options.windowMs
       };
     }
-    
+
     // Increment request count
     limitData.count++;
-    
+
     // Store updated data
     ipRequestCounts.set(ip, limitData);
-    
+
     // Check if rate limit is exceeded
     if (limitData.count > options.max) {
       // Calculate remaining time until reset
       const resetInSeconds = Math.ceil((limitData.resetTime - now) / 1000);
-      
+
       // Return rate limit exceeded response
       return json({
         success: false,
@@ -90,14 +91,15 @@ export function createRateLimit(customOptions: Partial<RateLimitOptions> = {}): 
         }
       });
     }
-    
+
     // Add rate limit headers to the response
-    return {
+    // Return a Response object with headers
+    return new Response(undefined, {
       headers: {
         'X-RateLimit-Limit': String(options.max),
         'X-RateLimit-Remaining': String(Math.max(0, options.max - limitData.count)),
         'X-RateLimit-Reset': String(Math.ceil(limitData.resetTime / 1000))
       }
-    };
+    });
   };
 }
