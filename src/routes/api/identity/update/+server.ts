@@ -84,6 +84,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .select('type')
       .eq('id', identityId)
       .eq('wallet_address', walletAddress)
+      .eq('chain_id', chainId)
       .single();
 
     if (initialIdentityError || !initialIdentityData) {
@@ -160,6 +161,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .select('type')
       .eq('id', identityId)
       .eq('wallet_address', walletAddress)
+      .eq('chain_id', chainId)
       .single();
 
     if (finalIdentityError || !finalIdentityData) {
@@ -236,6 +238,7 @@ export const POST: RequestHandler = async ({ request }) => {
       .update(updateData)
       .eq('id', identityId)
       .eq('wallet_address', walletAddress)
+      .eq('chain_id', chainId)
       .select();
 
     if (updateError) {
