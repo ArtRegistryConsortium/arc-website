@@ -132,15 +132,40 @@ export const POST: RequestHandler = async (event) => {
     try {
       // The wallet key should be a JSON string, parse it to get the wallet object
       console.log('Attempting to parse wallet key as JSON');
-      // Log the first few characters of the key for debugging (don't log the full key for security)
-      console.log('Wallet key starts with:', walletKey.substring(0, 15) + '...');
-      wallet = JSON.parse(walletKey);
-      console.log('Wallet key processed successfully');
+      // Check if the wallet key is empty or undefined
+      if (!walletKey || walletKey.trim() === '') {
+        console.error('Wallet key is empty or undefined');
+        throw new Error('Empty wallet key');
+      }
+
+      // Log the length and first few characters of the key for debugging (don't log the full key for security)
+      console.log(`Wallet key length: ${walletKey.length}, starts with: ${walletKey.substring(0, 15)}...`);
+
+      // Try to parse the wallet key
+      try {
+        wallet = JSON.parse(walletKey);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError.message);
+        // If the key is very long, it might be double-encoded
+        if (walletKey.startsWith('"') && walletKey.endsWith('"')) {
+          console.log('Attempting to parse double-encoded JSON...');
+          // Try to remove the extra quotes and parse again
+          const unescaped = walletKey.slice(1, -1).replace(/\\(.)/g, '$1');
+          wallet = JSON.parse(unescaped);
+        } else {
+          throw parseError;
+        }
+      }
+
+      console.log('Wallet key processed successfully, type:', typeof wallet);
     } catch (error) {
       console.error('Error processing Arweave wallet key:', error);
 
-      if (env.NODE_ENV === 'development') {
-        console.warn('Using fallback image URL in development mode due to wallet key processing error');
+      // Use fallback in development mode or if ALLOW_FALLBACK_IN_PRODUCTION is set
+      const allowFallbackInProduction = env.ALLOW_FALLBACK_IN_PRODUCTION === 'true';
+
+      if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
+        console.warn(`Using fallback image URL due to wallet key processing error (in ${env.NODE_ENV} mode)`);
         return json({
           success: true,
           url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
@@ -150,7 +175,7 @@ export const POST: RequestHandler = async (event) => {
 
       return json({
         success: false,
-        error: 'Server configuration error: Invalid Arweave wallet key format'
+        error: 'Server configuration error: Invalid Arweave wallet key format. Please check server logs.'
       }, { status: 500 });
     }
 
@@ -198,8 +223,11 @@ export const POST: RequestHandler = async (event) => {
     } catch (error) {
       console.error('Error during Arweave transaction process:', error);
 
-      if (env.NODE_ENV === 'development') {
-        console.warn('Using fallback image URL in development mode due to transaction error');
+      // Use fallback in development mode or if ALLOW_FALLBACK_IN_PRODUCTION is set
+      const allowFallbackInProduction = env.ALLOW_FALLBACK_IN_PRODUCTION === 'true';
+
+      if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
+        console.warn(`Using fallback image URL due to transaction error (in ${env.NODE_ENV} mode)`);
         return json({
           success: true,
           url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
@@ -226,9 +254,11 @@ export const POST: RequestHandler = async (event) => {
   } catch (error) {
     console.error('Error in Arweave upload API:', error);
 
-    // In development mode, return a fallback URL if upload fails
-    if (env.NODE_ENV === 'development') {
-      console.warn('Using fallback image URL in development mode due to general error');
+    // Use fallback in development mode or if ALLOW_FALLBACK_IN_PRODUCTION is set
+    const allowFallbackInProduction = env.ALLOW_FALLBACK_IN_PRODUCTION === 'true';
+
+    if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
+      console.warn(`Using fallback image URL due to general error (in ${env.NODE_ENV} mode)`);
       return json({
         success: true,
         url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
