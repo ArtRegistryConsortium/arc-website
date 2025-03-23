@@ -1,12 +1,12 @@
 <script lang="ts">
-console.log('Create Identity page component loaded');
+console.log('Update Identity page component loaded');
 import { Button } from "$lib/components/ui/button/index.js";
 import { goto } from '$app/navigation';
 import { getWalletAddress } from '$lib/stores/walletAuth';
 import { identityStore, type IdentityInfo } from '$lib/stores/identityStore';
 import { onMount, onDestroy } from 'svelte';
 import type { Address } from 'viem';
-import ActivationDialog from '$lib/components/ActivationDialog.svelte';
+import UpdateActivationDialog from '$lib/components/UpdateActivationDialog.svelte';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs/index.js";
 import { Input } from "$lib/components/ui/input/index.js";
 import { Label } from "$lib/components/ui/label/index.js";
@@ -17,14 +17,8 @@ import type { Chain } from '$lib/services/activationService';
 import { hasIdentityOnChain } from '$lib/services/userIdentityService';
 import { switchChain } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
-
-// Identity type definitions
-const identityTypes = [
-    { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
-    { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
-    { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
-    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
-];
+import { page } from '$app/stores';
+import { getUserIdentities, type UserIdentity } from '$lib/services/userIdentityService';
 
 // Identity data fields
 let selectedType: string | null = null;
@@ -36,9 +30,8 @@ let tags: string[] = [];
 let dob = '';
 let location = '';
 let addresses: string[] = [];
-let availableChains: Chain[] = [];
-let selectedChainId: number | null = null;
 let selectedChain: Chain | null = null;
+let identityId: number | null = null;
 
 // Form state
 let isValid = false;
@@ -50,8 +43,16 @@ let identityData: IdentityInfo | null = null;
 let unsubscribeStore: (() => void) | undefined;
 
 // Chain identity status
-let chainIdentityStatus: Record<number, boolean> = {};
 let walletAddress: Address | null = null;
+let currentIdentity: UserIdentity | null = null;
+
+// Identity type definitions
+const identityTypes = [
+    { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
+    { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
+    { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
+    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
+];
 
 // Force reactivity for validation state
 function updateValidState(newState: boolean) {
@@ -59,16 +60,52 @@ function updateValidState(newState: boolean) {
     console.log('Validation state updated:', isValid);
 }
 
+// Function to handle identity type selection
+function handleTypeSelect(type: string) {
+    selectedType = type;
+    console.log('Type selected:', type);
+    identityStore.setIdentityType(type as 'artist' | 'gallery' | 'institution' | 'collector');
+
+    // Reset type-specific fields when changing type
+    if (type === 'artist') {
+        dob = '';
+        location = '';
+        addresses = [];
+        identityStore.setDob(undefined);
+        identityStore.setLocation('');
+        identityStore.setAddresses([]);
+    } else if (type === 'gallery' || type === 'institution') {
+        dob = '';
+        location = '';
+        addresses = [''];
+        identityStore.setDob(undefined);
+        identityStore.setLocation('');
+        identityStore.setAddresses(['']);
+    }
+
+    // Force validation after type selection
+    setTimeout(() => {
+        validateForm();
+    }, 0);
+}
+
 // Subscribe to the identity store
 onMount(async () => {
     try {
-        console.log('Create Identity page onMount started');
+        console.log('Update Identity page onMount started');
 
         // Get wallet address
         walletAddress = getWalletAddress();
         if (!walletAddress) {
             throw new Error('Wallet address not found');
         }
+
+        // Get identity ID from URL
+        const idParam = $page.url.searchParams.get('id');
+        if (!idParam) {
+            throw new Error('Identity ID not found in URL');
+        }
+        identityId = parseInt(idParam);
 
         // Reset the identity store
         console.log('Resetting identity store...');
@@ -81,13 +118,8 @@ onMount(async () => {
             console.log('Identity store state updated:', state);
         });
 
-        // Load available chains
-        console.log('Starting to load available chains...');
-        await loadAvailableChains();
-        console.log('Available chains loaded successfully');
-
-        // Check which chains the user already has identities on
-        await checkExistingIdentities();
+        // Load the identity data
+        await loadIdentityData();
 
         // Run initial validation
         setTimeout(() => {
@@ -105,133 +137,134 @@ onMount(async () => {
     }
 });
 
+// Clean up the subscription when the component is destroyed
 onDestroy(() => {
-    if (unsubscribeStore) unsubscribeStore();
+    if (unsubscribeStore) {
+        unsubscribeStore();
+    }
 });
 
-// Function to load available chains
-async function loadAvailableChains() {
-    try {
-        console.log('loadAvailableChains: Starting to fetch chains...');
-        const response = await fetch('/api/chains');
-        console.log('loadAvailableChains: API response received:', response.status);
+// Load the identity data
+async function loadIdentityData() {
+    if (!walletAddress || !identityId) {
+        throw new Error('Wallet address or identity ID not found');
+    }
 
-        if (!response.ok) {
-            console.error('loadAvailableChains: API error:', response.status, response.statusText);
-            throw new Error(`Server responded with status: ${response.status}`);
-        }
+    // Get the identity data
+    const identities = await getUserIdentities(walletAddress);
+    currentIdentity = identities.find(identity => identity.id === identityId) || null;
 
-        const data = await response.json();
-        console.log('loadAvailableChains: API response data:', data);
+    if (!currentIdentity) {
+        throw new Error('Identity not found');
+    }
 
-        if (data.success) {
-            availableChains = data.chains || [];
-            console.log('loadAvailableChains: Available chains set:', availableChains);
+    // Set the identity type
+    selectedType = currentIdentity.type;
 
-            // Don't select a chain by default here - we'll do it after checking existing identities
-            if (availableChains.length === 0) {
-                console.warn('loadAvailableChains: No chains available from API');
-                errorMessage = 'No blockchain networks are available. Please try again later.';
+    // Set the basic identity data
+    username = currentIdentity.name;
+    description = currentIdentity.description || '';
+    identityImage = currentIdentity.identity_image || '';
+
+    // Set image preview if there's an image
+    if (identityImage) {
+        imagePreview = identityImage;
+    }
+
+    // Parse links
+    if (currentIdentity.links) {
+        try {
+            const parsedLinks = typeof currentIdentity.links === 'string'
+                ? JSON.parse(currentIdentity.links)
+                : currentIdentity.links;
+
+            if (Array.isArray(parsedLinks)) {
+                links = parsedLinks.map(link => ({
+                    name: link.name || link.title || '',
+                    url: link.url || ''
+                }));
+            } else if (parsedLinks.links && Array.isArray(parsedLinks.links)) {
+                links = parsedLinks.links.map((link: { name?: string; title?: string; url?: string }) => ({
+                    name: link.name || link.title || '',
+                    url: link.url || ''
+                }));
             }
-        } else {
-            console.error('loadAvailableChains: API returned error:', data.error);
-            errorMessage = data.error || 'Failed to load chains';
+        } catch (e) {
+            console.error('Error parsing links:', e);
+            links = [];
         }
-    } catch (error) {
-        console.error('loadAvailableChains: Error fetching chains:', error);
-        errorMessage = error instanceof Error ? error.message : 'Failed to load chains';
     }
-}
 
-// Function to handle identity type selection
-function handleTypeSelect(type: string) {
-    selectedType = type;
-    console.log('Type selected:', type);
+    // Ensure there's at least one empty link for the form
+    if (links.length === 0) {
+        links = [{ name: '', url: '' }];
+    }
 
-    // Force validation after type selection
-    setTimeout(() => {
-        validateForm();
-    }, 0);
-}
+    // Parse tags
+    tags = currentIdentity.tags || [];
 
-// Function to handle chain selection
-async function handleChainSelect(chainId: number) {
+    // Set type-specific fields
+    if (selectedType === 'artist') {
+        dob = currentIdentity.dob ? new Date(currentIdentity.dob * 1000).toISOString().split('T')[0] : '';
+        location = currentIdentity.location || '';
+    } else if (selectedType === 'gallery' || selectedType === 'institution') {
+        if (currentIdentity.addresses) {
+            try {
+                const parsedAddresses = typeof currentIdentity.addresses === 'string'
+                    ? JSON.parse(currentIdentity.addresses)
+                    : currentIdentity.addresses;
+
+                if (Array.isArray(parsedAddresses)) {
+                    addresses = parsedAddresses;
+                } else if (parsedAddresses.addresses && Array.isArray(parsedAddresses.addresses)) {
+                    addresses = parsedAddresses.addresses;
+                }
+            } catch (e) {
+                console.error('Error parsing addresses:', e);
+                addresses = [];
+            }
+        }
+    }
+
+    // Ensure there's at least one empty address for galleries/institutions
+    if ((selectedType === 'gallery' || selectedType === 'institution') && addresses.length === 0) {
+        addresses = [''];
+    }
+
+    // Get the chain information
     try {
-        // Check if user already has an identity on this chain
-        if (chainIdentityStatus[chainId]) {
-            console.log('User already has an identity on chain:', chainId);
-            return; // Don't allow selection
+        const response = await fetch(`/api/chains/info?chainId=${currentIdentity.chain_id}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.chain) {
+                selectedChain = data.chain;
+            }
         }
-
-        // Find the selected chain
-        const chain = availableChains.find(c => c.chain_id === chainId);
-        if (!chain) {
-            console.error('Chain not found:', chainId);
-            return;
-        }
-
-        // Switch to the selected chain
-        console.log('Switching to chain:', chain.name);
-        await switchChain(config, {
-            chainId: chainId as any
-        });
-
-        // Update the selected chain
-        selectedChainId = chainId;
-        selectedChain = chain;
-        console.log('Chain selected:', { chainId, selectedChain });
-
-        // Force validation after chain selection
-        setTimeout(() => {
-            validateForm();
-        }, 0);
     } catch (error) {
-        console.error('Error switching chain:', error);
-        errorMessage = 'Failed to switch to the selected chain. Please try again.';
+        console.error('Error fetching chain info:', error);
+    }
+
+    // Store the data in the identity store
+    identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector');
+    identityStore.setUsername(username);
+    identityStore.setDescription(description);
+    identityStore.setIdentityImage(identityImage);
+    identityStore.setLinks(links);
+    identityStore.setTags(tags);
+
+    if (selectedType === 'artist') {
+        identityStore.setDob(currentIdentity.dob || undefined);
+        identityStore.setLocation(location);
+    } else if (selectedType === 'gallery' || selectedType === 'institution') {
+        identityStore.setAddresses(addresses);
+    }
+
+    if (selectedChain) {
+        identityStore.setSelectedChain(selectedChain);
     }
 }
 
-// Function to check which chains the user already has identities on
-async function checkExistingIdentities() {
-    if (!walletAddress) return;
-
-    try {
-        console.log('Checking existing identities for wallet:', walletAddress);
-
-        // Check each available chain
-        for (const chain of availableChains) {
-            const status = await hasIdentityOnChain(walletAddress, chain.chain_id);
-            chainIdentityStatus[chain.chain_id] = status.hasIdentity;
-            console.log(`Chain ${chain.name} (${chain.chain_id}) identity status:`, status.hasIdentity);
-        }
-
-        console.log('Chain identity status map:', chainIdentityStatus);
-    } catch (error) {
-        console.error('Error checking existing identities:', error);
-    }
-}
-
-// Function to select the first available chain that doesn't have an identity
-function selectFirstAvailableChain() {
-    console.log('Selecting first available chain without existing identity');
-
-    // Reset current selection
-    selectedChainId = null;
-    selectedChain = null;
-
-    // Find the first chain that doesn't have an identity
-    const availableChain = availableChains.find(chain => !chainIdentityStatus[chain.chain_id]);
-
-    if (availableChain) {
-        selectedChainId = availableChain.chain_id;
-        selectedChain = availableChain;
-        console.log('Selected first available chain:', selectedChain);
-    } else {
-        console.log('No available chains without existing identities found');
-    }
-}
-
-// Function to handle image upload
+// Handle image upload
 function handleImageUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
@@ -239,144 +272,134 @@ function handleImageUpload(event: Event) {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            const result = e.target?.result as string;
-            imagePreview = result;
-            identityImage = result;
-            console.log('Image uploaded successfully');
-            // Force validation after image is loaded
-            setTimeout(() => {
+            if (e.target && typeof e.target.result === 'string') {
+                imagePreview = e.target.result;
+                identityImage = e.target.result;
+                identityStore.setIdentityImage(e.target.result);
                 validateForm();
-            }, 100);
+            }
         };
 
         reader.readAsDataURL(file);
-    } else {
-        console.log('No file selected or file selection canceled');
     }
 }
 
-// Function to remove image
-function removeImage() {
-    imagePreview = '';
-    identityImage = '';
-    console.log('Image removed');
+// Handle image URL input
+function handleImageUrlInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    identityImage = input.value;
+
+    // If the URL is valid, set it as the preview
+    if (identityImage && (identityImage.startsWith('http://') || identityImage.startsWith('https://'))) {
+        imagePreview = identityImage;
+    } else {
+        imagePreview = '';
+    }
+
+    identityStore.setIdentityImage(identityImage);
     validateForm();
 }
 
-// Function to add a new link field
+// Add a new link field
 function addLink() {
     links = [...links, { name: '', url: '' }];
 }
 
-// Function to remove a link field
+// Remove a link field
 function removeLink(index: number) {
     links = links.filter((_, i) => i !== index);
+    identityStore.setLinks(links);
     validateForm();
 }
 
-// Function to update a link field
-function updateLink(index: number, field: 'name' | 'url', value: string) {
-    links = links.map((link, i) => {
-        if (i === index) {
-            return { ...link, [field]: value };
+// Handle link input
+function handleLinkInput(index: number, field: 'name' | 'url', value: string) {
+    links[index][field] = value;
+    links = [...links]; // Force reactivity
+    identityStore.setLinks(links);
+    validateForm();
+}
+
+// Add a new tag
+function addTag(event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === ',') {
+        event.preventDefault();
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value && !tags.includes(value)) {
+            tags = [...tags, value];
+            identityStore.setTags(tags);
+            input.value = '';
+            validateForm();
         }
-        return link;
-    });
-    validateForm();
+    }
 }
 
-// Function to add a new tag field
-function addTag() {
-    tags = [...tags, ''];
-}
-
-// Function to remove a tag field
+// Remove a tag
 function removeTag(index: number) {
     tags = tags.filter((_, i) => i !== index);
+    identityStore.setTags(tags);
     validateForm();
 }
 
-// Function to update a tag field
-function updateTag(index: number, value: string) {
-    tags = tags.map((tag, i) => i === index ? value : tag);
-    validateForm();
-}
-
-// Function to add a new address field
+// Add a new address field (for galleries/institutions)
 function addAddress() {
     addresses = [...addresses, ''];
 }
 
-// Function to remove an address field
+// Remove an address field
 function removeAddress(index: number) {
     addresses = addresses.filter((_, i) => i !== index);
+    identityStore.setAddresses(addresses);
+    validateForm();
+}
 
-    // If all addresses are removed, keep the array empty
-    if (addresses.length === 0) {
-        addresses = [];
+// Handle address input
+function handleAddressInput(index: number, value: string) {
+    addresses[index] = value;
+    addresses = [...addresses]; // Force reactivity
+    identityStore.setAddresses(addresses);
+    validateForm();
+}
+
+// Handle date of birth input
+function handleDobInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    dob = input.value;
+
+    // Convert date to timestamp
+    if (dob) {
+        const timestamp = Math.floor(new Date(dob).getTime() / 1000);
+        identityStore.setDob(timestamp);
+    } else {
+        identityStore.setDob(undefined);
     }
 
     validateForm();
 }
 
-// Function to update an address field
-function updateAddress(index: number, value: string) {
-    addresses = addresses.map((address, i) => i === index ? value : address);
-    validateForm();
-}
-
-// Function to handle username input
-function handleUsernameInput(event: Event) {
+// Handle location input
+function handleLocationInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    username = input.value;
-    console.log('Username changed:', username);
+    location = input.value;
+    identityStore.setLocation(location);
     validateForm();
 }
 
-// Function to handle description input
-function handleDescriptionInput(event: Event) {
-    const input = event.target as HTMLTextAreaElement;
-    description = input.value;
-    console.log('Description changed:', description);
-    validateForm();
-}
-
-// Function to validate username
+// Validate username
 function validateUsername(value: string): boolean {
-    const trimmedValue = value.trim();
-    const isValid = trimmedValue.length >= 1 && trimmedValue.length <= 50;
-    console.log('Username validation:', {
-        value,
-        trimmedLength: trimmedValue.length,
-        isValid
-    });
-    return isValid;
+    return value.trim().length >= 2;
 }
 
-// Function to validate description
+// Validate description
 function validateDescription(value: string): boolean {
-    const trimmedValue = value.trim();
-    const isValid = trimmedValue.length > 0;
-    console.log('Description validation:', {
-        value,
-        trimmedLength: trimmedValue.length,
-        isValid
-    });
-    return isValid;
+    return value.trim().length >= 1;
 }
 
-// Function to validate the form
+// Validate the form
 function validateForm(): boolean {
-    // Log all current values
-    console.log('Form validation - Current values:', {
-        selectedType,
-        username,
-        description,
-        imagePreview: !!imagePreview,
-        identityImage: !!identityImage,
-        selectedChainId,
-        selectedChain
-    });
+    console.log('Validating form...');
 
     // Basic validation for required fields only
     const isTypeValid = !!selectedType;
@@ -387,34 +410,9 @@ function validateForm(): boolean {
     // This allows for both uploaded images and URLs
     const isImageValid = !!imagePreview || !!identityImage;
 
-    // Check if any chain is available and selected
-    const isChainValid = !!selectedChainId && !!selectedChain;
-
-    // Check if there are any available chains that don't already have identities
-    const hasAvailableChains = availableChains.some(chain => !chainIdentityStatus[chain.chain_id]);
-
-    // Log individual validation results
-    console.log('Form validation - Individual checks:', {
-        isTypeValid,
-        isUsernameValid,
-        isDescriptionValid,
-        isImageValid,
-        isChainValid,
-        hasAvailableChains,
-        usernameLength: username.trim().length,
-        descriptionLength: description.trim().length
-    });
-
     // Update the validation state - only check required fields
-    // Also ensure there are available chains to select from
-    const newIsValid = isTypeValid && isUsernameValid && isDescriptionValid && isImageValid && isChainValid && hasAvailableChains;
+    const newIsValid = isTypeValid && isUsernameValid && isDescriptionValid && isImageValid;
 
-    // If there are no available chains without identities, show an error message
-    if (!hasAvailableChains && availableChains.length > 0) {
-        errorMessage = 'You already have identities on all available chains. You can only have one identity per blockchain network.';
-    } else {
-        errorMessage = '';
-    }
     console.log('Form validation - Final result:', newIsValid);
 
     // Force reactivity by creating a new boolean
@@ -435,15 +433,21 @@ async function handleSubmit() {
 
         // Store type-specific data
         if (selectedType === 'artist') {
-            identityStore.setDob(dateToTimestamp(dob));
+            const timestamp = dob ? Math.floor(new Date(dob).getTime() / 1000) : 0;
+            identityStore.setDob(timestamp);
             identityStore.setLocation(location);
         } else if (selectedType === 'gallery' || selectedType === 'institution') {
             identityStore.setAddresses(addresses.filter(addr => addr.trim().length > 0));
         }
 
-        // Store the selected chain
-        if (selectedChain) {
-            identityStore.setSelectedChain(selectedChain);
+        // Set the identity ID
+        if (currentIdentity) {
+            // Create a new object that combines IdentityInfo with the identityId
+            const dialogData = {
+                ...identityData!,
+                identityId: currentIdentity.id
+            };
+            identityData = dialogData;
         }
 
         // Open the activation dialog
@@ -451,19 +455,7 @@ async function handleSubmit() {
     }
 }
 
-// Function to convert date string to timestamp
-function dateToTimestamp(dateStr: string): number {
-    if (!dateStr) return 0;
-    const date = new Date(dateStr);
-    return Math.floor(date.getTime() / 1000);
-}
 
-// Function to format timestamp to date string
-function timestampToDate(timestamp: number): string {
-    if (!timestamp) return '';
-    const date = new Date(timestamp * 1000);
-    return date.toISOString().split('T')[0];
-}
 </script>
 
 <div class="md:min-h-screen">
@@ -475,7 +467,7 @@ function timestampToDate(timestamp: number): string {
                 </svg>
                 Back to Identities
             </Button>
-            <h1 class="text-xl sm:text-2xl font-bold">Create Identity</h1>
+            <h1 class="text-xl sm:text-2xl font-bold">Update Identity</h1>
         </div>
 
         {#if errorMessage}
@@ -493,7 +485,7 @@ function timestampToDate(timestamp: number): string {
             <div class="bg-card rounded-lg border border-border p-4 sm:p-6 mb-6 sm:mb-8 space-y-6 sm:space-y-8">
                 <!-- Identity Type Section -->
                 <div>
-                    <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Choose Identity Type</h2>
+                    <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Identity Type</h2>
                     <p class="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">Select the type of identity you want to create</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -523,7 +515,10 @@ function timestampToDate(timestamp: number): string {
                                 id="username"
                                 type="text"
                                 value={username}
-                                on:input={handleUsernameInput}
+                                on:input={() => {
+                                    identityStore.setUsername(username);
+                                    validateForm();
+                                }}
                                 placeholder="Enter name"
                                 class="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             />
@@ -538,7 +533,10 @@ function timestampToDate(timestamp: number): string {
                             <textarea
                                 id="description"
                                 value={description}
-                                on:input={handleDescriptionInput}
+                                on:input={() => {
+                                    identityStore.setDescription(description);
+                                    validateForm();
+                                }}
                                 placeholder="Enter description"
                                 class="mt-1 flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             />
@@ -553,7 +551,12 @@ function timestampToDate(timestamp: number): string {
                                         <img src={imagePreview} alt="Preview" class="w-24 h-24 object-cover rounded-md" />
                                         <button
                                             class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                                            on:click={removeImage}
+                                            on:click={() => {
+                                                imagePreview = '';
+                                                identityImage = '';
+                                                identityStore.setIdentityImage('');
+                                                validateForm();
+                                            }}
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -594,13 +597,13 @@ function timestampToDate(timestamp: number): string {
                                             <Input
                                                 placeholder="Platform (e.g., Instagram)"
                                                 value={link.name}
-                                                on:input={(e) => updateLink(i, 'name', (e.target as HTMLInputElement).value)}
+                                                on:input={(e) => handleLinkInput(i, 'name', (e.target as HTMLInputElement).value)}
                                                 class="flex-1"
                                             />
                                             <Input
                                                 placeholder="URL"
                                                 value={link.url}
-                                                on:input={(e) => updateLink(i, 'url', (e.target as HTMLInputElement).value)}
+                                                on:input={(e) => handleLinkInput(i, 'url', (e.target as HTMLInputElement).value)}
                                                 class="flex-1"
                                             />
                                             <Button
@@ -637,7 +640,11 @@ function timestampToDate(timestamp: number): string {
                                             <Input
                                                 placeholder="Tag (e.g., Contemporary Art)"
                                                 value={tag}
-                                                on:input={(e) => updateTag(i, (e.target as HTMLInputElement).value)}
+                                                on:input={(e) => {
+                                                    tags[i] = (e.target as HTMLInputElement).value;
+                                                    identityStore.setTags(tags);
+                                                    validateForm();
+                                                }}
                                                 class="flex-1"
                                             />
                                             <Button
@@ -655,7 +662,10 @@ function timestampToDate(timestamp: number): string {
                                 {:else}
                                     <div class="text-sm text-muted-foreground mb-2">No tags added yet</div>
                                 {/if}
-                                <Button variant="outline" size="sm" on:click={addTag} class="mt-2">
+                                <Button variant="outline" size="sm" on:click={() => {
+                                    tags = [...tags, ''];
+                                    validateForm();
+                                }} class="mt-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                                     </svg>
@@ -674,10 +684,7 @@ function timestampToDate(timestamp: number): string {
                                         id="dob"
                                         type="date"
                                         value={dob}
-                                        on:input={(e) => {
-                                            dob = (e.target as HTMLInputElement).value;
-                                            validateForm();
-                                        }}
+                                        on:input={handleDobInput}
                                         class="mt-1"
                                     />
                                 </div>
@@ -686,10 +693,7 @@ function timestampToDate(timestamp: number): string {
                                     <Input
                                         id="location"
                                         value={location}
-                                        on:input={(e) => {
-                                            location = (e.target as HTMLInputElement).value;
-                                            validateForm();
-                                        }}
+                                        on:input={handleLocationInput}
                                         placeholder="City, Country"
                                         class="mt-1"
                                     />
@@ -706,7 +710,7 @@ function timestampToDate(timestamp: number): string {
                                                 <Input
                                                     placeholder="Address"
                                                     value={address}
-                                                    on:input={(e) => updateAddress(i, (e.target as HTMLInputElement).value)}
+                                                    on:input={(e) => handleAddressInput(i, (e.target as HTMLInputElement).value)}
                                                     class="flex-1"
                                                 />
                                                 <Button
@@ -736,70 +740,23 @@ function timestampToDate(timestamp: number): string {
                     </div>
                 </div>
 
-                <!-- Chain Selection Section -->
+                <!-- Blockchain Network -->
                 <div>
-                    <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Select Blockchain</h2>
-                    <p class="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">Choose the blockchain where your identity will be created</p>
+                    <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Blockchain Network</h2>
+                    <p class="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">The blockchain network cannot be changed after identity creation</p>
 
-                    {#if availableChains.length > 0}
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                            {#each availableChains as chain}
-                                <button
-                                    class="p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center text-center gap-2
-                                        {selectedChainId === chain.chain_id ? 'border-primary bg-primary/10' :
-                                         chainIdentityStatus[chain.chain_id] ? 'border-border bg-muted/50 opacity-70 cursor-not-allowed' :
-                                         'border-border hover:border-primary/50'}"
-                                    on:click={() => handleChainSelect(chain.chain_id)}
-                                    disabled={chainIdentityStatus[chain.chain_id]}
-                                    title={chainIdentityStatus[chain.chain_id] ? 'You already have an identity on this chain' : 'Select this chain'}
-                                >
-                                    {#if chain.icon_url}
-                                        <img
-                                            src={chain.icon_url}
-                                            alt={chain.name}
-                                            class="h-12 w-12 mb-2"
-                                            on:error={(e) => {
-                                                const img = e.target as HTMLImageElement;
-                                                img.onerror = null;
-                                                img.src = `https://placehold.co/48x48/svg?text=${chain.symbol || 'ETH'}`;
-                                            }}
-                                        />
-                                    {:else}
-                                        <div class="h-12 w-12 mb-2 bg-muted rounded-full flex items-center justify-center text-xl font-bold">
-                                            {chain.symbol || 'ETH'}
-                                        </div>
-                                    {/if}
-                                    <span class="text-lg font-medium">{chain.name}</span>
-                                    {#if chain.is_testnet}
-                                        <Badge variant="outline" class="bg-muted text-muted-foreground border-border">
-                                            Testnet
-                                        </Badge>
-                                    {/if}
-                                    {#if chainIdentityStatus[chain.chain_id]}
-                                        <Badge variant="secondary" class="bg-gray-100 text-gray-700 border-gray-200 font-medium">
-                                            Identity Exists
-                                        </Badge>
-                                    {/if}
-                                </button>
-                            {/each}
+                    {#if selectedChain}
+                        <div class="p-4 border border-border rounded-md bg-muted/30">
+                            <div class="flex items-center gap-2">
+                                {#if selectedChain.icon_url}
+                                    <img src={selectedChain.icon_url} alt={selectedChain.name} class="w-6 h-6" />
+                                {/if}
+                                <span class="font-medium">{selectedChain.name}</span>
+                            </div>
                         </div>
                     {:else}
-                        <div class="p-4 bg-muted rounded-lg text-center">
-                            <p>No chains available. Please try again later.</p>
-                        </div>
+                        <p class="text-muted-foreground">No blockchain network selected.</p>
                     {/if}
-
-                    {#if errorMessage}
-                        <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg">
-                            <p>{errorMessage}</p>
-                        </div>
-                    {/if}
-
-                    <Alert class="mt-4 bg-muted/50">
-                        <AlertDescription>
-                            You can only create one identity per blockchain network. Chains where you already have an identity are disabled.
-                        </AlertDescription>
-                    </Alert>
                 </div>
             </div>
 
@@ -811,14 +768,14 @@ function timestampToDate(timestamp: number): string {
                     disabled={!isValid}
                     class="w-full sm:w-auto touch-target"
                 >
-                    Create Identity
+                    Update Identity
                 </Button>
             </div>
         {/if}
     </div>
 </div>
 
-<!-- Activation Dialog -->
+<!-- Update Activation Dialog -->
 {#if identityData}
-<ActivationDialog bind:open={dialogOpen} identityData={identityData} />
+<UpdateActivationDialog bind:open={dialogOpen} identityData={identityData} />
 {/if}

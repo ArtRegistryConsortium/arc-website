@@ -33,9 +33,40 @@ export interface CreateIdentityRequest {
 }
 
 /**
- * Interface for identity creation response
+ * Interface for identity update request
+ */
+export interface UpdateIdentityRequest {
+  walletAddress: Address;
+  identityId: number;
+  chainId: number;
+  name: string;
+  description?: string;
+  identityImage?: string;
+  links?: string[];
+  tags?: string[];
+  dob?: number; // Only for Artists
+  dod?: number; // Only for Artists, optional
+  location?: string; // Only for Artists
+  addresses?: string[]; // Only for Galleries/Institutions
+  representedBy?: string; // JSON string, only for Artists
+  representedArtists?: string; // JSON string, only for Galleries
+}
+
+/**
+ * Interface for identity creation/update response
  */
 export interface CreateIdentityResponse {
+  success: boolean;
+  identityId?: number;
+  transactionHash?: string;
+  error?: string;
+  message?: string;
+}
+
+/**
+ * Interface for identity update response
+ */
+export interface UpdateIdentityResponse {
   success: boolean;
   identityId?: number;
   transactionHash?: string;
@@ -80,6 +111,47 @@ export async function createIdentity(request: CreateIdentityRequest): Promise<Cr
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error creating identity'
+    };
+  }
+}
+
+/**
+ * Updates an identity on-chain and in the database
+ * @param request The identity update request
+ * @returns The identity update response
+ */
+export async function updateIdentity(request: UpdateIdentityRequest): Promise<UpdateIdentityResponse> {
+  try {
+    console.log('Updating identity with request:', request);
+
+    const response = await fetch('/api/identity/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Identity update result:', result);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Unknown error'
+      };
+    }
+
+    return result as UpdateIdentityResponse;
+  } catch (error) {
+    console.error('Failed to update identity:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error updating identity'
     };
   }
 }

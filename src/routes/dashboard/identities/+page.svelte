@@ -6,11 +6,17 @@
   import type { UserIdentity } from '$lib/services/userIdentityService';
   import { onMount } from 'svelte';
   import { getWalletAddress } from '$lib/stores/walletAuth';
+  import IdentityDetailsDialog from '$lib/components/IdentityDetailsDialog.svelte';
 
   let identities: UserIdentity[] = [];
   let isLoading = true;
   let error: string | null = null;
   let chainIcons: Record<number, { icon_url: string, name: string }> = {};
+  let selectedIdentity: UserIdentity | null = null;
+  let dialogOpen = false;
+  let showTooltip = false;
+  let tooltipPosition = { x: 0, y: 0 };
+  let tooltipButton: HTMLDivElement;
 
   // Subscribe to the user identity store
   userIdentityStore.subscribe(state => {
@@ -42,6 +48,26 @@
     }
   }
 
+  // Function to handle view details click
+  function handleViewDetails(identity: UserIdentity) {
+    selectedIdentity = identity;
+    dialogOpen = true;
+  }
+
+  function handleMouseEnter(event: MouseEvent) {
+    const button = event.currentTarget as HTMLDivElement;
+    const rect = button.getBoundingClientRect();
+    tooltipPosition = {
+      x: rect.left + (rect.width / 2),
+      y: rect.bottom + 8
+    };
+    showTooltip = true;
+  }
+
+  function handleMouseLeave() {
+    showTooltip = false;
+  }
+
   // Ensure identities are loaded when the component mounts
   onMount(async () => {
     const walletAddress = getWalletAddress();
@@ -58,20 +84,50 @@
   });
 </script>
 
-<div class="space-y-8 min-h-screen">
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold">My Identities</h1>
-    <Button on:click={() => goto('/dashboard/create-identity')}>Create New Identity</Button>
+<div class="space-y-8 md:min-h-screen">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+    <div class="flex items-center gap-2">
+      <h1 class="text-xl sm:text-2xl font-bold">My Identities</h1>
+      <div class="relative inline-block">
+        <div
+          bind:this={tooltipButton}
+          class="cursor-help w-6 h-6 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-sm font-medium text-muted-foreground transition-colors"
+          on:mouseenter={handleMouseEnter}
+          on:mouseleave={handleMouseLeave}
+        >
+          ?
+        </div>
+        {#if showTooltip}
+          <div
+            class="fixed z-50 bg-background border border-border rounded-lg shadow-lg p-4 max-w-[calc(100vw-32px)] sm:max-w-sm"
+            style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px; transform: translateX(-50%);"
+          >
+            <div class="space-y-2">
+              <p>An Identity in the ARC system is a blockchain-verified profile that represents a participant in the ARC ecosystem. Each identity has a unique ID and is associated with a wallet address, ensuring proper authentication and authorization throughout the system.</p>
+              <p>ARC supports four types of identities:</p>
+              <ul class="list-disc pl-4 space-y-1">
+                <li><strong>Artist:</strong> Creators who deploy their own ART Contracts and mint ARTs</li>
+                <li><strong>Gallery:</strong> Entities that represent artists and facilitate art sales</li>
+                <li><strong>Institution:</strong> Museums, foundations, and other organizations that exhibit or preserve art</li>
+                <li><strong>Collector:</strong> Individuals or entities who own artworks and their corresponding ARTs</li>
+              </ul>
+            </div>
+            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-background"></div>
+          </div>
+        {/if}
+      </div>
+    </div>
+    <Button on:click={() => goto('/dashboard/create-identity')} class="w-full sm:w-auto touch-target">Create New Identity</Button>
   </div>
 
   {#if isLoading}
     <div class="rounded-lg border border-border overflow-hidden">
-      <div class="bg-muted/50 px-6 py-4 border-b border-border">
-        <div class="grid grid-cols-12 gap-4 font-medium text-sm text-muted-foreground">
-          <div class="col-span-5 sm:col-span-4">Name</div>
+      <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
+        <div class="grid grid-cols-12 gap-2 sm:gap-4 font-medium text-sm text-muted-foreground">
+          <div class="col-span-6 sm:col-span-4">Name</div>
           <div class="col-span-3 hidden sm:block">Type</div>
           <div class="col-span-2 hidden sm:block">Chain</div>
-          <div class="col-span-4 sm:col-span-1">Created</div>
+          <div class="col-span-3 sm:col-span-1">Created</div>
           <div class="col-span-3 sm:col-span-2 text-right">Actions</div>
         </div>
       </div>
@@ -114,17 +170,17 @@
     </div>
   {:else if identities.length === 0}
     <div class="rounded-lg border border-border overflow-hidden">
-      <div class="bg-muted/50 px-6 py-4 border-b border-border">
-        <div class="grid grid-cols-12 gap-4 font-medium text-sm text-muted-foreground">
-          <div class="col-span-5 sm:col-span-4">Name</div>
+      <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
+        <div class="grid grid-cols-12 gap-2 sm:gap-4 font-medium text-sm text-muted-foreground">
+          <div class="col-span-6 sm:col-span-4">Name</div>
           <div class="col-span-3 hidden sm:block">Type</div>
           <div class="col-span-2 hidden sm:block">Chain</div>
-          <div class="col-span-4 sm:col-span-1">Created</div>
+          <div class="col-span-3 sm:col-span-1">Created</div>
           <div class="col-span-3 sm:col-span-2 text-right">Actions</div>
         </div>
       </div>
 
-      <div class="py-16 flex flex-col items-center justify-center space-y-6 text-center">
+      <div class="py-16 flex flex-col items-center justify-center space-y-6 text-center px-4">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
@@ -132,41 +188,41 @@
           <h3 class="text-lg font-medium">No Identities Found</h3>
           <p class="text-gray-500 dark:text-gray-400 mt-2">You haven't created any identities yet.</p>
         </div>
-        <Button on:click={() => goto('/dashboard/create-identity')}>Create Your First Identity</Button>
+        <Button on:click={() => goto('/dashboard/create-identity')} class="touch-target">Create Your First Identity</Button>
       </div>
     </div>
   {:else}
     <div class="rounded-lg border border-border overflow-hidden">
-      <div class="bg-muted/50 px-6 py-4 border-b border-border">
-        <div class="grid grid-cols-12 gap-4 font-medium text-sm text-muted-foreground">
-          <div class="col-span-5 sm:col-span-4">Name</div>
+      <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
+        <div class="grid grid-cols-12 gap-2 sm:gap-4 font-medium text-sm text-muted-foreground">
+          <div class="col-span-6 sm:col-span-4">Name</div>
           <div class="col-span-3 hidden sm:block">Type</div>
           <div class="col-span-2 hidden sm:block">Chain</div>
-          <div class="col-span-4 sm:col-span-1">Created</div>
+          <div class="col-span-3 sm:col-span-1">Created</div>
           <div class="col-span-3 sm:col-span-2 text-right">Actions</div>
         </div>
       </div>
 
       <div class="divide-y divide-border">
         {#each identities as identity}
-          <div class="px-6 py-4 hover:bg-muted/30 transition-colors">
-            <div class="grid grid-cols-12 gap-4 items-center">
+          <div class="px-4 sm:px-6 py-4 hover:bg-muted/30 transition-colors">
+            <div class="grid grid-cols-12 gap-2 sm:gap-4 items-center">
               <!-- Name and image -->
-              <div class="col-span-5 sm:col-span-4 flex items-center gap-3">
-                <div class="relative flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+              <div class="col-span-6 sm:col-span-4 flex items-center gap-2 sm:gap-3">
+                <div class="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                   {#if identity.identity_image}
                     <img src={identity.identity_image} alt={identity.name} class="w-full h-full object-cover" />
                   {:else}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   {/if}
                   <!-- Removed type icon -->
                 </div>
                 <div class="truncate">
-                  <div class="font-medium truncate">{identity.name}</div>
+                  <div class="font-medium truncate text-sm sm:text-base">{identity.name}</div>
                   {#if identity.tags && identity.tags.length > 0}
-                    <div class="flex flex-wrap gap-1 mt-1">
+                    <div class="hidden sm:flex flex-wrap gap-1 mt-1">
                       {#each identity.tags.slice(0, 2) as tag}
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary truncate max-w-[80px]">
                           {tag}
@@ -220,7 +276,7 @@
               </div>
 
               <!-- Created date -->
-              <div class="col-span-4 sm:col-span-1 text-sm text-muted-foreground">
+              <div class="col-span-3 sm:col-span-1 text-xs sm:text-sm text-muted-foreground">
                 {#if identity.created_at}
                   {new Date(identity.created_at).toLocaleDateString()}
                 {:else}
@@ -229,8 +285,9 @@
               </div>
 
               <!-- Actions -->
-              <div class="col-span-3 sm:col-span-2 flex justify-end">
-                <Button variant="outline" size="sm">View Details</Button>
+              <div class="col-span-3 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
+                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target" on:click={() => handleViewDetails(identity)}>View</Button>
+                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target" on:click={() => goto(`/dashboard/update-identity?id=${identity.id}`)}>Edit</Button>
               </div>
             </div>
           </div>
@@ -239,3 +296,5 @@
     </div>
   {/if}
 </div>
+
+<IdentityDetailsDialog bind:open={dialogOpen} identity={selectedIdentity} />

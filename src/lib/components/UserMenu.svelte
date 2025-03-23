@@ -223,31 +223,28 @@
 
         <button
           type="button"
-          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center"
+          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white flex items-center"
           role="menuitem"
           on:click={() => { isOpen = false; goto('/dashboard/identities'); }}
         >
-
           Identities
         </button>
 
         <button
           type="button"
-          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center"
+          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white flex items-center"
           role="menuitem"
           on:click={() => { isOpen = false; goto('/dashboard/catalogue'); }}
         >
-
           Catalogue Raisonné
         </button>
 
         <button
           type="button"
-          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center"
+          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white flex items-center"
           role="menuitem"
           on:click={() => { isOpen = false; goto('/dashboard/collection'); }}
         >
-
           My Collection
         </button>
       </div>
@@ -277,11 +274,10 @@
         {/if}
         <button
           type="button"
-          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center"
+          class="block w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white flex items-center"
           role="menuitem"
           on:click={handleLogout}
         >
-
           Disconnect Wallet
         </button>
       </div>
