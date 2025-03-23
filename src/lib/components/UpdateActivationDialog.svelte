@@ -118,6 +118,7 @@
       // Prepare the contract data
       const contractData = {
         identityId: Number(identityId) || 0, // Ensure it's a valid number
+        identityType: mapIdentityType(displayData.identityType || 'artist'), // Map the identity type to the enum value
         name: displayData.username,
         description: displayData.description || '',
         identityImage: displayData.identityImage || '',
@@ -138,6 +139,7 @@
       // Prepare the arguments for the contract call
       const args = [
         contractData.identityId,
+        contractData.identityType,
         contractData.name,
         contractData.description,
         contractData.identityImage,
@@ -155,7 +157,7 @@
       for (let i = 0; i < args.length; i++) {
         console.log(`Argument ${i}:`, args[i], typeof args[i]);
         // Make sure numeric values are valid
-        if (i === 0 || i === 6 || i === 7) { // identityId, dob, dod
+        if (i === 0 || i === 1 || i === 7 || i === 8) { // identityId, identityType, dob, dod
           if (args[i] === undefined || args[i] === null) {
             console.warn(`Argument ${i} is ${args[i]}, setting to 0`);
             args[i] = 0;
@@ -199,6 +201,7 @@
         const dbUpdateData = {
           identityId: contractData.identityId,
           walletAddress,
+          identityType: contractData.identityType, // Include the identity type
           name: contractData.name,
           description: contractData.description,
           identityImage: contractData.identityImage,

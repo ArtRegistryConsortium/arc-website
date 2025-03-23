@@ -12,6 +12,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const {
       identityId,
       walletAddress,
+      identityType, // Add identityType
       name,
       description,
       identityImage,
@@ -43,6 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
       identity_image: string;
       links: string;
       tags: any[];
+      type?: string; // Add type field
       dob: number | null;
       location: string;
       addresses: string;
@@ -62,6 +64,26 @@ export const POST: RequestHandler = async ({ request }) => {
       represented_artists: representedArtists || '',
       updated_at: new Date().toISOString()
     };
+
+    // Map the numeric identity type to a string and add it to the update data
+    if (identityType !== undefined) {
+      let typeString = 'artist';
+      switch (identityType) {
+        case 0:
+          typeString = 'artist';
+          break;
+        case 1:
+          typeString = 'gallery';
+          break;
+        case 2:
+          typeString = 'institution';
+          break;
+        case 3:
+          typeString = 'collector';
+          break;
+      }
+      updateData.type = typeString;
+    }
 
     console.log('Update data:', updateData);
 

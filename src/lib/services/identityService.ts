@@ -39,6 +39,7 @@ export interface UpdateIdentityRequest {
   walletAddress: Address;
   identityId: number;
   chainId: number;
+  identityType?: IdentityType;
   name: string;
   description?: string;
   identityImage?: string;

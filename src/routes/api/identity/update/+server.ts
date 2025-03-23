@@ -7,7 +7,7 @@ import type { UpdateIdentityRequest } from '$lib/services/identityService';
 
 // ABI for the Identity contract's updateIdentity function
 const IDENTITY_ABI = [
-  "function updateIdentity(uint256 identityId, string name, string description, string identityImage, string links, string[] tags, uint256 dob, uint256 dod, string location, string addresses, string representedBy, string representedArtists) external"
+  "function updateIdentity(uint256 identityId, uint8 identityType, string name, string description, string identityImage, string links, string[] tags, uint256 dob, uint256 dod, string location, string addresses, string representedBy, string representedArtists) external"
 ];
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -72,9 +72,43 @@ export const POST: RequestHandler = async ({ request }) => {
     const representedBy = requestData.representedBy || '';
     const representedArtists = requestData.representedArtists || '';
 
+    // Get the identity type from the database
+    const { data: identityData, error: identityError } = await supabaseAdmin
+      .from('identities')
+      .select('type')
+      .eq('id', identityId)
+      .eq('wallet_address', walletAddress)
+      .single();
+
+    if (identityError || !identityData) {
+      console.error('Error fetching identity type:', identityError);
+      return json({
+        success: false,
+        error: 'Failed to fetch identity type from database.'
+      }, { status: 500 });
+    }
+
+    // Map the identity type to the enum value
+    let identityType = 0; // Default to Artist (0)
+    switch (identityData.type) {
+      case 'artist':
+        identityType = 0;
+        break;
+      case 'gallery':
+        identityType = 1;
+        break;
+      case 'institution':
+        identityType = 2;
+        break;
+      case 'collector':
+        identityType = 3;
+        break;
+    }
+
     // Call the updateIdentity function
     console.log('Updating identity on-chain with parameters:', {
       identityId,
+      identityType,
       name,
       description,
       identityImage,
@@ -91,6 +125,7 @@ export const POST: RequestHandler = async ({ request }) => {
     // Update the identity on-chain
     const tx = await identityContract.updateIdentity(
       identityId,
+      identityType,
       name,
       description,
       identityImage,
@@ -129,27 +164,63 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 500 });
     }
 
+    // Map the numeric identity type back to a string for the database
+    let typeString = 'artist';
+    switch (identityType) {
+      case 0:
+        typeString = 'artist';
+        break;
+      case 1:
+        typeString = 'gallery';
+        break;
+      case 2:
+        typeString = 'institution';
+        break;
+      case 3:
+        typeString = 'collector';
+        break;
+    }
+
     const updateData = {
       name: name,
       description: description,
       identity_image: identityImage,
       links: links,
       tags: tags,
+      type: typeString, // Update the identity type in the database
       updated_at: now
     };
 
-    // Add type-specific fields
-    if (identityData.type === 'artist') {
+    // Add type-specific fields based on the new identity type
+    if (typeString === 'artist') {
       Object.assign(updateData, {
         dob: dob,
         dod: dod,
         location: location,
-        represented_by: representedBy ? JSON.parse(representedBy) : null
+        represented_by: representedBy ? JSON.parse(representedBy) : null,
+        // Clear non-Artist fields
+        addresses: null,
+        represented_artists: null
       });
-    } else if (identityData.type === 'gallery' || identityData.type === 'institution') {
+    } else if (typeString === 'gallery' || typeString === 'institution') {
       Object.assign(updateData, {
         addresses: addresses,
-        represented_artists: representedArtists ? JSON.parse(representedArtists) : null
+        represented_artists: representedArtists ? JSON.parse(representedArtists) : null,
+        // Clear Artist fields
+        dob: null,
+        dod: null,
+        location: null,
+        represented_by: null
+      });
+    } else if (typeString === 'collector') {
+      Object.assign(updateData, {
+        // Clear all type-specific fields
+        dob: null,
+        dod: null,
+        location: null,
+        represented_by: null,
+        addresses: null,
+        represented_artists: null
       });
     }
 

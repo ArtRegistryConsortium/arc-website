@@ -73,6 +73,7 @@ export const IDENTITY_ABI = [
   {
     "inputs": [
       { "internalType": "uint256", "name": "identityId", "type": "uint256" },
+      { "internalType": "uint8", "name": "identityType", "type": "uint8" },
       { "internalType": "string", "name": "name", "type": "string" },
       { "internalType": "string", "name": "description", "type": "string" },
       { "internalType": "string", "name": "identityImage", "type": "string" },
