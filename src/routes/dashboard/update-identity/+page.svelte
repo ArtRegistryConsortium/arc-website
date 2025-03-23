@@ -446,15 +446,17 @@ async function handleSubmit() {
             identityStore.setAddresses(addresses.filter(addr => addr.trim().length > 0));
         }
 
-        // Set the identity ID
+        // Set the identity ID and original image URL
         if (currentIdentity) {
-            // Create a new object that combines IdentityInfo with the identityId
+            // Create a new object that combines IdentityInfo with the identityId and originalImageUrl
             const dialogData = {
                 ...identityData!,
-                identityId: Number(currentIdentity.id) // Ensure it's a valid number
+                identityId: Number(currentIdentity.id), // Ensure it's a valid number
+                originalImageUrl: currentIdentity.identity_image || '' // Pass the original image URL for comparison
             };
             identityData = dialogData;
             console.log('Setting identityId for dialog:', dialogData.identityId, typeof dialogData.identityId);
+            console.log('Setting originalImageUrl for dialog:', dialogData.originalImageUrl);
         }
 
         // Open the activation dialog

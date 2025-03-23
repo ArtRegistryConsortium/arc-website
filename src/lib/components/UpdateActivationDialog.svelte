@@ -22,6 +22,7 @@
   let arweaveUrl = '';
   let transactionHash = '';
   let identityId = 0;
+  let originalImageUrl = '';
 
   // Reset state when dialog opens
   $: if (open) {
@@ -32,8 +33,11 @@
     transactionHash = '';
     // Make sure identityId is a valid number
     identityId = identityData?.identityId ? Number(identityData.identityId) : 0;
+    // Store the original image URL for comparison
+    originalImageUrl = identityData?.originalImageUrl || '';
     console.log('Dialog opened with identityId:', identityId);
     console.log('Dialog opened with identity data:', identityData);
+    console.log('Original image URL:', originalImageUrl);
   }
 
   async function handleUploadToArweave() {
@@ -41,9 +45,14 @@
       isProcessing = true;
       errorMessage = '';
 
-      // If we have an image, upload it to Arweave via server-side API
-      if (identityData?.identityImage) {
-        console.log('Uploading image to Arweave via server API...');
+      // Check if the image has changed by comparing with the original image URL
+      if (identityData?.identityImage && originalImageUrl && identityData.identityImage === originalImageUrl) {
+        // Image hasn't changed, skip upload and use the original URL
+        console.log('Image has not changed, skipping Arweave upload');
+        arweaveUrl = originalImageUrl;
+      } else if (identityData?.identityImage) {
+        // Image has changed, upload to Arweave
+        console.log('Image has changed, uploading to Arweave via server API...');
         arweaveUrl = await uploadImageToArweave(identityData.identityImage);
         console.log('Image uploaded successfully:', arweaveUrl);
       } else {
