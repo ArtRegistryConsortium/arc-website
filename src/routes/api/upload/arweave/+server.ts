@@ -2,7 +2,6 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import Arweave from 'arweave';
 import { env } from '$env/dynamic/private';
-import { createRateLimit } from '$lib/utils/rateLimit';
 
 // Maximum file size in bytes (1MB)
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -26,34 +25,13 @@ const arweave = Arweave.init({
 // Log the Arweave configuration for debugging
 console.log('Arweave client initialized with host:', (env.ARWEAVE_GATEWAY_URL || 'arweave.net').replace(/^https?:\/\//, ''));
 
-// Configure rate limiting for Arweave uploads
-// Get rate limit configuration from environment variables or use defaults
-const RATE_LIMIT_MAX = parseInt(env.ARWEAVE_RATE_LIMIT_MAX || '5', 10); // Default: 5 uploads
-const RATE_LIMIT_WINDOW_HOURS = parseInt(env.ARWEAVE_RATE_LIMIT_WINDOW_HOURS || '1', 10); // Default: 1 hour
-
-const arweaveRateLimit = createRateLimit({
-  max: RATE_LIMIT_MAX,
-  windowMs: RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000, // Convert hours to milliseconds
-  message: 'Too many image uploads. Please try again later.',
-  skipInDevelopment: env.NODE_ENV === 'development' // Skip in development mode
-});
-
-// Log rate limit configuration on startup
-console.log(`Arweave upload rate limit: ${RATE_LIMIT_MAX} uploads per ${RATE_LIMIT_WINDOW_HOURS} hour(s)${env.NODE_ENV === 'development' ? ' (disabled in development)' : ''}`);
+// Rate limiting for Arweave uploads has been removed
 
 /**
  * API endpoint to upload an image to Arweave
  * This keeps the Arweave wallet key secure on the server
- * Rate limited to prevent abuse
  */
 export const POST: RequestHandler = async (event) => {
-  // Apply rate limiting
-  console.log('Applying rate limiting to Arweave upload request');
-  const rateLimitResult = await arweaveRateLimit(event);
-  if (rateLimitResult) {
-    console.log('Rate limit applied, returning response');
-    return rateLimitResult;
-  }
 
   const { request } = event;
   try {

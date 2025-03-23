@@ -73,14 +73,6 @@ export async function uploadImageToArweave(imageData: string | File): Promise<st
 
     if (!response.ok) {
       const errorData = await response.json();
-
-      // Handle rate limiting errors specially
-      if (response.status === 429) {
-        const retryAfter = errorData.retryAfter || 3600; // Default to 1 hour if not provided
-        const minutes = Math.ceil(retryAfter / 60);
-        throw new Error(`Rate limit exceeded. Too many uploads. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`);
-      }
-
       throw new Error(errorData.error || `Server responded with status: ${response.status}`);
     }
 
