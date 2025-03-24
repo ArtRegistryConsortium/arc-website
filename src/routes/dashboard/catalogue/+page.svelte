@@ -22,6 +22,7 @@
   let showTooltip = false;
   let tooltipPosition = { x: 0, y: 0 };
   let tooltipButton: HTMLDivElement;
+  let chainIcons: Record<number, { icon_url: string, name: string }> = {};
 
   function handleMouseEnter(event: MouseEvent) {
     const button = event.currentTarget as HTMLDivElement;
@@ -37,10 +38,38 @@
     showTooltip = false;
   }
 
+  // Function to fetch chain information
+  async function fetchChainInfo(chainId: number) {
+    if (chainIcons[chainId]) return chainIcons[chainId];
+
+    try {
+      const response = await fetch(`/api/chains/info?chainId=${chainId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.chain) {
+          chainIcons[chainId] = {
+            icon_url: data.chain.icon_url || '',
+            name: data.chain.name || `Chain ${chainId}`
+          };
+          return chainIcons[chainId];
+        }
+      }
+      return { icon_url: '', name: `Chain ${chainId}` };
+    } catch (error) {
+      console.error('Error fetching chain info:', error);
+      return { icon_url: '', name: `Chain ${chainId}` };
+    }
+  }
+
   // Load data on mount
   onMount(async () => {
     try {
       await loadData();
+      // Fetch chain info for all contracts
+      const uniqueChainIds = [...new Set(artContracts.map(contract => contract.chainId))];
+      for (const chainId of uniqueChainIds) {
+        await fetchChainInfo(chainId);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       errorMessage = error instanceof Error ? error.message : 'An error occurred while loading data';
@@ -156,54 +185,103 @@
         </div>
       </div>
     </div>
-  {:else}
-    <!-- ART Contracts Section -->
+  {:else if artContracts.length === 0}
     <div class="rounded-lg border border-border overflow-hidden">
       <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
-        <div class="flex flex-col space-y-6">
-          <h2 class="text-lg font-semibold">Your ART Contracts</h2>
-
-          <Separator />
-
-          {#if artContracts.length === 0}
-            <div class="flex flex-col items-center justify-center py-8 sm:py-12">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <h3 class="text-lg sm:text-xl font-medium text-center mt-4">No ART Contracts Found</h3>
-              <p class="text-gray-500 dark:text-gray-400 text-center text-sm sm:text-base max-w-md mt-2">
-                You haven't deployed any ART contracts yet. Deploy your first contract to start building your catalogue raisonné.
-              </p>
-            </div>
-          {:else}
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="border-b border-border">
-                    <th class="text-left py-2 px-4 font-medium text-sm">Name</th>
-                    <th class="text-left py-2 px-4 font-medium text-sm">Symbol</th>
-                    <th class="text-left py-2 px-4 font-medium text-sm">Chain</th>
-                    <th class="text-left py-2 px-4 font-medium text-sm">Deployed</th>
-                    <th class="text-left py-2 px-4 font-medium text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each artContracts as contract}
-                    <tr class="border-b border-border hover:bg-muted/30 transition-colors">
-                      <td class="py-3 px-4 text-sm">{contract.name}</td>
-                      <td class="py-3 px-4 text-sm">{contract.symbol}</td>
-                      <td class="py-3 px-4 text-sm">{getChainName(contract.chainId)}</td>
-                      <td class="py-3 px-4 text-sm">{formatDate(contract.deployedAt)}</td>
-                      <td class="py-3 px-4 text-sm">
-                        <Button size="sm" variant="outline" class="text-xs sm:text-sm touch-target">View</Button>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-          {/if}
+        <div class="grid grid-cols-12 gap-2 sm:gap-4 font-medium text-sm text-muted-foreground">
+          <div class="col-span-6 sm:col-span-4">Name</div>
+          <div class="col-span-3 hidden sm:block">Symbol</div>
+          <div class="col-span-2 hidden sm:block">Chain</div>
+          <div class="col-span-3 sm:col-span-1">Deployed</div>
+          <div class="col-span-3 sm:col-span-2 text-right">Actions</div>
         </div>
+      </div>
+
+      <div class="py-16 flex flex-col items-center justify-center space-y-6 text-center px-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <div>
+          <h3 class="text-lg sm:text-xl font-medium">No ART Contracts Found</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-center text-sm sm:text-base max-w-md mt-2">
+            You haven't deployed any ART contracts yet. Deploy your first contract to start building your catalogue raisonné.
+          </p>
+        </div>
+      </div>
+    </div>
+  {:else}
+    <div class="rounded-lg border border-border overflow-hidden">
+      <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
+        <div class="grid grid-cols-12 gap-2 sm:gap-4 font-medium text-sm text-muted-foreground">
+          <div class="col-span-6 sm:col-span-4">Name</div>
+          <div class="col-span-3 hidden sm:block">Symbol</div>
+          <div class="col-span-2 hidden sm:block">Chain</div>
+          <div class="col-span-3 sm:col-span-1">Deployed</div>
+          <div class="col-span-3 sm:col-span-2 text-right">Actions</div>
+        </div>
+      </div>
+
+      <div class="divide-y divide-border">
+        {#each artContracts as contract}
+          <div class="px-4 sm:px-6 py-4 hover:bg-muted/30 transition-colors">
+            <div class="grid grid-cols-12 gap-2 sm:gap-4 items-center">
+              <!-- Name -->
+              <div class="col-span-6 sm:col-span-4 flex items-center gap-2 sm:gap-3">
+                <div class="relative flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center border border-primary/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div class="truncate">
+                  <div class="font-medium truncate text-sm sm:text-base">{contract.name}</div>
+                </div>
+              </div>
+
+              <!-- Symbol -->
+              <div class="col-span-3 hidden sm:block">
+                <span class="text-sm">{contract.symbol}</span>
+              </div>
+
+              <!-- Chain -->
+              <div class="col-span-2 hidden sm:block">
+                {#await fetchChainInfo(contract.chainId) then chainInfo}
+                  {#if chainInfo.icon_url}
+                    <div class="flex items-center gap-1.5">
+                      <img
+                        src={chainInfo.icon_url}
+                        alt={chainInfo.name}
+                        class="w-4 h-4"
+                        on:error={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.onerror = null;
+                          img.src = `https://placehold.co/16x16/svg?text=${contract.chainId}`;
+                        }}
+                      />
+                      <span class="text-sm">{chainInfo.name}</span>
+                    </div>
+                  {:else}
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px]">
+                        {contract.chainId}
+                      </div>
+                      <span class="text-sm">{chainInfo.name}</span>
+                    </div>
+                  {/if}
+                {/await}
+              </div>
+
+              <!-- Deployed date -->
+              <div class="col-span-3 sm:col-span-1 text-xs sm:text-sm text-muted-foreground">
+                {formatDate(contract.deployedAt)}
+              </div>
+
+              <!-- Actions -->
+              <div class="col-span-3 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
+                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target">View</Button>
+              </div>
+            </div>
+          </div>
+        {/each}
       </div>
     </div>
   {/if}

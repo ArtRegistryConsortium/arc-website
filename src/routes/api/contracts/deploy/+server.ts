@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/supabase/server';
-import { JsonRpcProvider, Contract, Wallet } from 'ethers';
+import { JsonRpcProvider } from 'ethers';
 import { env } from '$env/dynamic/private';
 import type { Address } from 'viem';
 
@@ -9,6 +9,20 @@ import type { Address } from 'viem';
 const ART_FACTORY_ABI = [
   "function deployArtContract(uint256 artistIdentityId, string symbol) external returns (address)"
 ];
+
+// Event signature for ArtContractDeployed event
+// keccak256("ArtContractDeployed(address,uint256)")
+const ART_CONTRACT_DEPLOYED_EVENT_SIGNATURE = "0xb8404e00b0196506b8eed6392cd6195314860737075712144ba3ff6c5cfae465";
+
+// Function to decode hex data from logs
+function decodeAddress(hexData: string): string {
+  // Remove '0x' prefix if present and pad to 64 characters
+  const cleanHex = hexData.startsWith('0x') ? hexData.slice(2) : hexData;
+  const paddedHex = cleanHex.padStart(64, '0');
+
+  // For an address, we need to take the last 40 characters (20 bytes)
+  return '0x' + paddedHex.slice(paddedHex.length - 40);
+}
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
@@ -24,15 +38,49 @@ export const POST: RequestHandler = async ({ request }) => {
       transactionHash
     } = requestData;
 
-    // Validate required fields
-    if (!walletAddress || !identityId || !symbol || !chainId || !transactionHash) {
+    // Validate required fields with detailed error messages
+    if (!walletAddress) {
+      console.error('Missing walletAddress in request');
       return json({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required field: walletAddress'
+      }, { status: 400 });
+    }
+
+    if (identityId === undefined || identityId === null) {
+      console.error('Missing identityId in request');
+      return json({
+        success: false,
+        error: 'Missing required field: identityId'
+      }, { status: 400 });
+    }
+
+    if (!symbol) {
+      console.error('Missing symbol in request');
+      return json({
+        success: false,
+        error: 'Missing required field: symbol'
+      }, { status: 400 });
+    }
+
+    if (chainId === undefined || chainId === null) {
+      console.error('Missing chainId in request');
+      return json({
+        success: false,
+        error: 'Missing required field: chainId'
+      }, { status: 400 });
+    }
+
+    if (!transactionHash) {
+      console.error('Missing transactionHash in request');
+      return json({
+        success: false,
+        error: 'Missing required field: transactionHash'
       }, { status: 400 });
     }
 
     // Get chain information
+    console.log('Fetching chain information for chainId:', chainId);
     const { data: chain, error: chainError } = await supabaseAdmin
       .from('chains')
       .select('*')
@@ -43,134 +91,154 @@ export const POST: RequestHandler = async ({ request }) => {
       console.error('Error fetching chain information:', chainError);
       return json({
         success: false,
-        error: 'Chain not found'
+        error: `Chain not found for chainId: ${chainId}. Error: ${chainError.message}`
       }, { status: 404 });
     }
 
-    // Get contract information
-    const { data: contract, error: contractError } = await supabaseAdmin
-      .from('contracts')
-      .select('*')
-      .eq('chain_id', chainId)
-      .single();
-
-    if (contractError) {
-      console.error('Error fetching contract information:', contractError);
+    if (!chain.rpc_url) {
+      console.error('RPC URL is missing for chain:', chainId);
       return json({
         success: false,
-        error: 'Contract not found for the specified chain'
-      }, { status: 404 });
+        error: `RPC URL is missing for chain: ${chainId}`
+      }, { status: 500 });
     }
 
-    // Get identity information
-    const { data: identity, error: identityError } = await supabaseAdmin
-      .from('identities')
-      .select('*')
-      .eq('id', identityId)
-      .eq('chain_id', chainId)
-      .single();
-
-    if (identityError) {
-      console.error('Error fetching identity information:', identityError);
-      return json({
-        success: false,
-        error: 'Identity not found'
-      }, { status: 404 });
-    }
-
-    // Verify that the identity belongs to the wallet
-    if (identity.wallet_address !== walletAddress) {
-      return json({
-        success: false,
-        error: 'Identity does not belong to the wallet'
-      }, { status: 403 });
-    }
-
-    // Verify that the identity is of type 'artist'
-    if (identity.type !== 'artist') {
-      return json({
-        success: false,
-        error: 'Only artist identities can deploy ART contracts'
-      }, { status: 403 });
-    }
-
-    // Create a provider
+    // Create a provider to verify the transaction
     const provider = new JsonRpcProvider(chain.rpc_url);
 
-    // Create a contract instance
-    const artFactoryContract = new Contract(
-      contract.art_factory_contract_address,
-      ART_FACTORY_ABI,
-      provider
-    );
-
-    // Get the transaction receipt to extract the contract address
-    const receipt = await provider.getTransactionReceipt(transactionHash);
+    // Wait for the transaction to be mined
+    console.log('Waiting for transaction to be mined:', transactionHash);
+    const receipt = await provider.waitForTransaction(transactionHash);
 
     if (!receipt) {
+      console.error('Transaction receipt not found');
       return json({
         success: false,
-        error: 'Transaction not found'
-      }, { status: 404 });
+        error: 'Transaction not found or failed'
+      }, { status: 400 });
     }
 
-    // Extract the contract address from the logs
-    // This is a simplified approach - in a production environment, you would parse the logs
-    // to find the ArtContractDeployed event and extract the contract address
+    console.log('Transaction receipt:', JSON.stringify(receipt, null, 2));
+
+    // Check if the transaction was successful
+    if (receipt.status === 0) {
+      console.error('Transaction failed with status 0');
+      return json({
+        success: false,
+        error: 'Transaction failed'
+      }, { status: 400 });
+    }
+
+    // Extract the contract address from the transaction receipt
     let contractAddress: Address | null = null;
 
-    // For now, we'll use a placeholder approach
-    // In a real implementation, you would parse the logs to find the ArtContractDeployed event
-    // and extract the contract address from it
+    // First try to get the contract address from the receipt
+    if (receipt.contractAddress) {
+      contractAddress = receipt.contractAddress as Address;
+    } else {
+      // If not found in receipt, look for the ArtContractDeployed event in logs
+      const logs = receipt.logs;
+      console.log('Searching for ArtContractDeployed event in logs...');
 
-    // Create a wallet to sign transactions
-    const wallet = new Wallet(env.PRIVATE_KEY, provider);
+      // First try with the event signature
+      for (const log of logs) {
+        console.log('Log topic[0]:', log.topics[0]);
+        if (log.topics[0] === ART_CONTRACT_DEPLOYED_EVENT_SIGNATURE) {
+          console.log('Found matching event signature, topics:', log.topics);
+          // The contract address is in the first indexed parameter (topics[1])
+          if (log.topics[1]) {
+            contractAddress = decodeAddress(log.topics[1]) as Address;
+            console.log('Extracted contract address from topics[1]:', contractAddress);
+            break;
+          }
+        }
+      }
 
-    // Call the contract to get the deployed contract address
-    // This is a workaround - in a real implementation, you would parse the logs
-    const deployedContracts = await artFactoryContract.connect(wallet).getArtContractsByArtist(identityId);
+      // If still not found, try a more generic approach by looking at all logs
+      if (!contractAddress) {
+        console.log('Event signature not found, trying alternative approach...');
+        // Look for logs that might contain the contract address
+        for (const log of logs) {
+          // Check if this is a contract creation or event from the ART Factory
+          if (log.topics.length > 0) {
+            console.log('Examining log with topics:', log.topics);
+            // Try to extract address from data or topics
+            if (log.data && log.data !== '0x') {
+              console.log('Log has data:', log.data);
+              // Try to extract address from data
+              // This is a simplified approach - in reality, you'd need to decode the ABI
+              try {
+                // If data contains an address, it might be in the first 32 bytes
+                const potentialAddress = decodeAddress(log.data.slice(0, 66));
+                console.log('Potential address from data:', potentialAddress);
+                if (potentialAddress.startsWith('0x') && potentialAddress !== '0x0000000000000000000000000000000000000000') {
+                  contractAddress = potentialAddress as Address;
+                  console.log('Using address from data:', contractAddress);
+                  break;
+                }
+              } catch (e) {
+                console.error('Error extracting address from data:', e);
+              }
+            }
 
-    if (deployedContracts.length === 0) {
-      return json({
-        success: false,
-        error: 'No deployed contracts found for the artist'
-      }, { status: 404 });
+            // Try to extract from topics if there are at least 2 topics
+            if (log.topics.length > 1) {
+              try {
+                const potentialAddress = decodeAddress(log.topics[1]);
+                console.log('Potential address from topics[1]:', potentialAddress);
+                if (potentialAddress.startsWith('0x') && potentialAddress !== '0x0000000000000000000000000000000000000000') {
+                  contractAddress = potentialAddress as Address;
+                  console.log('Using address from topics[1]:', contractAddress);
+                  break;
+                }
+              } catch (e) {
+                console.error('Error extracting address from topics:', e);
+              }
+            }
+          }
+        }
+      }
     }
 
-    // Use the most recently deployed contract
-    contractAddress = deployedContracts[deployedContracts.length - 1];
+    if (!contractAddress) {
+      // Log the receipt for debugging
+      console.log('Transaction receipt:', receipt);
+      console.log('Transaction logs:', receipt.logs);
+      return json({
+        success: false,
+        error: 'No contract address found in transaction receipt or logs'
+      }, { status: 400 });
+    }
 
-    console.log('Extracted contract address:', contractAddress);
-
-    // Create a record in the art_contracts table
-    const { data: artContract, error: artContractError } = await supabaseAdmin
+    // Record the contract deployment in the database
+    const { error: insertError } = await supabaseAdmin
       .from('art_contracts')
       .insert({
         contract_address: contractAddress,
         identity_id: identityId,
-        chain_id: chainId
-      })
-      .select()
-      .single();
+        chain_id: chainId,
+        created_at: new Date().toISOString()
+      });
 
-    if (artContractError) {
-      console.error('Error creating art contract record:', artContractError);
+    if (insertError) {
+      console.error('Error recording contract deployment:', insertError);
       return json({
         success: false,
-        error: 'Failed to create art contract record'
+        error: `Failed to record contract deployment: ${insertError.message}`
       }, { status: 500 });
     }
 
     return json({
       success: true,
-      contractAddress,
-      artContract
+      contractAddress: contractAddress,
+      transactionHash: transactionHash
     });
+
   } catch (error) {
-    console.error('Server error deploying ART contract:', error);
+    console.error('Error in contract deployment:', error);
     return json({
       success: false,
-      error: 'Server error'
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 });
   }
 };

@@ -55,10 +55,10 @@ export const fontNames: Record<Font, string> = {
 
 // Initialize font from localStorage or use system font
 function getInitialFont(): Font {
-  if (!browser) return 'system';
+  if (!browser) return 'crimson-text';
 
   const storedFont = localStorage.getItem('font') as Font | null;
-  return storedFont || 'system';
+  return storedFont || 'crimson-text';
 }
 
 // Create the font store

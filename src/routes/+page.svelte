@@ -7,7 +7,7 @@
   <section class="py-10 md:py-40 relative overflow-hidden border-b border-border/40 bg-background/80 dark:bg-background/90">
 
     <div class="container mx-auto px-4 relative h-full flex items-center justify-center">
-      <div class="max-w-4xl mx-auto text-center py-7 md:py-12">
+      <div class="max-w-4xl mx-auto text-center py-7 md:pb-12 md:pt-12">
         <!-- Badge -->
         <div class="inline-block px-4 py-1 text-sm font-medium bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground rounded-full mb-8 backdrop-blur-sm">
           Blockchain-Powered Art Documentation

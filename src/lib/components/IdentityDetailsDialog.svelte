@@ -130,25 +130,8 @@
                 <!-- Type-specific Information -->
                 {#if identity.type === 'artist'}
                     <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-foreground/90">Artist Information</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <p class="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                                <p class="text-base font-semibold">
-                                    {identity.dob ? new Date(identity.dob * 1000).toLocaleDateString() : '-'}
-                                </p>
-                            </div>
-                            <div class="space-y-2">
-                                <p class="text-sm font-medium text-muted-foreground">Date of Death</p>
-                                <p class="text-base font-semibold">
-                                    {identity.dod && identity.dod > 0 ? new Date(identity.dod * 1000).toLocaleDateString() : '-'}
-                                </p>
-                            </div>
-                            <div class="space-y-2">
-                                <p class="text-sm font-medium text-muted-foreground">Location</p>
-                                <p class="text-base font-semibold">{identity.location || '-'}</p>
-                            </div>
-                        </div>
+                        <p class="text-sm font-medium text-muted-foreground">Location</p>
+                        <p class="text-base font-semibold">{identity.location || '-'}</p>
                     </div>
                 {:else if identity.type === 'gallery' || identity.type === 'institution'}
                     <div class="space-y-4">

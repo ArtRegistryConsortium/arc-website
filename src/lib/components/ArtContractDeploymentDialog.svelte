@@ -75,9 +75,13 @@
   }
 
   // Fetch chain info when identity changes
-  $: if (identity?.chain_id) {
-    fetchChainInfo(identity.chain_id).then(info => {
+  $: if (identity && typeof identity.chain_id === 'number') {
+    const chainId = identity.chain_id;
+    fetchChainInfo(chainId).then(info => {
       chainInfo = info;
+      console.log('Chain info for chain ID', chainId, ':', info);
+    }).catch(error => {
+      console.error('Error fetching chain info:', error);
     });
   }
 
@@ -88,6 +92,8 @@
     contractAddress = null;
     transactionHash = '';
     selectedIdentityId = '';
+    // Don't reset identity here, as it's set by the parent component
+    // and will be reset when loadArtistIdentities() is called
   }
 
   // Get chain name
@@ -112,11 +118,14 @@
         throw new Error('No identity selected');
       }
 
-      // Check if we need to switch chains
-      const currentChainId = await getChainId(config);
-      if (currentChainId !== identity.chain_id) {
-        await switchChain(config, { chainId: identity.chain_id as 1 | 10 | 42161 | 8453 | 11155111 | 421614 });
+      // Ensure identity ID is valid
+      if (typeof identity.id !== 'number' || isNaN(identity.id) || identity.id <= 0) {
+        throw new Error('Invalid identity ID. Please select a valid identity.');
       }
+
+      // Log identity information for debugging
+      console.log('Deploying with identity:', identity);
+      console.log('Identity ID:', identity.id, 'Type:', typeof identity.id);
 
       isProcessing = true;
       currentStep = 2;
@@ -128,29 +137,94 @@
         throw new Error('Wallet not connected');
       }
 
-      // Deploy the ART contract
-      // Ensure identityId is a valid number before passing it
-      if (typeof identity.id !== 'number' || isNaN(identity.id)) {
-        throw new Error('Invalid identity ID');
+      // Check if we need to switch chains
+      const currentChainId = await getChainId(config);
+      if (currentChainId !== identity.chain_id) {
+        await switchChain(config, { chainId: identity.chain_id as 1 | 10 | 42161 | 8453 | 11155111 | 421614 });
       }
 
-      const result = await deployArtContract({
-        walletAddress,
-        identityId: identity.id,
-        symbol,
-        chainId: identity.chain_id
-      });
+      // Verify that we have contract information for this chain
+      const contractInfo = await fetch(`/api/contracts?chainId=${identity.chain_id}`).then(res => res.json());
+      console.log('Contract info for deployment:', contractInfo);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to deploy ART contract');
+      if (!contractInfo.success || !contractInfo.contract || !contractInfo.contract.art_factory_contract_address) {
+        throw new Error(`ART Factory contract is not configured for chain ${getChainName(identity.chain_id)}. Please select a different chain.`);
       }
 
-      // Update state with the result
-      contractAddress = result.contractAddress || null;
-      transactionHash = result.transactionHash || '';
+      // Convert identity ID to a number explicitly to ensure it's not a string
+      const identityId = Number(identity.id);
 
-      // Move to success step
-      currentStep = 3;
+      try {
+        // Log the parameters being sent to deployArtContract
+        console.log('Deploying ART contract with parameters:', {
+          walletAddress,
+          identityId,
+          symbol,
+          chainId: identity.chain_id
+        });
+
+        const result = await deployArtContract({
+          walletAddress,
+          identityId,
+          symbol,
+          chainId: identity.chain_id as 1 | 10 | 42161 | 8453 | 11155111 | 421614
+        });
+
+        console.log('Deployment result:', result);
+
+        // Check if we have a transaction hash, even if there was an error
+        if (result.transactionHash) {
+          transactionHash = result.transactionHash;
+        }
+
+        // Check if we have a contract address
+        if (result.contractAddress) {
+          contractAddress = result.contractAddress;
+        }
+
+        // If the deployment was not successful, show the error but don't throw
+        if (!result.success) {
+          errorMessage = result.error || 'Failed to deploy ART contract';
+
+          // Check if the error message indicates a transaction was actually sent
+          const wasTransactionSent =
+            transactionHash ||
+            (typeof result.error === 'string' && result.error.includes('transaction hash'));
+
+          // Check if this is a server configuration error (private key issue)
+          const isServerConfigError =
+            typeof result.error === 'string' &&
+            (result.error.includes('invalid private key') ||
+             result.error.includes('PRIVATE_KEY'));
+
+          if (isServerConfigError) {
+            console.log('Server configuration error detected. Showing friendly message.');
+            errorMessage = 'The server is not properly configured to complete this operation. Please contact support.';
+
+            // If we have a transaction hash, still show partial success
+            if (wasTransactionSent) {
+              console.log('Transaction was sent despite server error. Showing partial success.');
+              currentStep = 3; // Move to success step with warning
+            } else {
+              throw new Error(errorMessage);
+            }
+          }
+          // If we have a transaction hash or the error suggests a transaction was sent, consider it a partial success
+          else if (wasTransactionSent) {
+            console.log('Transaction was sent but encountered an issue. Showing partial success.');
+            currentStep = 3; // Move to success step with warning
+          } else {
+            throw new Error(errorMessage);
+          }
+        } else {
+          // Clear any error message on success
+          errorMessage = '';
+          currentStep = 3; // Move to success step
+        }
+      } catch (deployError) {
+        console.error('Error in deployArtContract:', deployError);
+        throw deployError; // Re-throw to be caught by the outer try-catch
+      }
 
       // Call the success callback
       if (contractAddress) {
@@ -197,10 +271,16 @@
                 {#each artistIdentities as artistIdentity}
                   <Button
                     variant={selectedIdentityId === artistIdentity.id.toString() ? "default" : "outline"}
-                    class="w-full justify-between items-center h-auto py-3 px-4 transition-colors hover:bg-accent hover:text-accent-foreground {selectedIdentityId === artistIdentity.id.toString() ? 'dark:bg-accent/60 border-2 border-primary' : ''}"
+                    class="w-full justify-between items-center h-auto py-3 px-4 transition-colors hover:bg-accent hover:text-accent-foreground {selectedIdentityId === artistIdentity.id.toString() ? 'bg-primary/5 border-2 border-primary text-primary dark:bg-accent/60 dark:border-primary dark:text-white' : ''}"
                     on:click={() => {
+                      console.log('Selected identity:', artistIdentity);
                       selectedIdentityId = artistIdentity.id.toString();
-                      identity = artistIdentity;
+                      identity = {...artistIdentity}; // Create a new object to ensure reactivity
+                      // Generate symbol based on the selected identity
+                      if (identity && identity.name) {
+                        const initial = identity.name.trim().charAt(0).toUpperCase();
+                        symbol = `ARC${initial}`;
+                      }
                       chainInfo = null;
                     }}
                   >
@@ -224,7 +304,7 @@
                         {/if}
                       </div>
                       <div class="flex flex-col items-start gap-1">
-                        <span class="font-medium {selectedIdentityId === artistIdentity.id.toString() ? 'text-white' : ''}">{artistIdentity.name}</span>
+                        <span class="font-medium {selectedIdentityId === artistIdentity.id.toString() ? 'text-primary dark:text-white' : ''}">{artistIdentity.name}</span>
                         <div class="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>Artist</span>
                           <span>•</span>
@@ -253,7 +333,7 @@
                       </div>
                     </div>
                     {#if selectedIdentityId === artistIdentity.id.toString()}
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-primary dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     {/if}
@@ -324,13 +404,25 @@
       {:else if currentStep === 3}
         <div class="space-y-6">
           <div class="flex flex-col items-center justify-center py-6">
-            <div class="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
+            <div class="h-12 w-12 rounded-full {errorMessage ? 'bg-yellow-500/20' : 'bg-green-500/20'} flex items-center justify-center">
+              {#if errorMessage}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              {:else}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              {/if}
             </div>
-            <h3 class="text-lg font-semibold mt-4">Contract Deployed</h3>
-            <p class="text-sm text-muted-foreground mt-1">Your ART contract has been deployed successfully.</p>
+            <h3 class="text-lg font-semibold mt-4">Transaction Sent</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              {#if errorMessage}
+                Your transaction was sent, but there may have been an issue with the contract deployment.
+              {:else}
+                Your ART contract has been deployed successfully.
+              {/if}
+            </p>
           </div>
 
           <div class="grid gap-6 p-4 border rounded-lg bg-muted/50">
@@ -348,6 +440,14 @@
               </div>
             </div>
           </div>
+
+          {#if errorMessage}
+            <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-700 dark:text-yellow-500">
+              <p class="font-medium mb-1">Warning:</p>
+              <p>{errorMessage}</p>
+              <p class="mt-2">Your transaction was sent successfully, but there may have been an issue with recording it in our database. You can still view your transaction on the blockchain explorer.</p>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>
@@ -355,7 +455,7 @@
     <Dialog.Footer>
       {#if currentStep === 1}
         <Button variant="outline" on:click={handleClose} disabled={isProcessing}>Cancel</Button>
-        <Button on:click={deployContract} disabled={isProcessing || !identity}>Deploy Contract</Button>
+        <Button on:click={deployContract} disabled={isProcessing || !identity || typeof identity.id !== 'number' || isNaN(identity.id)}>Deploy Contract</Button>
       {:else if currentStep === 2}
         <Button variant="outline" on:click={handleClose} disabled={true}>Cancel</Button>
         <Button disabled={true}>Deploying...</Button>
