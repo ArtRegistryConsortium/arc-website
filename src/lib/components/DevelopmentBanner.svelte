@@ -9,7 +9,7 @@
                 <span class="hidden md:inline animate-pulse">🚧</span>
                 <span class="font-medium">ARC is currently in development</span>
             </div>
-            <span class="hidden md:inline text-black/80">Join our community to stay updated!</span>
+            <span class="hidden md:inline text-black/80">Join the community to stay updated!</span>
         </div>
         <Button
             variant="outline"
