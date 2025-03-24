@@ -277,7 +277,14 @@
 
               <!-- Actions -->
               <div class="col-span-3 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-2">
-                <Button variant="outline" size="sm" class="text-xs sm:text-sm touch-target">View</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="text-xs sm:text-sm touch-target"
+                  on:click={() => goto(`/dashboard/catalogue/${contract.chainId}/${contract.address}`)}
+                >
+                  View
+                </Button>
               </div>
             </div>
           </div>

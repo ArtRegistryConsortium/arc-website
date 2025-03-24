@@ -468,14 +468,24 @@ function timestampToDate(timestamp: number): string {
 
 <div class="md:min-h-screen">
     <div class="container py-4 sm:py-8 px-4 sm:px-6 max-w-4xl mx-auto">
-        <div class="flex flex-col gap-4 mb-6 sm:mb-8">
-            <Button variant="outline" size="sm" on:click={() => goto('/dashboard/identities')} class="gap-2 self-start bg-background hover:bg-muted touch-target">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-                Back to Identities
-            </Button>
-            <h1 class="text-xl sm:text-2xl font-bold">Create Identity</h1>
+        <div class="space-y-8">
+            <!-- Header with back button and title -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-center gap-2 mb-7">
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        class="h-8 w-8 sm:h-9 sm:w-9"
+                        on:click={() => goto('/dashboard/identities')}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        <span class="sr-only">Back</span>
+                    </Button>
+                    <h1 class="text-xl sm:text-2xl font-bold">Create Identity</h1>
+                </div>
+            </div>
         </div>
 
         {#if errorMessage}

@@ -172,7 +172,7 @@
           <a
             href="/dashboard/catalogue"
             class="flex items-center px-6 py-3 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-white transition-colors duration-200 touch-target"
-            class:active={$page.url.pathname === '/dashboard/catalogue'}
+            class:active={$page.url.pathname === '/dashboard/catalogue' || $page.url.pathname.startsWith('/dashboard/catalogue/')}
           >
             Catalogue Raisonné
           </a>

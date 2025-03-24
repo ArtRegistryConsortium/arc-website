@@ -82,12 +82,13 @@ export type Database = {
       }
       art_tokens: {
         Row: {
-          art_contract_id: number
           artist_statement: string | null
           bibliography: Json | null
           catalogue_inventory: string | null
           certification_method: string | null
+          chain_id: number
           condition_reports: Json | null
+          contract_address: string
           created_at: string | null
           description: string
           dimensions: string | null
@@ -109,12 +110,13 @@ export type Database = {
           year: number
         }
         Insert: {
-          art_contract_id: number
           artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
           certification_method?: string | null
+          chain_id: number
           condition_reports?: Json | null
+          contract_address: string
           created_at?: string | null
           description: string
           dimensions?: string | null
@@ -136,12 +138,13 @@ export type Database = {
           year: number
         }
         Update: {
-          art_contract_id?: number
           artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
           certification_method?: string | null
+          chain_id?: number
           condition_reports?: Json | null
+          contract_address?: string
           created_at?: string | null
           description?: string
           dimensions?: string | null
@@ -164,11 +167,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "art_tokens_art_contract_id_fkey"
-            columns: ["art_contract_id"]
+            foreignKeyName: "art_tokens_address_contract_chain_id_fkey"
+            columns: ["contract_address", "chain_id"]
             isOneToOne: false
             referencedRelation: "art_contracts"
-            referencedColumns: ["id"]
+            referencedColumns: ["contract_address", "chain_id"]
           },
           {
             foreignKeyName: "art_tokens_owner_wallet_fkey"
