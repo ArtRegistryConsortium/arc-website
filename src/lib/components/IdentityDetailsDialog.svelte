@@ -103,39 +103,15 @@
                                     <p class="text-base font-semibold capitalize">{identity.type}</p>
                                 </div>
                                 <div class="space-y-2">
-                                    <p class="text-sm font-medium text-muted-foreground">Chain</p>
-                                    <div class="flex items-center gap-2">
-                                        {#if identity.chain_id}
-                                            {#await fetchChainInfo(identity.chain_id) then chainInfo}
-                                                <div class="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
-                                                    {#if chainInfo.icon_url}
-                                                        <img
-                                                            src={chainInfo.icon_url}
-                                                            alt={chainInfo.name}
-                                                            class="w-5 h-5"
-                                                            on:error={(e) => {
-                                                                const img = e.target as HTMLImageElement;
-                                                                img.onerror = null;
-                                                                img.src = `https://placehold.co/20x20/svg?text=${identity.chain_id}`;
-                                                            }}
-                                                        />
-                                                    {:else}
-                                                        <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs">
-                                                            {identity.chain_id}
-                                                        </div>
-                                                    {/if}
-                                                    <span class="font-medium text-sm">{chainInfo.name}</span>
-                                                </div>
-                                            {/await}
-                                        {:else}
-                                            <span class="text-muted-foreground">-</span>
-                                        {/if}
-                                    </div>
+                                    <p class="text-sm font-medium text-muted-foreground">Date of Birth</p>
+                                    <p class="text-base font-semibold">
+                                        {identity.dob ? new Date(identity.dob * 1000).toLocaleDateString() : '-'}
+                                    </p>
                                 </div>
                                 <div class="space-y-2">
-                                    <p class="text-sm font-medium text-muted-foreground">Created Date</p>
+                                    <p class="text-sm font-medium text-muted-foreground">Date of Death</p>
                                     <p class="text-base font-semibold">
-                                        {identity.created_at ? new Date(identity.created_at).toLocaleDateString() : '-'}
+                                        {identity.dod && identity.dod > 0 ? new Date(identity.dod * 1000).toLocaleDateString() : '-'}
                                     </p>
                                 </div>
                             </div>
@@ -239,6 +215,67 @@
                     {:else}
                         <p class="text-muted-foreground">No tags available</p>
                     {/if}
+                </div>
+
+                <!-- Blockchain Information -->
+                <div class="space-y-4 pt-4 border-t border-border/50">
+                    <h3 class="text-lg font-semibold text-foreground/90">Blockchain Information</h3>
+                    <div class="bg-muted/30 rounded-lg p-4 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-muted-foreground">Chain</p>
+                                <div class="flex items-center gap-2">
+                                    {#if identity.chain_id}
+                                        {#await fetchChainInfo(identity.chain_id) then chainInfo}
+                                            <div class="flex items-center gap-2 bg-background/50 px-3 py-2 rounded-md w-full">
+                                                {#if chainInfo.icon_url}
+                                                    <img
+                                                        src={chainInfo.icon_url}
+                                                        alt={chainInfo.name}
+                                                        class="w-5 h-5"
+                                                        on:error={(e) => {
+                                                            const img = e.target as HTMLImageElement;
+                                                            img.onerror = null;
+                                                            img.src = `https://placehold.co/20x20/svg?text=${identity.chain_id}`;
+                                                        }}
+                                                    />
+                                                {:else}
+                                                    <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs">
+                                                        {identity.chain_id}
+                                                    </div>
+                                                {/if}
+                                                <span class="font-medium text-sm">{chainInfo.name}</span>
+                                            </div>
+                                        {/await}
+                                    {:else}
+                                        <span class="text-muted-foreground">-</span>
+                                    {/if}
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-muted-foreground">Identity ID</p>
+                                <div class="bg-background/50 rounded-md p-2">
+                                    <p class="text-sm font-mono break-all text-foreground/80">{identity.id || '-'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-muted-foreground">Wallet Address</p>
+                                <div class="bg-background/50 rounded-md p-2">
+                                    <p class="text-sm font-mono break-all text-foreground/80">{identity.wallet_address || '-'}</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-muted-foreground">Created Date</p>
+                                <div class="bg-background/50 rounded-md p-2">
+                                    <p class="text-sm font-mono text-foreground/80">
+                                        {identity.created_at ? new Date(identity.created_at).toLocaleDateString() : '-'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

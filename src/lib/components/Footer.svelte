@@ -4,7 +4,7 @@
   import { page } from '$app/stores';
 </script>
 
-<footer class="bg-gray-50 dark:bg-[#09090b] border-t border-border py-8 md:py-12 w-full">
+<footer class="bg-gray-50 dark:bg-[#09090b] border-t border-border py-8 md:py-12 pb-20 md:pb-24 w-full">
   <div class="container mx-auto px-4 max-w-7xl">
     <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
       <div class="col-span-2 sm:col-span-2 md:col-span-1">

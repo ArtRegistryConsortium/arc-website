@@ -2,6 +2,7 @@
 	import '../app.css';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import DevelopmentBanner from '$lib/components/DevelopmentBanner.svelte';
 	import { injectAnalytics } from '@vercel/analytics/sveltekit'
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 	import { onMount, onDestroy } from 'svelte';
@@ -101,10 +102,11 @@
 	{:else}
 		<div class="min-h-screen flex flex-col">
 			<Navbar />
-			<main class="flex-grow pt-16 md:pt-19">
+			<main class="flex-grow pt-16 md:pt-19 ">
 				{@render children()}
 			</main>
 			<Footer />
+			<DevelopmentBanner />
 		</div>
 	{/if}
 </Web3Provider>
