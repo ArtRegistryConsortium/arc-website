@@ -190,10 +190,16 @@
       // Wait for the transaction to be mined
       const receipt = await waitForTransaction(config, {
         hash,
-        confirmations: 1
+        confirmations: 1,
+        timeout: 60_000 // 60 seconds timeout
       });
 
       console.log('Transaction confirmed:', receipt);
+
+      // Check if the transaction was successful
+      if (receipt.status === 'reverted') {
+        throw new Error('Transaction was reverted by the blockchain. This could be due to a contract error or gas issues.');
+      }
 
       // Always get the identity ID by calling getIdentityByAddress
       let onChainIdentityId = 0;
@@ -250,6 +256,14 @@
           errorMessage = 'Transaction nonce error. Please refresh the page and try again.';
         } else if (errorMsg.includes('gas')) {
           errorMessage = 'Gas estimation failed. The transaction might fail or the contract may have an issue.';
+        } else if (errorMsg.includes('execution reverted')) {
+          // Extract the revert reason if available
+          const revertMatch = errorMsg.match(/execution reverted: ([^"]+)/i);
+          if (revertMatch && revertMatch[1]) {
+            errorMessage = `Transaction failed: ${revertMatch[1]}`;
+          } else {
+            errorMessage = 'Transaction failed: The contract reverted the transaction.';
+          }
         } else if (errorMsg.length > 300) {
           // If error message is too long, truncate it
           errorMessage = 'Transaction error: ' + errorMsg.substring(0, 300) + '...';

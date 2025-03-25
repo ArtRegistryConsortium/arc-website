@@ -226,9 +226,30 @@
         });
 
         console.log('Transaction receipt:', receipt);
+
+        // Check if the transaction was successful
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction was reverted by the blockchain. This could be due to a contract error or gas issues.');
+        }
       } catch (waitError) {
-        console.warn('Timeout waiting for transaction, but continuing anyway:', waitError);
-        // Continue anyway, as the transaction might still be processed
+        console.warn('Error waiting for transaction:', waitError);
+
+        // Format the error message
+        if (waitError instanceof Error) {
+          const errorMsg = waitError.message;
+
+          if (errorMsg.includes('timeout')) {
+            console.warn('Timeout waiting for transaction, but continuing anyway');
+            // Continue anyway, as the transaction might still be processed
+          } else if (errorMsg.includes('reverted')) {
+            throw new Error('Transaction was reverted by the blockchain. This could be due to a contract error or gas issues.');
+          } else {
+            throw waitError; // Re-throw other errors to be caught by the outer catch block
+          }
+        } else {
+          // Continue anyway if it's not a critical error
+          console.warn('Unknown error type while waiting for transaction, continuing anyway');
+        }
       }
 
       // Update the identity in the database
@@ -278,7 +299,37 @@
       currentStep = 3;
     } catch (error) {
       console.error('Error updating identity:', error);
-      errorMessage = error instanceof Error ? error.message : 'Failed to update identity';
+
+      // Format the error message to be more user-friendly
+      if (error instanceof Error) {
+        const errorMsg = error.message;
+
+        // Check for common wallet errors
+        if (errorMsg.includes('User rejected the request')) {
+          errorMessage = 'Transaction was rejected. Please try again and approve the transaction in your wallet.';
+        } else if (errorMsg.includes('insufficient funds')) {
+          errorMessage = 'Your wallet has insufficient funds to complete this transaction. Please add funds and try again.';
+        } else if (errorMsg.includes('nonce')) {
+          errorMessage = 'Transaction nonce error. Please refresh the page and try again.';
+        } else if (errorMsg.includes('gas')) {
+          errorMessage = 'Gas estimation failed. The transaction might fail or the contract may have an issue.';
+        } else if (errorMsg.includes('execution reverted')) {
+          // Extract the revert reason if available
+          const revertMatch = errorMsg.match(/execution reverted: ([^"]+)/i);
+          if (revertMatch && revertMatch[1]) {
+            errorMessage = `Transaction failed: ${revertMatch[1]}`;
+          } else {
+            errorMessage = 'Transaction failed: The contract reverted the transaction.';
+          }
+        } else if (errorMsg.length > 300) {
+          // If error message is too long, truncate it
+          errorMessage = 'Transaction error: ' + errorMsg.substring(0, 300) + '...';
+        } else {
+          errorMessage = errorMsg;
+        }
+      } else {
+        errorMessage = 'An unknown error occurred while updating your identity. Please try again.';
+      }
     } finally {
       isProcessing = false;
     }
