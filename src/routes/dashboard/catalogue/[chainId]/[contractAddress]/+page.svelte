@@ -7,13 +7,17 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import ArtMintDialog from './ArtMintDialog.svelte';
+  import ArtViewDialog from './ArtViewDialog.svelte';
   import type { PageData } from './$types';
+  import type { ArtToken } from '$lib/types/art';
 
   export let data: PageData;
 
   // State
   let isLoading = true;
   let mintDialogOpen = false;
+  let viewDialogOpen = false;
+  let selectedToken: ArtToken | null = null;
   let errorMessage = '';
   let walletAddress: string | null = null;
 
@@ -43,6 +47,12 @@
   // Handle mint button click
   function handleOpenMintDialog() {
     mintDialogOpen = true;
+  }
+
+  // Handle view details button click
+  function handleOpenViewDialog(token: ArtToken) {
+    selectedToken = token;
+    viewDialogOpen = true;
   }
 
   // Handle mint success
@@ -194,7 +204,7 @@
                   </CardHeader>
                   <CardFooter class="p-3 pt-0 flex justify-between">
                     <span class="text-xs text-muted-foreground">{formatDate(token.created_at)}</span>
-                    <Button variant="outline" size="sm" class="h-8 text-xs">View Details</Button>
+                    <Button variant="outline" size="sm" class="h-8 text-xs" on:click={() => handleOpenViewDialog(token)}>View Details</Button>
                   </CardFooter>
                 </Card>
               {/each}
@@ -283,4 +293,12 @@
   chainId={Number(data.contract?.chain_id || 0)}
   artistIdentityId={Number(data.contract?.identity_id || 0)}
   onSuccess={handleMintSuccess}
+/>
+
+<ArtViewDialog
+  bind:open={viewDialogOpen}
+  token={selectedToken}
+  contractAddress={data.contract?.contract_address || ''}
+  chainId={Number(data.contract?.chain_id || 0)}
+  artistName={data.contract?.identities?.name || 'Unknown Artist'}
 />
