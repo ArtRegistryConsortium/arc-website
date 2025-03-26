@@ -176,10 +176,16 @@ export async function deployArtContract(request: DeployArtContractRequest): Prom
       };
     }
 
+    // Ensure symbol is in uppercase
+    const symbol = request.symbol.toUpperCase();
+    if (symbol !== request.symbol) {
+      console.log(`Symbol converted to uppercase: ${request.symbol} -> ${symbol}`);
+    }
+
     // Log the contract address and parameters
     console.log('ART Factory contract address:', contractInfo.art_factory_contract_address);
     console.log('Identity ID (BigInt):', identityId);
-    console.log('Symbol:', request.symbol);
+    console.log('Symbol:', symbol);
     console.log('Chain ID:', request.chainId);
 
     // Prepare the contract parameters - use explicit types to avoid conversion issues
@@ -192,8 +198,8 @@ export async function deployArtContract(request: DeployArtContractRequest): Prom
       addressType: typeof contractAddress,
       identityId: identityId.toString(),
       identityIdType: typeof identityId,
-      symbol: request.symbol,
-      symbolType: typeof request.symbol,
+      symbol: symbol,
+      symbolType: typeof symbol,
       chainId: chainId,
       chainIdType: typeof chainId
     });
@@ -215,7 +221,7 @@ export async function deployArtContract(request: DeployArtContractRequest): Prom
         address: contractAddress,
         abi: ART_FACTORY_ABI,
         functionName: 'deployArtContract',
-        args: [identityId, request.symbol],
+        args: [identityId, symbol],
         chainId: chainId
       });
 

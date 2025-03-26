@@ -63,6 +63,15 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 400 });
     }
 
+    // Ensure symbol is in uppercase
+    if (symbol !== symbol.toUpperCase()) {
+      console.error('Symbol must be in uppercase:', symbol);
+      return json({
+        success: false,
+        error: 'Symbol must be in uppercase'
+      }, { status: 400 });
+    }
+
     if (chainId === undefined || chainId === null) {
       console.error('Missing chainId in request');
       return json({

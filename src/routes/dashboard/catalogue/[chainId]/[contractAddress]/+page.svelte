@@ -8,24 +8,24 @@
   import { page } from '$app/stores';
   import ArtMintDialog from './ArtMintDialog.svelte';
   import type { PageData } from './$types';
-  
+
   export let data: PageData;
-  
+
   // State
   let isLoading = true;
   let mintDialogOpen = false;
   let errorMessage = '';
   let walletAddress: string | null = null;
-  
+
   onMount(async () => {
     try {
       walletAddress = getWalletAddress();
       if (!walletAddress) {
         throw new Error('Wallet not connected');
       }
-      
+
       // Additional initialization if needed
-      
+
     } catch (error) {
       console.error('Error initializing page:', error);
       errorMessage = error instanceof Error ? error.message : 'An error occurred while loading data';
@@ -33,24 +33,24 @@
       isLoading = false;
     }
   });
-  
+
   // Format date
   function formatDate(dateString: string | null) {
     if (!dateString) return 'Unknown date';
     return new Date(dateString).toLocaleDateString();
   }
-  
+
   // Handle mint button click
   function handleOpenMintDialog() {
     mintDialogOpen = true;
   }
-  
+
   // Handle mint success
   async function handleMintSuccess() {
     // Reload the page to show the new token
     window.location.reload();
   }
-  
+
   // Truncate address for display
   function truncateAddress(address: string) {
     if (!address) return '';
@@ -62,9 +62,9 @@
   <!-- Header with back button and title -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div class="flex items-center gap-2">
-      <Button 
-        variant="outline" 
-        size="icon" 
+      <Button
+        variant="outline"
+        size="icon"
         class="h-8 w-8 sm:h-9 sm:w-9"
         on:click={() => goto('/dashboard/catalogue')}
       >
@@ -77,7 +77,7 @@
     </div>
     <Button on:click={handleOpenMintDialog} class="w-full sm:w-auto touch-target">Mint New ART</Button>
   </div>
-  
+
   {#if isLoading}
     <div class="rounded-lg border border-border overflow-hidden">
       <div class="bg-muted/50 px-4 sm:px-6 py-4 border-b border-border">
@@ -166,9 +166,9 @@
               {#each data.artTokens as token}
                 <Card class="overflow-hidden">
                   <div class="aspect-square w-full bg-muted relative">
-                    {#if token.image}
+                    {#if token.image_url}
                       <img
-                        src={token.image}
+                        src={token.image_url}
                         alt={token.title || 'Artwork'}
                         class="w-full h-full object-cover"
                         on:error={(e) => {
@@ -238,6 +238,10 @@
               </div>
             </div>
             <div class="space-y-2">
+              <h3 class="text-sm font-medium text-muted-foreground">Symbol</h3>
+              <p class="text-sm">{data.contract.symbol || 'Unknown'}</p>
+            </div>
+            <div class="space-y-2">
               <h3 class="text-sm font-medium text-muted-foreground">Artist Identity ID</h3>
               <p class="text-sm">{data.contract.identity_id}</p>
             </div>
@@ -246,9 +250,9 @@
               <p class="text-sm">{formatDate(data.contract.created_at)}</p>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <div class="space-y-2">
             <h3 class="text-sm font-medium text-muted-foreground">Artist Information</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

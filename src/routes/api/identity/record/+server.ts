@@ -95,7 +95,7 @@ export const POST: RequestHandler = async ({ request }) => {
       identity_image: identityImage,
       links: links,
       tags: tags,
-      type: ['artist', 'gallery', 'institution', 'collector'][identityType], // Convert enum to string
+      type: ['artist', 'gallery', 'institution', 'collector', 'custodian'][identityType], // Convert enum to string
       created_at: now,
       updated_at: now,
       // Always include an id field, using onChainIdentityId if available or a temporary value

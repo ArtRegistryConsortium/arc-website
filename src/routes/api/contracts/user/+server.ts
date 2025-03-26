@@ -33,7 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
       address: contract.contract_address,
       artistIdentityId: contract.identity_id,
       name: `ARC / ${contract.identities?.name || 'Unknown'}`,
-      symbol: 'ARC' + (contract.identities?.name?.charAt(0) || ''),  // Generate symbol from name
+      symbol: ('ARC' + (contract.identities?.name?.charAt(0) || '')).toUpperCase(),  // Generate symbol from name in uppercase
       chainId: contract.chain_id,
       deployedAt: contract.created_at
     }));

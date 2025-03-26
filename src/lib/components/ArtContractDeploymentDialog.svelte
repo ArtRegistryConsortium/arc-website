@@ -34,8 +34,8 @@
     // Get the first letter of the first word in the name
     const initial = identity.name.trim().charAt(0).toUpperCase();
 
-    // Set symbol to ARC + initial
-    symbol = `ARC${initial}`;
+    // Set symbol to ARC + initial (ensure it's all uppercase)
+    symbol = `ARC${initial}`.toUpperCase();
   }
 
   // Load artist identities when dialog opens
@@ -279,7 +279,7 @@
                       // Generate symbol based on the selected identity
                       if (identity && identity.name) {
                         const initial = identity.name.trim().charAt(0).toUpperCase();
-                        symbol = `ARC${initial}`;
+                        symbol = `ARC${initial}`.toUpperCase();
                       }
                       chainInfo = null;
                     }}

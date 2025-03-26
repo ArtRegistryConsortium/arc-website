@@ -13,7 +13,6 @@ export const POST: RequestHandler = async ({ request }) => {
       contractAddress,
       chainId,
       tokenId,
-      walletAddress,
       title,
       description,
       yearOfCreation,
@@ -24,17 +23,23 @@ export const POST: RequestHandler = async ({ request }) => {
       imageUrl,
       artistStatement,
       status,
-      royalties,
-      transactionHash
+      royalties
     } = requestData;
 
     // Validate required fields
-    if (!contractAddress || !chainId || !tokenId || !walletAddress || !title || !description || !imageUrl) {
+    if (!contractAddress || !chainId || !tokenId || !title || !description || !imageUrl) {
       return json({
         success: false,
         error: 'Missing required fields'
       }, { status: 400 });
     }
+
+    // Convert numeric status to string value
+    const statusMap = {
+      0: 'Available',
+      1: 'NotAvailable',
+      2: 'Sold'
+    };
 
     // Record the token in the database
     const { error: insertError } = await supabaseAdmin
@@ -43,20 +48,28 @@ export const POST: RequestHandler = async ({ request }) => {
         contract_address: contractAddress,
         chain_id: chainId,
         token_id: tokenId,
-        owner_address: walletAddress,
         title,
         description,
-        year_of_creation: yearOfCreation,
+        year: yearOfCreation,
         medium,
         dimensions,
         edition,
         series,
         image_url: imageUrl,
         artist_statement: artistStatement,
-        status,
+        status: statusMap[status as keyof typeof statusMap] || 'Available',
         royalties,
-        transaction_hash: transactionHash,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        // Additional fields from the schema with default values
+        catalogue_inventory: requestData.catalogueInventory || null,
+        certification_method: requestData.certificationMethod || null,
+        bibliography: requestData.bibliography || null,
+        condition_reports: requestData.conditionReports || null,
+        exhibition_history: requestData.exhibitionHistory || null,
+        keywords: requestData.keywords || null,
+        location_collection: requestData.locationCollection || null,
+        manual_sales_info: requestData.manualSalesInformation || null,
+        note: requestData.note || null
       });
 
     if (insertError) {

@@ -23,7 +23,8 @@ const identityTypes = [
     { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
     { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
     { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
-    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
+    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' },
+    { id: 'custodian', name: 'Custodian', description: 'For custodians and caretakers of art collections' }
 ];
 
 // Identity data fields
@@ -426,7 +427,7 @@ function validateForm(): boolean {
 async function handleSubmit() {
     if (validateForm()) {
         // Store all the data in the store
-        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector');
+        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian');
         identityStore.setUsername(username);
         identityStore.setDescription(description);
         identityStore.setIdentityImage(identityImage);
@@ -472,9 +473,9 @@ function timestampToDate(timestamp: number): string {
             <!-- Header with back button and title -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-2 mb-7">
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
+                    <Button
+                        variant="outline"
+                        size="icon"
                         class="h-8 w-8 sm:h-9 sm:w-9"
                         on:click={() => goto('/dashboard/identities')}
                     >

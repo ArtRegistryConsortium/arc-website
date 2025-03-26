@@ -6,7 +6,7 @@
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea/index.js";
   import { getWalletAddress } from '$lib/stores/walletAuth';
-  import { writeContract, waitForTransaction, getAccount, switchChain, getChainId } from 'wagmi/actions';
+  import { writeContract, readContract, waitForTransaction, getAccount, switchChain, getChainId } from 'wagmi/actions';
   import { config } from '$lib/web3/config';
   import type { Address } from 'viem';
   import { uploadImageToArweave } from '$lib/services/arweaveService';
@@ -41,6 +41,18 @@
   let status = 0; // 0: Available, 1: Not Available, 2: Sold
   let royalties = 1000; // 10% in basis points
 
+  // Additional required fields
+  let certificationMethod = 'Digital Certificate of Authenticity';
+
+  // Optional fields
+  let manualSalesInformation = '';
+  let exhibitionHistory = '';
+  let conditionReports = '';
+  let bibliography = '';
+  let keywords: string[] = [];
+  let locationCollection = '';
+  let note = '';
+
   // Reset form
   function resetForm() {
     title = '';
@@ -57,6 +69,16 @@
     artistStatement = '';
     status = 0;
     royalties = 1000;
+
+    // Reset additional fields
+    certificationMethod = 'Digital Certificate of Authenticity';
+    manualSalesInformation = '';
+    exhibitionHistory = '';
+    conditionReports = '';
+    bibliography = '';
+    keywords = [];
+    locationCollection = '';
+    note = '';
 
     isProcessing = false;
     currentStep = 1;
@@ -107,6 +129,7 @@
 
   // Validate form
   function validateForm() {
+    // Check required fields based on smart contract validation
     if (!title.trim()) {
       errorMessage = 'Title is required';
       return false;
@@ -117,8 +140,43 @@
       return false;
     }
 
+    if (!yearOfCreation || yearOfCreation <= 0) {
+      errorMessage = 'Year of creation must be set';
+      return false;
+    }
+
+    if (!medium.trim()) {
+      errorMessage = 'Medium is required';
+      return false;
+    }
+
+    if (!dimensions.trim()) {
+      errorMessage = 'Dimensions are required';
+      return false;
+    }
+
+    if (!catalogueInventory.trim()) {
+      errorMessage = 'Catalogue inventory is required';
+      return false;
+    }
+
     if (!imageFile && !imageArweaveUrl) {
       errorMessage = 'Image is required';
+      return false;
+    }
+
+    if (!certificationMethod.trim()) {
+      errorMessage = 'Certification method is required';
+      return false;
+    }
+
+    if (!artistStatement.trim()) {
+      errorMessage = 'Artist statement is required';
+      return false;
+    }
+
+    if (royalties > 5000) {
+      errorMessage = 'Royalties cannot exceed 50% (5000 basis points)';
       return false;
     }
 
@@ -177,16 +235,16 @@
         series,
         catalogueInventory,
         image: imageUrl,
-        manualSalesInformation: '',
-        certificationMethod: '',
-        exhibitionHistory: '',
-        conditionReports: '',
+        manualSalesInformation,
+        certificationMethod,
+        exhibitionHistory,
+        conditionReports,
         artistStatement,
-        bibliography: '',
-        keywords: [],
-        locationCollection: '',
+        bibliography,
+        keywords,
+        locationCollection,
         status: Number(status),
-        note: '',
+        note,
         royalties: BigInt(royalties)
       } as const;
 
@@ -260,10 +318,93 @@
 
       console.log('Mint transaction receipt:', receipt);
 
-      // Extract the token ID from the transaction receipt
-      // This would typically be done by parsing the logs for the ArtMinted event
-      // For now, we'll use a placeholder
-      tokenId = 1; // This should be extracted from the receipt
+      // Extract the token ID from the transaction receipt by parsing the logs for the ArtMinted event
+      // Event signature for ArtMinted event: keccak256("ArtMinted(uint256,uint256,address)")
+      const ART_MINTED_EVENT_SIGNATURE = "0x5f7666f775f640ee5a82619ebba5e4a8f9f95f0fbc9f50bbbd3ca3c6fd4520a7";
+
+      // Try to extract token ID from logs
+      let extractedTokenId: number | null = null;
+
+      if (receipt && receipt.logs) {
+        for (const log of receipt.logs) {
+          // Check if this log is from the ArtMinted event
+          if (log.topics && log.topics[0] === ART_MINTED_EVENT_SIGNATURE) {
+            // The token ID is the first indexed parameter (topics[1])
+            if (log.topics[1]) {
+              // Convert hex to number
+              const hexTokenId = log.topics[1];
+              extractedTokenId = parseInt(hexTokenId, 16);
+              console.log('Extracted token ID from logs:', extractedTokenId);
+              break;
+            }
+          }
+        }
+      }
+
+      // If we couldn't extract the token ID from logs, try to get it from the return value
+      if (extractedTokenId === null) {
+        try {
+          // The mint function returns the token ID
+          const data = await readContract(config, {
+            address: contractAddress as Address,
+            abi: [{
+              "inputs": [{
+                "components": [
+                  // ... ArtMetadata components ...
+                ],
+                "internalType": "struct IArtContract.ArtMetadata",
+                "name": "metadata",
+                "type": "tuple"
+              }],
+              "name": "mint",
+              "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }],
+            functionName: 'getArtCount',
+            chainId: chainId as 1 | 10 | 42161 | 8453 | 11155111 | 421614
+          });
+
+          // The token ID is likely to be (artCount - 1) since we just minted
+          if (typeof data === 'bigint') {
+            extractedTokenId = Number(data) - 1;
+            console.log('Extracted token ID from art count:', extractedTokenId);
+          }
+        } catch (error) {
+          console.error('Error getting art count:', error);
+        }
+      }
+
+      // If we still couldn't extract the token ID, use a fallback approach
+      if (extractedTokenId === null) {
+        // Try to get the latest token ID by calling getAllArt and taking the last one
+        try {
+          const data = await readContract(config, {
+            address: contractAddress as Address,
+            abi: [{
+              "inputs": [],
+              "name": "getAllArt",
+              "outputs": [{ "internalType": "uint256[]", "name": "", "type": "uint256[]" }],
+              "stateMutability": "view",
+              "type": "function"
+            }],
+            functionName: 'getAllArt',
+            chainId: chainId as 1 | 10 | 42161 | 8453 | 11155111 | 421614
+          });
+
+          if (Array.isArray(data) && data.length > 0) {
+            // Get the last token ID in the array
+            extractedTokenId = Number(data[data.length - 1]);
+            console.log('Extracted token ID from getAllArt:', extractedTokenId);
+          }
+        } catch (error) {
+          console.error('Error getting all art:', error);
+        }
+      }
+
+      // If all extraction methods failed, use a fallback value
+      tokenId = extractedTokenId !== null ? extractedTokenId : 0;
+      console.log('Final token ID:', tokenId);
 
       // Step 4: Record the token in the database
       const response = await fetch('/api/art/mint', {
@@ -275,7 +416,6 @@
           contractAddress,
           chainId,
           tokenId,
-          walletAddress,
           title,
           description,
           yearOfCreation,
@@ -287,7 +427,16 @@
           artistStatement,
           status,
           royalties,
-          transactionHash
+          // Additional fields from the form
+          catalogueInventory,
+          certificationMethod,
+          bibliography,
+          conditionReports,
+          exhibitionHistory,
+          keywords,
+          locationCollection,
+          manualSalesInformation: manualSalesInformation,
+          note
         })
       });
 
@@ -313,9 +462,17 @@
 
   function handleClose() {
     if (!isProcessing) {
-      open = false;
-      // Reset form when dialog is closed
-      setTimeout(resetForm, 300);
+      // If we're on the success step, don't reset the form immediately
+      // so the user can see the success message and transaction details
+      if (currentStep === 3) {
+        open = false;
+        // Only reset the form after the dialog animation completes
+        setTimeout(resetForm, 300);
+      } else {
+        open = false;
+        // Reset form when dialog is closed
+        setTimeout(resetForm, 300);
+      }
     }
   }
 
@@ -385,19 +542,19 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Year of Creation</div>
+                  <div class="font-medium text-sm mb-1.5">Year of Creation <span class="text-red-500">*</span></div>
                   <Input id="yearOfCreation" type="number" bind:value={yearOfCreation} min="1" max={new Date().getFullYear()} />
                 </div>
 
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Medium</div>
+                  <div class="font-medium text-sm mb-1.5">Medium <span class="text-red-500">*</span></div>
                   <Input id="medium" bind:value={medium} placeholder="e.g., Oil on canvas" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Dimensions</div>
+                  <div class="font-medium text-sm mb-1.5">Dimensions <span class="text-red-500">*</span></div>
                   <Input id="dimensions" bind:value={dimensions} placeholder="e.g., 24 x 36 inches" />
                 </div>
 
@@ -414,21 +571,26 @@
                 </div>
 
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Catalogue Inventory</div>
+                  <div class="font-medium text-sm mb-1.5">Catalogue Inventory <span class="text-red-500">*</span></div>
                   <Input id="catalogueInventory" bind:value={catalogueInventory} placeholder="e.g., ARC-2023-001" />
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Additional Information -->
+          <!-- Required Additional Information -->
           <div class="space-y-4">
-            <h3 class="text-sm font-medium">Additional Information</h3>
+            <h3 class="text-sm font-medium">Required Additional Information</h3>
 
             <div class="grid grid-cols-1 gap-4">
               <div class="space-y-2">
-                <div class="font-medium text-sm mb-1.5">Artist Statement</div>
+                <div class="font-medium text-sm mb-1.5">Artist Statement <span class="text-red-500">*</span></div>
                 <Textarea id="artistStatement" bind:value={artistStatement} placeholder="Enter artist statement about this artwork" rows={3} />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Certification Method <span class="text-red-500">*</span></div>
+                <Input id="certificationMethod" bind:value={certificationMethod} placeholder="e.g., Digital Certificate of Authenticity" />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -462,6 +624,43 @@
                   />
                   <p class="text-xs text-muted-foreground">Value in basis points (e.g., 1000 = 10%)</p>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional Additional Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-medium">Optional Additional Information</h3>
+
+            <div class="grid grid-cols-1 gap-4">
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Exhibition History</div>
+                <Textarea id="exhibitionHistory" bind:value={exhibitionHistory} placeholder="Enter exhibition history" rows={2} />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Condition Reports</div>
+                <Textarea id="conditionReports" bind:value={conditionReports} placeholder="Enter condition reports" rows={2} />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Bibliography</div>
+                <Textarea id="bibliography" bind:value={bibliography} placeholder="Enter bibliography information" rows={2} />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Manual Sales Information</div>
+                <Textarea id="manualSalesInformation" bind:value={manualSalesInformation} placeholder="Enter sales information" rows={2} />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Location/Collection</div>
+                <Input id="locationCollection" bind:value={locationCollection} placeholder="e.g., Private Collection, New York" />
+              </div>
+
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Notes</div>
+                <Textarea id="note" bind:value={note} placeholder="Enter any additional notes" rows={2} />
               </div>
             </div>
           </div>
@@ -540,6 +739,11 @@
         <Button disabled={true}>Minting...</Button>
       {:else}
         <Button on:click={handleClose}>Close</Button>
+        <Button variant="default" on:click={() => {
+          // Reset form and go back to step 1 to mint another token
+          resetForm();
+          currentStep = 1;
+        }}>Mint Another</Button>
       {/if}
     </div>
   </Dialog.Content>

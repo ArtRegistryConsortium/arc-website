@@ -410,8 +410,8 @@
       </Dialog.Header>
 
       {#if errorMessage}
-        <div class="p-4 mb-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg overflow-auto max-h-48">
-          <p class="break-words whitespace-normal">{errorMessage}</p>
+        <div class="p-4 mb-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg overflow-auto max-h-48 w-full">
+          <p class="break-words whitespace-normal text-sm md:text-base">{errorMessage}</p>
         </div>
       {/if}
 

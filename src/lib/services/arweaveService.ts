@@ -2,6 +2,9 @@
  * Service for handling Arweave uploads via server-side API
  */
 import { formatFileSize } from '$lib/utils';
+import { get } from 'svelte/store';
+import { web3Store } from '$lib/stores/web3';
+import type { Address } from 'viem';
 
 // Maximum file size in bytes (1MB)
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -37,9 +40,10 @@ function validateImageFile(file: File): { valid: boolean; error?: string } {
 /**
  * Uploads an image to Arweave via server-side API
  * @param imageData The image data to upload (base64 or file)
+ * @param walletAddress Optional wallet address to associate with the upload
  * @returns A promise that resolves to the Arweave URL
  */
-export async function uploadImageToArweave(imageData: string | File): Promise<string> {
+export async function uploadImageToArweave(imageData: string | File, walletAddress?: Address): Promise<string> {
   try {
     console.log('Starting Arweave upload process via server API');
 
@@ -62,13 +66,20 @@ export async function uploadImageToArweave(imageData: string | File): Promise<st
       throw new Error('Invalid image data format');
     }
 
+    // Get the wallet address from the store if not provided
+    const address = walletAddress || get(web3Store).address;
+    console.log('Using wallet address for Arweave upload:', address);
+
     // Call the server-side API to handle the upload
     const response = await fetch('/api/upload/arweave', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ imageData: base64Data })
+      body: JSON.stringify({
+        imageData: base64Data,
+        walletAddress: address
+      })
     });
 
     if (!response.ok) {

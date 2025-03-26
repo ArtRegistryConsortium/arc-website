@@ -15,7 +15,8 @@ const identityTypes = [
     { id: 'artist', name: 'Artist', description: 'For individual artists and creators' },
     { id: 'gallery', name: 'Gallery', description: 'For art galleries and exhibition spaces' },
     { id: 'institution', name: 'Institution', description: 'For museums and cultural institutions' },
-    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' }
+    { id: 'collector', name: 'Collector', description: 'For art collectors and enthusiasts' },
+    { id: 'custodian', name: 'Custodian', description: 'For custodians and caretakers of art collections' }
 ];
 
 let selectedType: string | null = null;
@@ -76,7 +77,7 @@ onMount(async () => {
 async function handleContinue() {
     if (selectedType) {
         // Store the selected identity type in the store
-        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector');
+        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian');
 
         // Update setup progress to the next step (2 - Identity Data)
         const walletAddress = getWalletAddress();

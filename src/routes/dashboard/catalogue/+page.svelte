@@ -173,16 +173,20 @@
   {:else if errorMessage}
     <div class="rounded-lg border border-red-200 dark:border-red-800 overflow-hidden bg-red-50 dark:bg-red-900/20">
       <div class="bg-red-100/50 dark:bg-red-900/30 px-6 py-4 border-b border-red-200 dark:border-red-800">
-        <div class="flex flex-col items-center justify-center py-8 sm:py-12">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-16 sm:w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <h3 class="text-lg sm:text-xl font-medium text-center mt-4">Error Loading Data</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-center text-sm sm:text-base max-w-md mt-2">
-            {errorMessage}
-          </p>
-          <Button class="mt-4" on:click={loadData}>Retry</Button>
+        <div class="grid grid-cols-12 gap-4 font-medium text-sm text-red-700 dark:text-red-300">
+          <div class="col-span-12">Error Loading Catalogue Raisonné</div>
         </div>
+      </div>
+
+      <div class="py-16 flex flex-col items-center justify-center space-y-6 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <h3 class="text-lg font-medium text-red-700 dark:text-red-300">Error Loading Catalogue Raisonné</h3>
+          <p class="text-red-600 dark:text-red-400 mt-2">{errorMessage}</p>
+        </div>
+        <Button variant="outline" on:click={loadData}>Try Again</Button>
       </div>
     </div>
   {:else if artContracts.length === 0}

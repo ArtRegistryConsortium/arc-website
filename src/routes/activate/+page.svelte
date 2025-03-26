@@ -292,10 +292,35 @@ async function checkWalletActivationStatus(startPeriodic = false) {
             // Set payment status to confirmed
             paymentStatus = 'payment_confirmed';
 
-            // Ensure setup_step is updated to 1 when payment is confirmed
+            // Check for existing identities on all chains
             if (walletAddress) {
                 try {
-                    // First get the current setup step
+                    console.log('Checking for existing identities on all chains after payment confirmation...');
+
+                    // Check for existing identities on all chains
+                    const checkResponse = await fetch('/api/identity/check-all-chains', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ walletAddress })
+                    });
+
+                    if (!checkResponse.ok) {
+                        console.error(`Server responded with status: ${checkResponse.status}`);
+                    } else {
+                        const checkResult = await checkResponse.json();
+                        console.log('Identity check result after payment:', checkResult);
+
+                        // If identities were found, we'll let the user click the continue button
+                        // which will redirect them to the dashboard
+                        if (checkResult.success && checkResult.identitiesFound > 0) {
+                            console.log(`Found ${checkResult.identitiesFound} existing identities on blockchain.`);
+                            // Don't redirect automatically - let the user click the continue button
+                        }
+                    }
+
+                    // Ensure setup_step is updated to 1 when payment is confirmed
                     const response = await fetch('/api/wallet/status', {
                         method: 'POST',
                         headers: {
@@ -383,11 +408,36 @@ async function checkTransactionStatus(hash: `0x${string}`) {
             console.log('Transaction confirmed successfully!');
             transactionStatus = 'confirmed';
 
-            // Ensure setup_step is updated to 1 when transaction is confirmed
+            // Check for existing identities on all chains
             const address = getWalletAddress();
             if (address) {
                 try {
-                    // First get the current setup step
+                    console.log('Checking for existing identities on all chains after transaction confirmation...');
+
+                    // Check for existing identities on all chains
+                    const checkResponse = await fetch('/api/identity/check-all-chains', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ walletAddress: address })
+                    });
+
+                    if (!checkResponse.ok) {
+                        console.error(`Server responded with status: ${checkResponse.status}`);
+                    } else {
+                        const checkResult = await checkResponse.json();
+                        console.log('Identity check result after transaction confirmation:', checkResult);
+
+                        // If identities were found, we'll let the user click the continue button
+                        // which will redirect them to the dashboard
+                        if (checkResult.success && checkResult.identitiesFound > 0) {
+                            console.log(`Found ${checkResult.identitiesFound} existing identities on blockchain.`);
+                            // Don't redirect automatically - let the user click the continue button
+                        }
+                    }
+
+                    // Ensure setup_step is updated to 1 when transaction is confirmed
                     const response = await fetch('/api/wallet/status', {
                         method: 'POST',
                         headers: {
@@ -605,9 +655,34 @@ function startMonitoring(address: Address, chainId?: number) {
             // Stop periodic verification if it's running
             stopPeriodicVerification();
 
-            // Ensure setup_step is updated to 1 when payment is confirmed via monitor
+            // Check for existing identities on all chains
             try {
-                // First get the current setup step
+                console.log('Checking for existing identities on all chains after payment monitor confirmation...');
+
+                // Check for existing identities on all chains
+                const checkResponse = await fetch('/api/identity/check-all-chains', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ walletAddress: address })
+                });
+
+                if (!checkResponse.ok) {
+                    console.error(`Server responded with status: ${checkResponse.status}`);
+                } else {
+                    const checkResult = await checkResponse.json();
+                    console.log('Identity check result after payment monitor:', checkResult);
+
+                    // If identities were found, we'll let the user click the continue button
+                    // which will redirect them to the dashboard
+                    if (checkResult.success && checkResult.identitiesFound > 0) {
+                        console.log(`Found ${checkResult.identitiesFound} existing identities on blockchain.`);
+                        // Don't redirect automatically - let the user click the continue button
+                    }
+                }
+
+                // Ensure setup_step is updated to 1 when payment is confirmed via monitor
                 const response = await fetch('/api/wallet/status', {
                     method: 'POST',
                     headers: {
@@ -661,6 +736,59 @@ async function handleContinueToNextStep() {
             return;
         }
 
+        console.log('Checking for existing identities on all chains...');
+
+        // Check for existing identities on all chains
+        const checkResponse = await fetch('/api/identity/check-all-chains', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ walletAddress: address })
+        });
+
+        if (!checkResponse.ok) {
+            throw new Error(`Server responded with status: ${checkResponse.status}`);
+        }
+
+        const checkResult = await checkResponse.json();
+        console.log('Identity check result:', checkResult);
+
+        // If identities were found, redirect to dashboard
+        if (checkResult.success && checkResult.identitiesFound > 0) {
+            console.log(`Found ${checkResult.identitiesFound} existing identities on blockchain. Redirecting to dashboard.`);
+
+            // First check if setup is already marked as completed
+            const setupResponse = await fetch('/api/wallet/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ walletAddress: address })
+            });
+
+            if (setupResponse.ok) {
+                const setupResult = await setupResponse.json();
+
+                // If setup is not already completed, mark it as completed
+                if (setupResult.success && setupResult.data && !setupResult.data.setup_completed) {
+                    console.log('Marking setup as completed before redirecting to dashboard');
+                    await fetch('/api/wallet/complete-setup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ walletAddress: address })
+                    });
+                }
+            }
+
+            // Redirect to dashboard/identities
+            goto('/dashboard/identities');
+            return;
+        }
+
+        console.log('No existing identities found. Continuing with normal activation flow.');
         console.log('Checking current setup step before updating to step 1 (Identity Type)');
 
         // First get the current setup step
@@ -1046,14 +1174,14 @@ onDestroy(() => {
                     </div>
                 </div>
                 <h3 class="text-xl font-bold text-green-800 dark:text-green-300 mb-2">Payment Confirmed!</h3>
-                <p class="text-green-700 dark:text-green-400 mb-6">Your payment has been successfully verified. You can now continue to the next step.</p>
+                <p class="text-green-700 dark:text-green-400 mb-6">Your payment has been successfully verified. Click the button below to continue.</p>
 
                 <Button
                     class="w-full"
                     variant="default"
                     on:click={handleContinueToNextStep}
                 >
-                    Continue to Next Step
+                    Continue
                 </Button>
             </div>
         {:else if paymentStatus === 'awaiting_payment' || paymentStatus === 'registration_created'}
@@ -1268,7 +1396,7 @@ onDestroy(() => {
                         variant="default"
                         on:click={handleContinueToNextStep}
                     >
-                        Continue to Next Step
+                        Continue
                     </Button>
                 {:else if transactionStatus === 'pending'}
                     <!-- Show checking status when transaction is pending -->

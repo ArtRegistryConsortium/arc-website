@@ -8,7 +8,8 @@ export enum IdentityType {
   Artist = 0,
   Gallery = 1,
   Institution = 2,
-  Collector = 3
+  Collector = 3,
+  Custodian = 4
 }
 
 /**
@@ -172,6 +173,8 @@ export function mapIdentityType(type: string): IdentityType {
       return IdentityType.Institution;
     case 'collector':
       return IdentityType.Collector;
+    case 'custodian':
+      return IdentityType.Custodian;
     default:
       throw new Error(`Invalid identity type: ${type}`);
   }

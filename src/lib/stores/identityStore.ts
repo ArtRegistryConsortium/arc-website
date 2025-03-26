@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 import type { Chain } from '$lib/services/activationService';
 
 export interface IdentityInfo {
-  identityType: 'artist' | 'gallery' | 'institution' | 'collector' | null;
+  identityType: 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian' | null;
   username: string;
   description: string;
   identityImage: string;
@@ -45,7 +45,7 @@ const createIdentityStore = () => {
     subscribe,
 
     // Set the identity type
-    setIdentityType: (type: 'artist' | 'gallery' | 'institution' | 'collector') => {
+    setIdentityType: (type: 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian') => {
       update(state => ({ ...state, identityType: type }));
     },
 

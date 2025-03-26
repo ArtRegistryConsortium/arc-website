@@ -94,16 +94,15 @@ export type Database = {
           dimensions: string | null
           edition: string | null
           exhibition_history: Json | null
-          image: string | null
-          keywords: string[] | null
+          image_url: string | null
+          keywords: string | null
           location_collection: Json | null
           manual_sales_info: Json | null
           medium: string
           note: string | null
-          owner_wallet: string
           royalties: number | null
           series: string | null
-          status: string
+          status: string | null
           title: string
           token_id: number
           updated_at: string | null
@@ -122,16 +121,15 @@ export type Database = {
           dimensions?: string | null
           edition?: string | null
           exhibition_history?: Json | null
-          image?: string | null
-          keywords?: string[] | null
+          image_url?: string | null
+          keywords?: string | null
           location_collection?: Json | null
           manual_sales_info?: Json | null
           medium: string
           note?: string | null
-          owner_wallet: string
           royalties?: number | null
           series?: string | null
-          status: string
+          status?: string | null
           title: string
           token_id: number
           updated_at?: string | null
@@ -150,16 +148,15 @@ export type Database = {
           dimensions?: string | null
           edition?: string | null
           exhibition_history?: Json | null
-          image?: string | null
-          keywords?: string[] | null
+          image_url?: string | null
+          keywords?: string | null
           location_collection?: Json | null
           manual_sales_info?: Json | null
           medium?: string
           note?: string | null
-          owner_wallet?: string
           royalties?: number | null
           series?: string | null
-          status?: string
+          status?: string | null
           title?: string
           token_id?: number
           updated_at?: string | null
@@ -173,9 +170,31 @@ export type Database = {
             referencedRelation: "art_contracts"
             referencedColumns: ["contract_address", "chain_id"]
           },
+        ]
+      }
+      arweave_uploads: {
+        Row: {
+          created_at: string
+          id: number
+          url: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          url?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          url?: string | null
+          wallet_address?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "art_tokens_owner_wallet_fkey"
-            columns: ["owner_wallet"]
+            foreignKeyName: "arweave_uploads_wallet_address_fkey"
+            columns: ["wallet_address"]
             isOneToOne: false
             referencedRelation: "wallets"
             referencedColumns: ["wallet_address"]

@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import Arweave from 'arweave';
 import { env } from '$env/dynamic/private';
+import { supabaseAdmin } from '$lib/supabase/server';
 
 // Maximum file size in bytes (1MB)
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -32,11 +33,14 @@ console.log('Arweave client initialized with host:', (env.ARWEAVE_GATEWAY_URL ||
  * This keeps the Arweave wallet key secure on the server
  */
 export const POST: RequestHandler = async (event) => {
-
   const { request } = event;
+  let userWalletAddress: string | undefined;
+
   try {
-    // Get the image data from the request
-    const { imageData } = await request.json();
+    // Get the image data and wallet address from the request
+    const { imageData, walletAddress } = await request.json();
+
+    console.log('Received upload request with wallet address:', walletAddress);
 
     if (!imageData) {
       return json({
@@ -44,6 +48,9 @@ export const POST: RequestHandler = async (event) => {
         error: 'Image data is required'
       }, { status: 400 });
     }
+
+    // Store walletAddress in a variable accessible to all scopes
+    userWalletAddress = walletAddress;
 
     // Validate the image data
     if (!imageData.startsWith('data:')) {
@@ -92,9 +99,33 @@ export const POST: RequestHandler = async (event) => {
 
       if (env.NODE_ENV === 'development') {
         console.warn('Using fallback image URL in development mode due to missing wallet key');
+        const fallbackUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+
+        // Save the fallback URL and wallet address to the database if a wallet address was provided
+        if (userWalletAddress) {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from('arweave_uploads')
+              .insert({
+                url: fallbackUrl,
+                wallet_address: userWalletAddress
+              });
+
+            if (error) {
+              console.error('Error saving fallback Arweave upload to database:', error);
+              // Continue with the response even if database save fails
+            } else {
+              console.log('Fallback Arweave upload saved to database successfully');
+            }
+          } catch (dbError) {
+            console.error('Exception when saving fallback Arweave upload to database:', dbError);
+            // Continue with the response even if database save fails
+          }
+        }
+
         return json({
           success: true,
-          url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
+          url: fallbackUrl,
           fallback: true
         });
       }
@@ -123,7 +154,7 @@ export const POST: RequestHandler = async (event) => {
       try {
         wallet = JSON.parse(walletKey);
       } catch (parseError) {
-        console.error('JSON parse error:', parseError.message);
+        console.error('JSON parse error:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
         // If the key is very long, it might be double-encoded
         if (walletKey.startsWith('"') && walletKey.endsWith('"')) {
           console.log('Attempting to parse double-encoded JSON...');
@@ -144,9 +175,33 @@ export const POST: RequestHandler = async (event) => {
 
       if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
         console.warn(`Using fallback image URL due to wallet key processing error (in ${env.NODE_ENV} mode)`);
+        const fallbackUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+
+        // Save the fallback URL and wallet address to the database if a wallet address was provided
+        if (userWalletAddress) {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from('arweave_uploads')
+              .insert({
+                url: fallbackUrl,
+                wallet_address: userWalletAddress
+              });
+
+            if (error) {
+              console.error('Error saving fallback Arweave upload to database:', error);
+              // Continue with the response even if database save fails
+            } else {
+              console.log('Fallback Arweave upload saved to database successfully');
+            }
+          } catch (dbError) {
+            console.error('Exception when saving fallback Arweave upload to database:', dbError);
+            // Continue with the response even if database save fails
+          }
+        }
+
         return json({
           success: true,
-          url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
+          url: fallbackUrl,
           fallback: true
         });
       }
@@ -186,9 +241,33 @@ export const POST: RequestHandler = async (event) => {
 
         if (env.NODE_ENV === 'development') {
           console.warn('Using fallback image URL in development mode due to transaction submission failure');
+          const fallbackUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+
+          // Save the fallback URL and wallet address to the database if a wallet address was provided
+          if (userWalletAddress) {
+            try {
+              const { data, error } = await supabaseAdmin
+                .from('arweave_uploads')
+                .insert({
+                  url: fallbackUrl,
+                  wallet_address: userWalletAddress
+                });
+
+              if (error) {
+                console.error('Error saving fallback Arweave upload to database:', error);
+                // Continue with the response even if database save fails
+              } else {
+                console.log('Fallback Arweave upload saved to database successfully');
+              }
+            } catch (dbError) {
+              console.error('Exception when saving fallback Arweave upload to database:', dbError);
+              // Continue with the response even if database save fails
+            }
+          }
+
           return json({
             success: true,
-            url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
+            url: fallbackUrl,
             fallback: true
           });
         }
@@ -206,9 +285,33 @@ export const POST: RequestHandler = async (event) => {
 
       if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
         console.warn(`Using fallback image URL due to transaction error (in ${env.NODE_ENV} mode)`);
+        const fallbackUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+
+        // Save the fallback URL and wallet address to the database if a wallet address was provided
+        if (userWalletAddress) {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from('arweave_uploads')
+              .insert({
+                url: fallbackUrl,
+                wallet_address: userWalletAddress
+              });
+
+            if (error) {
+              console.error('Error saving fallback Arweave upload to database:', error);
+              // Continue with the response even if database save fails
+            } else {
+              console.log('Fallback Arweave upload saved to database successfully');
+            }
+          } catch (dbError) {
+            console.error('Exception when saving fallback Arweave upload to database:', dbError);
+            // Continue with the response even if database save fails
+          }
+        }
+
         return json({
           success: true,
-          url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
+          url: fallbackUrl,
           fallback: true
         });
       }
@@ -225,6 +328,30 @@ export const POST: RequestHandler = async (event) => {
 
     console.log('Arweave upload complete:', arweaveUrl);
 
+    // Save the URL and wallet address to the database if a wallet address was provided
+    if (userWalletAddress) {
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('arweave_uploads')
+          .insert({
+            url: arweaveUrl,
+            wallet_address: userWalletAddress
+          });
+
+        if (error) {
+          console.error('Error saving Arweave upload to database:', error);
+          // Continue with the response even if database save fails
+        } else {
+          console.log('Arweave upload saved to database successfully');
+        }
+      } catch (dbError) {
+        console.error('Exception when saving Arweave upload to database:', dbError);
+        // Continue with the response even if database save fails
+      }
+    } else {
+      console.log('No wallet address provided, skipping database save');
+    }
+
     return json({
       success: true,
       url: arweaveUrl
@@ -237,9 +364,33 @@ export const POST: RequestHandler = async (event) => {
 
     if (env.NODE_ENV === 'development' || allowFallbackInProduction) {
       console.warn(`Using fallback image URL due to general error (in ${env.NODE_ENV} mode)`);
+      const fallbackUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+
+      // Save the fallback URL and wallet address to the database if a wallet address was provided
+      if (userWalletAddress) {
+        try {
+          const { data, error } = await supabaseAdmin
+            .from('arweave_uploads')
+            .insert({
+              url: fallbackUrl,
+              wallet_address: userWalletAddress
+            });
+
+          if (error) {
+            console.error('Error saving fallback Arweave upload to database:', error);
+            // Continue with the response even if database save fails
+          } else {
+            console.log('Fallback Arweave upload saved to database successfully');
+          }
+        } catch (dbError) {
+          console.error('Exception when saving fallback Arweave upload to database:', dbError);
+          // Continue with the response even if database save fails
+        }
+      }
+
       return json({
         success: true,
-        url: 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ',
+        url: fallbackUrl,
         fallback: true
       });
     }
