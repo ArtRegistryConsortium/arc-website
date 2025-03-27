@@ -6,14 +6,10 @@
   import type { UserIdentity } from '$lib/services/userIdentityService';
   import { onMount } from 'svelte';
   import { getWalletAddress } from '$lib/stores/walletAuth';
-  import IdentityDetailsDialog from '$lib/components/IdentityDetailsDialog.svelte';
-
   let identities: UserIdentity[] = [];
   let isLoading = true;
   let error: string | null = null;
   let chainIcons: Record<number, { icon_url: string, name: string }> = {};
-  let selectedIdentity: UserIdentity | null = null;
-  let dialogOpen = false;
   let showTooltip = false;
   let tooltipPosition = { x: 0, y: 0 };
   let tooltipButton: HTMLDivElement;
@@ -50,8 +46,10 @@
 
   // Function to handle view details click
   function handleViewDetails(identity: UserIdentity) {
-    selectedIdentity = identity;
-    dialogOpen = true;
+    console.log('Viewing identity details:', identity);
+    const url = `/dashboard/identities/${identity.id}/${identity.chain_id}`;
+    console.log('Navigating to:', url);
+    goto(url);
   }
 
   function handleMouseEnter(event: MouseEvent) {
@@ -296,5 +294,3 @@
     </div>
   {/if}
 </div>
-
-<IdentityDetailsDialog bind:open={dialogOpen} identity={selectedIdentity} />

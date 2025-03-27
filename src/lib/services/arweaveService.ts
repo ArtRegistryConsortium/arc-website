@@ -49,23 +49,32 @@ function validateImageFile(file: File): { valid: boolean; error?: string } {
 export async function uploadImageToArweave(imageData: string | File, walletAddress?: Address): Promise<string> {
   try {
     console.log('Starting Arweave image upload process via server API');
+    console.log('Image data type:', typeof imageData, imageData instanceof File ? 'File object' : 'string data');
 
     // Convert File to base64 if needed
     let base64Data: string;
 
     if (typeof imageData === 'string' && imageData.startsWith('data:')) {
       // Already a base64 data URL
+      console.log('Image data is already a base64 string');
       base64Data = imageData;
     } else if (imageData instanceof File) {
+      console.log('Processing File object for upload:', imageData.name, 'size:', imageData.size);
+
       // Validate file before sending to server
       const validation = validateImageFile(imageData);
       if (!validation.valid) {
+        console.error('File validation failed:', validation.error);
         throw new Error(validation.error);
       }
 
+      console.log('File validation passed, converting to base64...');
+
       // Convert File to base64
       base64Data = await fileToBase64(imageData);
+      console.log('File successfully converted to base64, length:', base64Data.length);
     } else {
+      console.error('Invalid image data format, neither string nor File');
       throw new Error('Invalid image data format');
     }
 

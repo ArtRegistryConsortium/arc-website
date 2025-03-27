@@ -24,6 +24,8 @@
   let chainId: number = parseInt($page.params.chainId);
   let artistIdentityId: number = 0;
   let artistName: string = '';
+  // Generate a key for forcing image re-render
+  let key = Date.now();
 
   // Form data
   let title = '';
@@ -62,29 +64,33 @@
 
       token = data.token;
 
-      // Populate form with token data
-      title = token.title || '';
-      description = token.description || '';
-      yearOfCreation = token.year || new Date().getFullYear();
-      medium = token.medium || '';
-      dimensions = token.dimensions || '';
-      edition = token.edition || '';
-      series = token.series || '';
-      imageArweaveUrl = token.image_url || '';
-      tokenUri = token.token_uri || '';
-      royalties = token.royalties || 1000;
+      // Populate form with token data if token exists
+      if (token) {
+        title = token.title || '';
+        description = token.description || '';
+        yearOfCreation = token.year || new Date().getFullYear();
+        medium = token.medium || '';
+        dimensions = token.dimensions || '';
+        edition = token.edition || '';
+        series = token.series || '';
+        imageArweaveUrl = token.image_url || '';
+        // The ArtToken type doesn't have token_uri, but it's in the database schema
+        // Use a type assertion to access it
+        tokenUri = (token as any).token_uri || '';
+        royalties = token.royalties || 1000;
 
-      // Optional fields
-      exhibitionHistory = token.exhibition_history ?
-        (typeof token.exhibition_history === 'string' ? token.exhibition_history : JSON.stringify(token.exhibition_history)) : '';
-      conditionReports = token.condition_reports ?
-        (typeof token.condition_reports === 'string' ? token.condition_reports : JSON.stringify(token.condition_reports)) : '';
-      bibliography = token.bibliography ?
-        (typeof token.bibliography === 'string' ? token.bibliography : JSON.stringify(token.bibliography)) : '';
-      keywords = token.keywords || [];
-      locationCollection = token.location_collection ?
-        (typeof token.location_collection === 'string' ? token.location_collection : JSON.stringify(token.location_collection)) : '';
-      note = token.note || '';
+        // Optional fields
+        exhibitionHistory = token.exhibition_history ?
+          (typeof token.exhibition_history === 'string' ? token.exhibition_history : JSON.stringify(token.exhibition_history)) : '';
+        conditionReports = token.condition_reports ?
+          (typeof token.condition_reports === 'string' ? token.condition_reports : JSON.stringify(token.condition_reports)) : '';
+        bibliography = token.bibliography ?
+          (typeof token.bibliography === 'string' ? token.bibliography : JSON.stringify(token.bibliography)) : '';
+        keywords = token.keywords || [];
+        locationCollection = token.location_collection ?
+          (typeof token.location_collection === 'string' ? token.location_collection : JSON.stringify(token.location_collection)) : '';
+        note = token.note || '';
+      }
 
       // Fetch contract data to get artist info
       const contractResponse = await fetch(`/api/contracts?chainId=${chainId}`);
@@ -105,13 +111,49 @@
   function handleImageChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
-      imageFile = input.files[0];
+      const file = input.files[0];
+      console.log('Image file selected:', file.name, 'size:', file.size);
+      
+      // Store the file for later upload
+      imageFile = file;
+      
+      // Read and display the preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        imagePreview = e.target?.result as string;
+        if (e.target && typeof e.target.result === 'string') {
+          // Set the preview directly from the file data
+          imagePreview = e.target.result;
+          console.log('Image preview updated with new file data');
+          
+          // Clear the existing Arweave URL to ensure the new file is uploaded when submitting
+          imageArweaveUrl = '';
+          console.log('Existing Arweave URL cleared to force new upload on submit');
+          
+          // Update the key to force re-render
+          key = Date.now();
+        }
       };
-      reader.readAsDataURL(imageFile);
+      reader.readAsDataURL(file);
+    } else {
+      console.log('No file selected or file input is null');
     }
+  }
+
+  // Function to reset the file input
+  function resetFileInput() {
+    // Reset the file input element
+    const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+      console.log('File input reset');
+    }
+
+    // Clear the file and preview
+    imageFile = null;
+    imagePreview = '';
+
+    // Keep the original image URL
+    console.log('Image selection cleared, keeping original URL:', imageArweaveUrl);
   }
 
   // Validate form
@@ -157,16 +199,29 @@
 
       // Step 1: Upload image to Arweave if a new image is provided
       let imageUrl = imageArweaveUrl;
+
+      // Force image upload if a new file is selected
       if (imageFile) {
+        console.log('New image file detected, uploading to Arweave...');
+        console.log('Current imageArweaveUrl before upload:', imageArweaveUrl);
+        
         try {
+          // Upload the new image
           imageUrl = await uploadImageToArweave(imageFile);
-          console.log('Image uploaded to Arweave:', imageUrl);
+          console.log('New image uploaded to Arweave:', imageUrl);
+
+          // Update the arweave URL with the new URL
+          imageArweaveUrl = imageUrl;
+          console.log('imageArweaveUrl updated to:', imageArweaveUrl);
         } catch (error) {
           console.error('Error uploading image to Arweave:', error);
           // Use a fallback URL if upload fails
           imageUrl = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+          imageArweaveUrl = imageUrl;
           errorMessage = 'Warning: Failed to upload image. Using fallback URL.';
         }
+      } else {
+        console.log('No new image file, using existing image URL:', imageUrl);
       }
 
       // Step 2: Prepare OpenSea metadata and upload to Arweave
@@ -214,12 +269,17 @@
         attributes.push({ trait_type: 'Notes', value: note });
       }
 
+      // Ensure we're using the most up-to-date image URL
+      console.log('Creating OpenSea metadata with image URL:', imageUrl);
+
       const openSeaMetadata = {
         name: title,
         description,
-        image: imageUrl,
+        image: imageUrl,  // This should be the new image URL if a new image was uploaded
         attributes
       };
+
+      console.log('OpenSea metadata created with image:', openSeaMetadata.image);
 
       // Upload metadata to Arweave
       try {
@@ -243,6 +303,10 @@
 
         // Prepare metadata for the contract with proper handling of all fields
         // Ensure all string fields have values and arrays are not empty
+
+        // Double-check that we have the correct image URL
+        console.log('Preparing contract metadata with image URL:', imageUrl);
+
         const metadata = {
           artistIdentityId: BigInt(artistIdentityId),
           title: title || '',
@@ -252,7 +316,7 @@
           dimensions: dimensions || '',
           edition: edition || '',
           series: series || '',
-          image: imageUrl || '',
+          image: imageUrl || '',  // This should be the new image URL if a new image was uploaded
           tokenUri: tokenUri || '',
           exhibitionHistory: exhibitionHistory || '',
           conditionReports: conditionReports || '',
@@ -263,21 +327,36 @@
           royalties: BigInt(royalties || 0)
         } as const;
 
+        console.log('Contract metadata image field set to:', metadata.image);
+
         // Log the exact keywords being sent
         console.log('Keywords being sent:', metadata.keywords);
 
         console.log('Updating ART with metadata:', metadata);
 
         // Create a modified metadata object with hardcoded keywords array and ensure artistIdentityId is set
+        // Force the image URL to be the latest one
         const metadataForContract = {
           ...metadata,
           keywords: ['placeholder'],  // Hardcode a non-empty array to avoid the error
-          artistIdentityId: BigInt(artistIdentityId > 0 ? artistIdentityId : 1)  // Ensure artistIdentityId is greater than 0
+          artistIdentityId: BigInt(artistIdentityId > 0 ? artistIdentityId : 1),  // Ensure artistIdentityId is greater than 0
+          image: imageUrl  // Explicitly set the image URL to ensure it's updated
         };
+
+        // Force the image field to be the latest URL
+        if (imageFile) {
+          console.log('New image file was uploaded, forcing image URL in contract metadata');
+          metadataForContract.image = imageUrl;
+        }
+
+        console.log('Final image URL being sent to contract:', metadataForContract.image);
 
         console.log('Artist Identity ID being sent:', metadataForContract.artistIdentityId);
 
         console.log('Final metadata being sent to contract:', metadataForContract);
+
+        // Log the image URL one more time before sending to the contract
+        console.log('Final image URL being sent to contract:', metadataForContract.image);
 
         // Call the updateArt function on the contract
         const result = await writeContract(config, {
@@ -318,7 +397,7 @@
             }
           ],
           functionName: 'updateArt',
-          args: [BigInt(tokenId), metadataForContract],
+          args: [BigInt(tokenId || 0), metadataForContract],
           chainId: chainId as 1 | 10 | 42161 | 8453 | 11155111 | 421614
         });
 
@@ -355,6 +434,13 @@
       }
 
       // Step 4: Update the token in the database
+      // Double-check that we're using the latest image URL
+      if (imageFile) {
+        console.log('New image was uploaded, ensuring database gets the new URL:', imageUrl);
+      } else {
+        console.log('Using existing image URL for database update:', imageUrl);
+      }
+
       const response = await fetch('/api/art/update', {
         method: 'POST',
         headers: {
@@ -371,7 +457,7 @@
           dimensions,
           edition,
           series,
-          imageUrl,
+          imageUrl: imageFile ? imageUrl : imageArweaveUrl,  // Use new URL if file was uploaded, otherwise use existing URL
           tokenUri,
           royalties,
           // Additional fields from the form
@@ -493,31 +579,58 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <div class="font-medium text-sm mb-1.5">Upload Image</div>
-                <Input
-                  id="imageUpload"
-                  type="file"
-                  accept="image/*"
-                  on:change={handleImageChange}
-                  class="cursor-pointer"
-                />
-                <p class="text-xs text-muted-foreground">Max file size: 1MB. Supported formats: JPEG, PNG, GIF, WebP, SVG.</p>
+                {#if imagePreview}
+                    <div class="relative">
+                        <img src={imagePreview} alt="Preview" class="w-24 h-24 object-cover rounded-md" />
+                    </div>
+                {/if}
+                <div>
+                    <Button variant="outline" class="relative overflow-hidden" type="button">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            on:change={handleImageChange}
+                            class="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {imagePreview ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                    <p class="text-xs text-muted-foreground mt-1">Recommended: Square image, 500x500px or larger</p>
+                </div>
               </div>
 
               <div class="space-y-2">
                 <div class="font-medium text-sm mb-1.5">Image Preview</div>
                 <div class="aspect-square w-full max-w-[200px] bg-muted rounded-md overflow-hidden">
                   {#if imagePreview}
-                    <img src={imagePreview} alt="Preview" class="w-full h-full object-contain" />
+                    <!-- When we have a preview from new file upload -->
+                    {#key key}
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        class="w-full h-full object-contain"
+                      />
+                    {/key}
                   {:else if imageArweaveUrl}
-                    <img src={imageArweaveUrl} alt="Current" class="w-full h-full object-contain" />
+                    <!-- When we show the existing image -->
+                    <img 
+                      src={imageArweaveUrl} 
+                      alt="Current" 
+                      class="w-full h-full object-contain" 
+                    />
                   {:else}
+                    <!-- Fallback when no image -->
                     <div class="w-full h-full flex items-center justify-center text-muted-foreground">
                       No image
                     </div>
                   {/if}
                 </div>
-                {#if imageArweaveUrl && !imagePreview}
+                
+                <!-- Status text -->
+                {#if imagePreview}
+                  <p class="text-xs text-blue-500 font-medium">New image selected. Will be uploaded on save.</p>
+                {:else if imageArweaveUrl}
                   <p class="text-xs text-muted-foreground">Current image will be kept if no new image is uploaded.</p>
+                  <p class="text-xs text-muted-foreground truncate w-[200px]">{imageArweaveUrl}</p>
                 {/if}
               </div>
             </div>

@@ -57,8 +57,11 @@ export const POST: RequestHandler = async (event) => {
       console.log('Processing JSON data upload');
     } else if (imageData) {
       // Handle image data
+      console.log('Processing image data, length:', imageData.length);
+
       // Validate the image data
       if (!imageData.startsWith('data:')) {
+        console.error('Invalid image data format, does not start with "data:"');
         return json({
           success: false,
           error: 'Invalid image data format. Must be a base64 data URL.'
@@ -68,6 +71,7 @@ export const POST: RequestHandler = async (event) => {
       // Parse the base64 data URL
       const matches = imageData.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
       if (!matches || matches.length !== 3) {
+        console.error('Failed to parse base64 data URL');
         return json({
           success: false,
           error: 'Invalid base64 image data'
@@ -76,7 +80,11 @@ export const POST: RequestHandler = async (event) => {
 
       contentType = matches[1];
       const base64Data = matches[2];
+      console.log('Image content type:', contentType);
+      console.log('Base64 data length:', base64Data.length);
+
       buffer = Buffer.from(base64Data, 'base64');
+      console.log('Converted to buffer, size:', buffer.length, 'bytes');
 
       // Validate content type for images
       if (!ALLOWED_MIME_TYPES.includes(contentType)) {

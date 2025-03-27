@@ -104,7 +104,7 @@
     <a
       href="/registry"
       class="px-3 py-2 rounded-md whitespace-nowrap hover:text-primary transition-colors duration-200 dark:text-gray-300 dark:hover:text-white"
-      class:active={$page.url.pathname === '/registry'}
+      class:active={$page.url.pathname === '/registry' || $page.url.pathname.startsWith('/registry/')}
     >
       Registry
     </a>
@@ -187,7 +187,7 @@
         href="/registry"
         on:click={closeMobileMenu}
         class="py-3 px-4 hover:text-primary rounded-md dark:text-gray-300 dark:hover:text-white transition-colors duration-200"
-        class:active={$page.url.pathname === '/registry'}
+        class:active={$page.url.pathname === '/registry' || $page.url.pathname.startsWith('/registry/')}
       >
         Registry
       </a>

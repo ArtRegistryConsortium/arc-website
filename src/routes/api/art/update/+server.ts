@@ -35,6 +35,9 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 400 });
     }
 
+    // Log the image URL being updated
+    console.log('Updating token in database with image URL:', imageUrl);
+
     // Update the token in the database
     const { error: updateError } = await supabaseAdmin
       .from('art_tokens')
