@@ -7,7 +7,6 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import ArtMintDialog from './ArtMintDialog.svelte';
-  import ArtViewDialog from './ArtViewDialog.svelte';
   import type { PageData } from './$types';
   import type { ArtToken } from '$lib/types/art';
 
@@ -16,8 +15,6 @@
   // State
   let isLoading = true;
   let mintDialogOpen = false;
-  let viewDialogOpen = false;
-  let selectedToken: ArtToken | null = null;
   let errorMessage = '';
   let walletAddress: string | null = null;
 
@@ -49,11 +46,7 @@
     mintDialogOpen = true;
   }
 
-  // Handle view details button click
-  function handleOpenViewDialog(token: ArtToken) {
-    selectedToken = token;
-    viewDialogOpen = true;
-  }
+
 
   // Handle mint success
   async function handleMintSuccess() {
@@ -172,15 +165,15 @@
         <div class="space-y-6">
           <h2 class="text-lg font-semibold">Artworks</h2>
           {#if data.artTokens && data.artTokens.length > 0}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {#each data.artTokens as token}
-                <Card class="overflow-hidden">
-                  <div class="aspect-square w-full bg-muted relative">
+                <Card class="overflow-hidden h-full">
+                  <div class="aspect-square w-full bg-muted relative h-32 sm:h-40 md:h-48">
                     {#if token.image_url}
                       <img
                         src={token.image_url}
                         alt={token.title || 'Artwork'}
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-contain"
                         on:error={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.onerror = null;
@@ -196,15 +189,22 @@
                       #{token.token_id}
                     </div>
                   </div>
-                  <CardHeader class="p-3">
-                    <CardTitle class="text-base">{token.title || 'Untitled'}</CardTitle>
+                  <CardHeader class="p-2">
+                    <CardTitle class="text-sm">{token.title || 'Untitled'}</CardTitle>
                     <CardDescription class="line-clamp-2 text-xs">
                       {token.description || 'No description'}
                     </CardDescription>
                   </CardHeader>
-                  <CardFooter class="p-3 pt-0 flex justify-between">
+                  <CardFooter class="p-2 pt-0 flex justify-between items-center">
                     <span class="text-xs text-muted-foreground">{formatDate(token.created_at)}</span>
-                    <Button variant="outline" size="sm" class="h-8 text-xs" on:click={() => handleOpenViewDialog(token)}>View Details</Button>
+                    <div class="flex gap-1 items-center">
+                      <a href="/dashboard/catalogue/{$page.params.chainId}/{$page.params.contractAddress}/{token.token_id}" class="inline-flex">
+                        <Button variant="outline" size="sm" class="h-6 text-xs px-1.5 min-h-0">View</Button>
+                      </a>
+                      <a href="/dashboard/catalogue/{$page.params.chainId}/{$page.params.contractAddress}/{token.token_id}/edit" class="inline-flex">
+                        <Button variant="outline" size="sm" class="h-6 text-xs px-1.5 min-h-0">Edit</Button>
+                      </a>
+                    </div>
                   </CardFooter>
                 </Card>
               {/each}
@@ -295,10 +295,4 @@
   onSuccess={handleMintSuccess}
 />
 
-<ArtViewDialog
-  bind:open={viewDialogOpen}
-  token={selectedToken}
-  contractAddress={data.contract?.contract_address || ''}
-  chainId={Number(data.contract?.chain_id || 0)}
-  artistName={data.contract?.identities?.name || 'Unknown Artist'}
-/>
+

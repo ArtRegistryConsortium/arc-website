@@ -247,6 +247,14 @@
         >
           My Collection
         </button>
+
+        <div 
+          class="block w-full text-left px-5 py-3 text-sm text-gray-400 dark:text-gray-600 cursor-not-allowed flex items-center justify-between"
+          role="menuitem"
+        >
+          Roles
+          <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Coming soon</span>
+        </div>
       </div>
 
       <!-- Logout Section -->

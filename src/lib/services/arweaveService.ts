@@ -18,6 +18,9 @@ const ALLOWED_MIME_TYPES = [
   'image/svg+xml'
 ];
 
+// Allowed JSON MIME type
+const JSON_MIME_TYPE = 'application/json';
+
 /**
  * Validates an image file on the client side before sending to the server
  * @param file The file to validate
@@ -45,7 +48,7 @@ function validateImageFile(file: File): { valid: boolean; error?: string } {
  */
 export async function uploadImageToArweave(imageData: string | File, walletAddress?: Address): Promise<string> {
   try {
-    console.log('Starting Arweave upload process via server API');
+    console.log('Starting Arweave image upload process via server API');
 
     // Convert File to base64 if needed
     let base64Data: string;
@@ -78,7 +81,8 @@ export async function uploadImageToArweave(imageData: string | File, walletAddre
       },
       body: JSON.stringify({
         imageData: base64Data,
-        walletAddress: address
+        walletAddress: address,
+        contentType: 'image'
       })
     });
 
@@ -97,6 +101,55 @@ export async function uploadImageToArweave(imageData: string | File, walletAddre
     return data.url;
   } catch (error) {
     console.error('Error uploading to Arweave:', error);
+    throw error;
+  }
+}
+
+/**
+ * Uploads JSON metadata to Arweave via server-side API
+ * @param jsonData The JSON data to upload
+ * @param walletAddress Optional wallet address to associate with the upload
+ * @returns A promise that resolves to the Arweave URL
+ */
+export async function uploadJsonToArweave(jsonData: object, walletAddress?: Address): Promise<string> {
+  try {
+    console.log('Starting Arweave JSON upload process via server API');
+
+    // Convert JSON to string
+    const jsonString = JSON.stringify(jsonData);
+
+    // Get the wallet address from the store if not provided
+    const address = walletAddress || get(web3Store).address;
+    console.log('Using wallet address for Arweave JSON upload:', address);
+
+    // Call the server-side API to handle the upload
+    const response = await fetch('/api/upload/arweave', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonData: jsonString,
+        walletAddress: address,
+        contentType: 'json'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Server responded with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown error during upload');
+    }
+
+    console.log('Arweave JSON upload complete:', data.url);
+    return data.url;
+  } catch (error) {
+    console.error('Error uploading JSON to Arweave:', error);
     throw error;
   }
 }

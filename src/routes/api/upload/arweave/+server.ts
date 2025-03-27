@@ -37,55 +37,66 @@ export const POST: RequestHandler = async (event) => {
   let userWalletAddress: string | undefined;
 
   try {
-    // Get the image data and wallet address from the request
-    const { imageData, walletAddress } = await request.json();
+    // Get the data and wallet address from the request
+    const { imageData, jsonData, walletAddress, contentType: requestContentType } = await request.json();
 
     console.log('Received upload request with wallet address:', walletAddress);
-
-    if (!imageData) {
-      return json({
-        success: false,
-        error: 'Image data is required'
-      }, { status: 400 });
-    }
+    console.log('Content type:', requestContentType);
 
     // Store walletAddress in a variable accessible to all scopes
     userWalletAddress = walletAddress;
 
-    // Validate the image data
-    if (!imageData.startsWith('data:')) {
+    let contentType: string;
+    let buffer: Buffer;
+
+    // Handle different content types
+    if (requestContentType === 'json' && jsonData) {
+      // Handle JSON data
+      contentType = 'application/json';
+      buffer = Buffer.from(jsonData);
+      console.log('Processing JSON data upload');
+    } else if (imageData) {
+      // Handle image data
+      // Validate the image data
+      if (!imageData.startsWith('data:')) {
+        return json({
+          success: false,
+          error: 'Invalid image data format. Must be a base64 data URL.'
+        }, { status: 400 });
+      }
+
+      // Parse the base64 data URL
+      const matches = imageData.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        return json({
+          success: false,
+          error: 'Invalid base64 image data'
+        }, { status: 400 });
+      }
+
+      contentType = matches[1];
+      const base64Data = matches[2];
+      buffer = Buffer.from(base64Data, 'base64');
+
+      // Validate content type for images
+      if (!ALLOWED_MIME_TYPES.includes(contentType)) {
+        return json({
+          success: false,
+          error: 'File type not supported. Please upload a JPEG, PNG, GIF, WebP, or SVG image.'
+        }, { status: 400 });
+      }
+    } else {
       return json({
         success: false,
-        error: 'Invalid image data format. Must be a base64 data URL.'
+        error: 'Either image data or JSON data is required'
       }, { status: 400 });
     }
-
-    // Parse the base64 data URL
-    const matches = imageData.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      return json({
-        success: false,
-        error: 'Invalid base64 image data'
-      }, { status: 400 });
-    }
-
-    const contentType = matches[1];
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
 
     // Validate file size
     if (buffer.length > MAX_FILE_SIZE) {
       return json({
         success: false,
         error: `File size exceeds maximum allowed size of ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(1)}MB`
-      }, { status: 400 });
-    }
-
-    // Validate content type
-    if (!ALLOWED_MIME_TYPES.includes(contentType)) {
-      return json({
-        success: false,
-        error: 'File type not supported. Please upload a JPEG, PNG, GIF, WebP, or SVG image.'
       }, { status: 400 });
     }
 

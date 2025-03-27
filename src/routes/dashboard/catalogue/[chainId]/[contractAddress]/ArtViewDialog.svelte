@@ -7,6 +7,7 @@
   import { config } from '$lib/web3/config';
   import type { Address } from 'viem';
   import type { ArtToken } from '$lib/types/art';
+  import { fetchChainInfo } from '$lib/services/chainService';
 
   // Props
   export let open = false;
@@ -18,6 +19,8 @@
   // State
   let isLoading = false;
   let errorMessage = '';
+  let explorerUrl = '';
+  let openSeaUrl = '';
 
   // Format date
   function formatDate(dateString: string | null) {
@@ -25,27 +28,7 @@
     return new Date(dateString).toLocaleDateString();
   }
 
-  // Format status
-  function formatStatus(status: string | null) {
-    if (!status) return 'Unknown';
-    return status;
-  }
-
-  // Get status color
-  function getStatusColor(status: string | null) {
-    if (!status) return 'bg-gray-500';
-
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'bg-green-500';
-      case 'notavailable':
-        return 'bg-yellow-500';
-      case 'sold':
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
-    }
-  }
+  // These functions have been removed as status field is no longer used
 
   // Format royalties
   function formatRoyalties(royalties: number | null) {
@@ -58,10 +41,47 @@
     open = false;
   }
 
+  // Get explorer URL for the current chain
+  async function getExplorerUrl() {
+    try {
+      const chainInfo = await fetchChainInfo(chainId);
+      if (chainInfo && chainInfo.explorer_url) {
+        explorerUrl = chainInfo.explorer_url;
+
+        // Determine OpenSea URL based on chain
+        if (chainId === 1) {
+          // Ethereum Mainnet
+          openSeaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${token?.token_id}`;
+        } else if (chainId === 10) {
+          // Optimism
+          openSeaUrl = `https://opensea.io/assets/optimism/${contractAddress}/${token?.token_id}`;
+        } else if (chainId === 42161) {
+          // Arbitrum
+          openSeaUrl = `https://opensea.io/assets/arbitrum/${contractAddress}/${token?.token_id}`;
+        } else if (chainId === 8453) {
+          // Base
+          openSeaUrl = `https://opensea.io/assets/base/${contractAddress}/${token?.token_id}`;
+        } else if (chainId === 11155111) {
+          // Sepolia
+          openSeaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${token?.token_id}`;
+        } else if (chainId === 421614) {
+          // Arbitrum Sepolia
+          openSeaUrl = `https://testnets.opensea.io/assets/arbitrum-sepolia/${contractAddress}/${token?.token_id}`;
+        } else {
+          // Default to Ethereum
+          openSeaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${token?.token_id}`;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching explorer URL:', error);
+    }
+  }
+
   // Reset state when dialog opens
   $: if (open) {
     isLoading = false;
     errorMessage = '';
+    getExplorerUrl();
   }
 </script>
 
@@ -112,10 +132,6 @@
           </div>
 
           <div class="flex flex-wrap gap-2">
-            <Badge variant="outline" class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full {getStatusColor(token.status)}"></span>
-              {formatStatus(token.status)}
-            </Badge>
             {#if token.royalties !== null && token.royalties !== undefined}
               <Badge variant="outline">Royalties: {formatRoyalties(token.royalties)}</Badge>
             {/if}
@@ -164,12 +180,7 @@
               </div>
             {/if}
 
-            {#if token.catalogue_inventory}
-              <div>
-                <h3 class="text-sm font-medium text-muted-foreground">Catalogue Inventory</h3>
-                <p class="mt-1">{token.catalogue_inventory}</p>
-              </div>
-            {/if}
+
           </div>
         </div>
       </div>
@@ -181,19 +192,7 @@
         <h3 class="text-lg font-semibold">Additional Information</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {#if token.artist_statement}
-            <div>
-              <h4 class="text-sm font-medium text-muted-foreground">Artist Statement</h4>
-              <p class="mt-1">{token.artist_statement}</p>
-            </div>
-          {/if}
 
-          {#if token.certification_method}
-            <div>
-              <h4 class="text-sm font-medium text-muted-foreground">Certification Method</h4>
-              <p class="mt-1">{token.certification_method}</p>
-            </div>
-          {/if}
 
           {#if token.exhibition_history}
             <div>
@@ -247,18 +246,7 @@
             </div>
           {/if}
 
-          {#if token.manual_sales_info}
-            <div>
-              <h4 class="text-sm font-medium text-muted-foreground">Sales Information</h4>
-              <p class="mt-1">
-                {#if typeof token.manual_sales_info === 'string'}
-                  {token.manual_sales_info}
-                {:else if token.manual_sales_info && typeof token.manual_sales_info === 'object'}
-                  {JSON.stringify(token.manual_sales_info, null, 2)}
-                {/if}
-              </p>
-            </div>
-          {/if}
+
 
           {#if token.note}
             <div>
@@ -278,7 +266,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 class="text-sm font-medium text-muted-foreground">Contract Address</h4>
-            <p class="mt-1 font-mono text-sm">{contractAddress}</p>
+            <p class="mt-1 font-mono text-sm">
+              {#if explorerUrl}
+                <a href="{explorerUrl}/address/{contractAddress}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                  {contractAddress}
+                </a>
+              {:else}
+                {contractAddress}
+              {/if}
+            </p>
           </div>
           <div>
             <h4 class="text-sm font-medium text-muted-foreground">Token ID</h4>
@@ -288,6 +284,26 @@
             <h4 class="text-sm font-medium text-muted-foreground">Chain ID</h4>
             <p class="mt-1 font-mono text-sm">{chainId}</p>
           </div>
+          {#if explorerUrl}
+          <div>
+            <h4 class="text-sm font-medium text-muted-foreground">View on Explorer</h4>
+            <p class="mt-1">
+              <a href="{explorerUrl}/nft/{contractAddress}/{token.token_id}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                View on Etherscan
+              </a>
+            </p>
+          </div>
+          {/if}
+          {#if openSeaUrl}
+          <div>
+            <h4 class="text-sm font-medium text-muted-foreground">View on OpenSea</h4>
+            <p class="mt-1">
+              <a href="{openSeaUrl}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                View on OpenSea
+              </a>
+            </p>
+          </div>
+          {/if}
         </div>
       </div>
     {:else}

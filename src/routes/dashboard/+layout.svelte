@@ -183,6 +183,12 @@
           >
             My Collection
           </a>
+          <div
+            class="flex items-center justify-between px-6 py-3 text-gray-400 dark:text-gray-600 cursor-not-allowed touch-target"
+          >
+            Roles
+            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Coming soon</span>
+          </div>
           {#if walletAddress}
             <hr class="mt-4 mb-6 border-border" />
             <div class="text-gray-500 dark:text-neutral-500 flex items-center mb-1 pl-6 text-sm">

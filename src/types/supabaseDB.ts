@@ -82,10 +82,8 @@ export type Database = {
       }
       art_tokens: {
         Row: {
-          artist_statement: string | null
           bibliography: Json | null
           catalogue_inventory: string | null
-          certification_method: string | null
           chain_id: number
           condition_reports: Json | null
           contract_address: string
@@ -97,22 +95,19 @@ export type Database = {
           image_url: string | null
           keywords: string | null
           location_collection: Json | null
-          manual_sales_info: Json | null
           medium: string
           note: string | null
           royalties: number | null
           series: string | null
-          status: string | null
           title: string
           token_id: number
+          token_uri: string | null
           updated_at: string | null
           year: number
         }
         Insert: {
-          artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
-          certification_method?: string | null
           chain_id: number
           condition_reports?: Json | null
           contract_address: string
@@ -124,22 +119,19 @@ export type Database = {
           image_url?: string | null
           keywords?: string | null
           location_collection?: Json | null
-          manual_sales_info?: Json | null
           medium: string
           note?: string | null
           royalties?: number | null
           series?: string | null
-          status?: string | null
           title: string
           token_id: number
+          token_uri?: string | null
           updated_at?: string | null
           year: number
         }
         Update: {
-          artist_statement?: string | null
           bibliography?: Json | null
           catalogue_inventory?: string | null
-          certification_method?: string | null
           chain_id?: number
           condition_reports?: Json | null
           contract_address?: string
@@ -151,14 +143,13 @@ export type Database = {
           image_url?: string | null
           keywords?: string | null
           location_collection?: Json | null
-          manual_sales_info?: Json | null
           medium?: string
           note?: string | null
           royalties?: number | null
           series?: string | null
-          status?: string | null
           title?: string
           token_id?: number
+          token_uri?: string | null
           updated_at?: string | null
           year?: number
         }

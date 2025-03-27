@@ -97,18 +97,18 @@
         <li><span class="font-semibold">Dimensions:</span> Size of the artwork, listed as height x width x depth (in cm or inches).</li>
         <li><span class="font-semibold">Edition:</span> If the artwork is part of an edition, include the edition number and total editions (e.g., "1/10").</li>
         <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows artists to document and organize pieces that are part of a unified vision, making it easier for collectors and institutions to understand the context of each artwork within a larger narrative.</li>
-        <li><span class="font-semibold">Catalogue Inventory:</span> A unique identifier assigned to the artwork within the artist's personal registry. E.g. ART-2024-001.</li>
+        <li><span class="font-semibold">Catalogue Inventory:</span> <span class="text-red-500">[REMOVED - Catalogue Inventory should be stored in the Note field]</span></li>
         <li><span class="font-semibold">Image:</span> A high-resolution image or scan of the artwork stored on Arweave.</li>
-        <li><span class="font-semibold">Sales Information:</span> JSON string containing price, buyer address, and date of sale transactions.</li>
-        <li><span class="font-semibold">Certification Method:</span> How the artwork is linked to the NFT (e.g., NFC chip, QR code, Token ID inscription).</li>
+        <li><span class="font-semibold">Sales Information:</span> <span class="text-red-500">[REMOVED - Sales information will be stored on-chain]</span></li>
+        <li><span class="font-semibold">Certification Method:</span> <span class="text-red-500">[REMOVED - Certification method is always the ART Stamp]</span></li>
         <li><span class="font-semibold">Exhibition History:</span> JSON string containing an array of exhibitions with name, date, and location.</li>
         <li><span class="font-semibold">Condition Reports:</span> JSON string containing an array of reports with date and description of the artwork's condition.</li>
-        <li><span class="font-semibold">Artist Statement:</span> A brief description or intention behind the artwork, written by the artist.</li>
+        <li><span class="font-semibold">Artist Statement:</span> <span class="text-red-500">[REMOVED - Artist statements should be included in the Note field]</span></li>
         <li><span class="font-semibold">Bibliography:</span> JSON string containing an array of references with title, author, and page.</li>
         <li><span class="font-semibold">Keywords or Tags:</span> An array of themes, styles, or movements related to the artwork (e.g., "surrealism," "landscape").</li>
         <li><span class="font-semibold">Location / Collection:</span> JSON string containing location and collection information where the artwork resides.</li>
-        <li><span class="font-semibold">Status:</span> Current status of the artwork (e.g., Available, Not Available, On Loan).</li>
-        <li><span class="font-semibold">Note:</span> A flexible field for additional remarks, context, or annotations related to the artwork. This could include restoration notes, collector insights, special dedications, or any other relevant information that does not fit into the predefined fields.</li>
+        <li><span class="font-semibold">Status:</span> <span class="text-red-500">[REMOVED]</span></li>
+        <li><span class="font-semibold">Note:</span> A flexible field for additional remarks, context, or annotations related to the artwork. This could include restoration notes, collector insights, special dedications, artist statements, or any other relevant information that does not fit into the predefined fields.</li>
         <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist (in basis points, e.g., 1000 = 10%).</li>
       </ol>
     </div>

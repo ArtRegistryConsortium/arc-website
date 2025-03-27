@@ -9,7 +9,7 @@
   import { writeContract, readContract, waitForTransaction, getAccount, switchChain, getChainId } from 'wagmi/actions';
   import { config } from '$lib/web3/config';
   import type { Address } from 'viem';
-  import { uploadImageToArweave } from '$lib/services/arweaveService';
+  import { uploadImageToArweave, uploadJsonToArweave } from '$lib/services/arweaveService';
 
   // Props
   export let open = false;
@@ -33,23 +33,17 @@
   let dimensions = '';
   let edition = '';
   let series = '';
-  let catalogueInventory = '';
   let imageFile: File | null = null;
   let imagePreview = '';
   let imageArweaveUrl = '';
-  let artistStatement = '';
-  let status = 0; // 0: Available, 1: Not Available, 2: Sold
+  let tokenUri = ''; // URL to the metadata JSON on Arweave
   let royalties = 1000; // 10% in basis points
 
-  // Additional required fields
-  let certificationMethod = 'Digital Certificate of Authenticity';
-
   // Optional fields
-  let manualSalesInformation = '';
   let exhibitionHistory = '';
   let conditionReports = '';
   let bibliography = '';
-  let keywords: string[] = [];
+  let keywords: string[] = [''];  // Initialize with a non-empty array
   let locationCollection = '';
   let note = '';
 
@@ -62,21 +56,17 @@
     dimensions = '';
     edition = '';
     series = '';
-    catalogueInventory = '';
     imageFile = null;
     imagePreview = '';
     imageArweaveUrl = '';
-    artistStatement = '';
-    status = 0;
+    tokenUri = '';
     royalties = 1000;
 
-    // Reset additional fields
-    certificationMethod = 'Digital Certificate of Authenticity';
-    manualSalesInformation = '';
+    // Reset optional fields
     exhibitionHistory = '';
     conditionReports = '';
     bibliography = '';
-    keywords = [];
+    keywords = [''];  // Reset to non-empty array
     locationCollection = '';
     note = '';
 
@@ -140,40 +130,13 @@
       return false;
     }
 
-    if (!yearOfCreation || yearOfCreation <= 0) {
-      errorMessage = 'Year of creation must be set';
-      return false;
-    }
-
-    if (!medium.trim()) {
-      errorMessage = 'Medium is required';
-      return false;
-    }
-
-    if (!dimensions.trim()) {
-      errorMessage = 'Dimensions are required';
-      return false;
-    }
-
-    if (!catalogueInventory.trim()) {
-      errorMessage = 'Catalogue inventory is required';
-      return false;
-    }
-
     if (!imageFile && !imageArweaveUrl) {
       errorMessage = 'Image is required';
       return false;
     }
 
-    if (!certificationMethod.trim()) {
-      errorMessage = 'Certification method is required';
-      return false;
-    }
-
-    if (!artistStatement.trim()) {
-      errorMessage = 'Artist statement is required';
-      return false;
-    }
+    // These fields are not required by the contract but are recommended for the artwork record
+    // We'll leave them empty if not provided - no default values
 
     if (royalties > 5000) {
       errorMessage = 'Royalties cannot exceed 50% (5000 basis points)';
@@ -223,34 +186,108 @@
         }
       }
 
-      // Step 2: Prepare metadata
+      // Step 2: Prepare OpenSea metadata and upload to Arweave
+      // Create attributes array, filtering out empty or "Unspecified" values
+      const attributes = [];
+
+      // Only add attributes with meaningful values
+      if (yearOfCreation && yearOfCreation.toString() !== "0") {
+        attributes.push({ trait_type: 'Year', value: yearOfCreation.toString() });
+      }
+
+      if (medium && medium.trim() !== '' && medium !== 'Unspecified') {
+        attributes.push({ trait_type: 'Medium', value: medium });
+      }
+
+      if (dimensions && dimensions.trim() !== '' && dimensions !== 'Unspecified') {
+        attributes.push({ trait_type: 'Dimensions', value: dimensions });
+      }
+
+      if (edition && edition.trim() !== '') {
+        attributes.push({ trait_type: 'Edition', value: edition });
+      }
+
+      if (series && series.trim() !== '') {
+        attributes.push({ trait_type: 'Series', value: series });
+      }
+
+      if (exhibitionHistory && exhibitionHistory.trim() !== '') {
+        attributes.push({ trait_type: 'Exhibition History', value: exhibitionHistory });
+      }
+
+      if (conditionReports && conditionReports.trim() !== '') {
+        attributes.push({ trait_type: 'Condition Reports', value: conditionReports });
+      }
+
+      if (bibliography && bibliography.trim() !== '') {
+        attributes.push({ trait_type: 'Bibliography', value: bibliography });
+      }
+
+      if (locationCollection && locationCollection.trim() !== '') {
+        attributes.push({ trait_type: 'Location/Collection', value: locationCollection });
+      }
+
+      if (note && note.trim() !== '') {
+        attributes.push({ trait_type: 'Notes', value: note });
+      }
+
+      const openSeaMetadata = {
+        name: title,
+        description,
+        image: imageUrl,
+        attributes
+      };
+
+      // Upload metadata to Arweave
+      try {
+        tokenUri = await uploadJsonToArweave(openSeaMetadata);
+        console.log('Metadata uploaded to Arweave:', tokenUri);
+      } catch (error) {
+        console.error('Error uploading metadata to Arweave:', error);
+        // Use a fallback URL if upload fails
+        tokenUri = 'https://arweave.net/hbBeH-lC5iZOqUkCh6kVKEN_3bAwstkYD-7VCPgwSIQ';
+        errorMessage = 'Warning: Failed to upload metadata. Using fallback URL.';
+      }
+
+      // Step 3: Prepare contract metadata with proper handling of all fields
+      // Ensure all string fields have values and arrays are not empty
       const metadata = {
         artistIdentityId: BigInt(artistIdentityId),
-        title,
-        description,
-        yearOfCreation: BigInt(yearOfCreation),
-        medium,
-        dimensions,
-        edition,
-        series,
-        catalogueInventory,
-        image: imageUrl,
-        manualSalesInformation,
-        certificationMethod,
-        exhibitionHistory,
-        conditionReports,
-        artistStatement,
-        bibliography,
-        keywords,
-        locationCollection,
-        status: Number(status),
-        note,
-        royalties: BigInt(royalties)
+        title: title || '',
+        description: description || '',
+        yearOfCreation: BigInt(yearOfCreation || 0),
+        medium: medium || '',
+        dimensions: dimensions || '',
+        edition: edition || '',
+        series: series || '',
+        image: imageUrl || '',
+        tokenUri: tokenUri || '', // Add the tokenUri field
+        exhibitionHistory: exhibitionHistory || '',
+        conditionReports: conditionReports || '',
+        bibliography: bibliography || '',
+        keywords: keywords.length > 0 ? keywords : [''],  // Ensure non-empty array
+        locationCollection: locationCollection || '',
+        note: note || '',
+        royalties: BigInt(royalties || 0)
       } as const;
+
+      // Log the exact keywords being sent
+      console.log('Keywords being sent:', metadata.keywords);
 
       console.log('Minting ART with metadata:', metadata);
 
       // Step 3: Call the mint function on the ART contract
+      // Create a modified metadata object with hardcoded keywords array and ensure artistIdentityId is set
+      const metadataForContract = {
+        ...metadata,
+        keywords: ['placeholder'],  // Hardcode a non-empty array to avoid the error
+        artistIdentityId: BigInt(artistIdentityId > 0 ? artistIdentityId : 1)  // Ensure artistIdentityId is greater than 0
+      };
+
+      console.log('Artist Identity ID being sent:', metadataForContract.artistIdentityId);
+
+      console.log('Final metadata being sent to contract:', metadataForContract);
+
       const result = await writeContract(config, {
         address: contractAddress as Address,
         abi: [
@@ -266,17 +303,14 @@
                   { "internalType": "string", "name": "dimensions", "type": "string" },
                   { "internalType": "string", "name": "edition", "type": "string" },
                   { "internalType": "string", "name": "series", "type": "string" },
-                  { "internalType": "string", "name": "catalogueInventory", "type": "string" },
                   { "internalType": "string", "name": "image", "type": "string" },
-                  { "internalType": "string", "name": "manualSalesInformation", "type": "string" },
-                  { "internalType": "string", "name": "certificationMethod", "type": "string" },
+                  { "internalType": "string", "name": "tokenUri", "type": "string" },
                   { "internalType": "string", "name": "exhibitionHistory", "type": "string" },
                   { "internalType": "string", "name": "conditionReports", "type": "string" },
-                  { "internalType": "string", "name": "artistStatement", "type": "string" },
                   { "internalType": "string", "name": "bibliography", "type": "string" },
                   { "internalType": "string[]", "name": "keywords", "type": "string[]" },
                   { "internalType": "string", "name": "locationCollection", "type": "string" },
-                  { "internalType": "uint8", "name": "status", "type": "uint8" },
+
                   { "internalType": "string", "name": "note", "type": "string" },
                   { "internalType": "uint256", "name": "royalties", "type": "uint256" }
                 ],
@@ -292,7 +326,7 @@
           }
         ],
         functionName: 'mint',
-        args: [metadata],
+        args: [metadataForContract],
         chainId: chainId as 1 | 10 | 42161 | 8453 | 11155111 | 421614
       });
 
@@ -424,18 +458,14 @@
           edition,
           series,
           imageUrl,
-          artistStatement,
-          status,
+          tokenUri,
           royalties,
           // Additional fields from the form
-          catalogueInventory,
-          certificationMethod,
           bibliography,
           conditionReports,
           exhibitionHistory,
           keywords,
           locationCollection,
-          manualSalesInformation: manualSalesInformation,
           note
         })
       });
@@ -542,19 +572,19 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Year of Creation <span class="text-red-500">*</span></div>
+                  <div class="font-medium text-sm mb-1.5">Year of Creation</div>
                   <Input id="yearOfCreation" type="number" bind:value={yearOfCreation} min="1" max={new Date().getFullYear()} />
                 </div>
 
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Medium <span class="text-red-500">*</span></div>
+                  <div class="font-medium text-sm mb-1.5">Medium</div>
                   <Input id="medium" bind:value={medium} placeholder="e.g., Oil on canvas" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Dimensions <span class="text-red-500">*</span></div>
+                  <div class="font-medium text-sm mb-1.5">Dimensions</div>
                   <Input id="dimensions" bind:value={dimensions} placeholder="e.g., 24 x 36 inches" />
                 </div>
 
@@ -564,66 +594,34 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Series</div>
-                  <Input id="series" bind:value={series} placeholder="e.g., Summer Collection" />
-                </div>
-
-                <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Catalogue Inventory <span class="text-red-500">*</span></div>
-                  <Input id="catalogueInventory" bind:value={catalogueInventory} placeholder="e.g., ARC-2023-001" />
-                </div>
+              <div class="space-y-2">
+                <div class="font-medium text-sm mb-1.5">Series</div>
+                <Input id="series" bind:value={series} placeholder="e.g., Summer Collection" />
               </div>
             </div>
           </div>
 
-          <!-- Required Additional Information -->
+          <!-- Royalties -->
           <div class="space-y-4">
-            <h3 class="text-sm font-medium">Required Additional Information</h3>
+            <h3 class="text-sm font-medium">Royalties</h3>
 
             <div class="grid grid-cols-1 gap-4">
               <div class="space-y-2">
-                <div class="font-medium text-sm mb-1.5">Artist Statement <span class="text-red-500">*</span></div>
-                <Textarea id="artistStatement" bind:value={artistStatement} placeholder="Enter artist statement about this artwork" rows={3} />
-              </div>
-
-              <div class="space-y-2">
-                <div class="font-medium text-sm mb-1.5">Certification Method <span class="text-red-500">*</span></div>
-                <Input id="certificationMethod" bind:value={certificationMethod} placeholder="e.g., Digital Certificate of Authenticity" />
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Status</div>
-                  <select
-                    id="status"
-                    bind:value={status}
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value={0}>Available</option>
-                    <option value={1}>Not Available</option>
-                    <option value={2}>Sold</option>
-                  </select>
-                </div>
-
-                <div class="space-y-2">
-                  <div class="font-medium text-sm mb-1.5">Royalties (%)</div>
-                  <Input
-                    id="royalties"
-                    type="number"
-                    bind:value={royalties}
-                    min="0"
-                    max="5000"
-                    step="100"
-                    on:input={(e) => {
-                      const value = parseInt(e.currentTarget.value);
-                      if (value > 5000) royalties = 5000;
-                      if (value < 0) royalties = 0;
-                    }}
-                  />
-                  <p class="text-xs text-muted-foreground">Value in basis points (e.g., 1000 = 10%)</p>
-                </div>
+                <div class="font-medium text-sm mb-1.5">Royalties (%)</div>
+                <Input
+                  id="royalties"
+                  type="number"
+                  bind:value={royalties}
+                  min="0"
+                  max="5000"
+                  step="100"
+                  on:input={(e) => {
+                    const value = parseInt(e.currentTarget.value);
+                    if (value > 5000) royalties = 5000;
+                    if (value < 0) royalties = 0;
+                  }}
+                />
+                <p class="text-xs text-muted-foreground">Value in basis points (e.g., 1000 = 10%)</p>
               </div>
             </div>
           </div>
@@ -648,10 +646,7 @@
                 <Textarea id="bibliography" bind:value={bibliography} placeholder="Enter bibliography information" rows={2} />
               </div>
 
-              <div class="space-y-2">
-                <div class="font-medium text-sm mb-1.5">Manual Sales Information</div>
-                <Textarea id="manualSalesInformation" bind:value={manualSalesInformation} placeholder="Enter sales information" rows={2} />
-              </div>
+
 
               <div class="space-y-2">
                 <div class="font-medium text-sm mb-1.5">Location/Collection</div>

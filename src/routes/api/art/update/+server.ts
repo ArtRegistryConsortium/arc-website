@@ -1,14 +1,16 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/supabase/server';
-import type { Address } from 'viem';
 
+/**
+ * API endpoint to update an existing ART token
+ */
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    // Get request data
+    // Parse request data
     const requestData = await request.json();
-    console.log('Received ART token mint request:', requestData);
 
+    // Extract required fields
     const {
       contractAddress,
       chainId,
@@ -33,15 +35,10 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 400 });
     }
 
-    // No status conversion needed as we're not using status anymore
-
-    // Record the token in the database
-    const { error: insertError } = await supabaseAdmin
+    // Update the token in the database
+    const { error: updateError } = await supabaseAdmin
       .from('art_tokens')
-      .insert({
-        contract_address: contractAddress,
-        chain_id: chainId,
-        token_id: tokenId,
+      .update({
         title,
         description,
         year: yearOfCreation,
@@ -52,33 +49,36 @@ export const POST: RequestHandler = async ({ request }) => {
         image_url: imageUrl,
         token_uri: tokenUri,
         royalties,
-        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         bibliography: requestData.bibliography || null,
         condition_reports: requestData.conditionReports || null,
         exhibition_history: requestData.exhibitionHistory || null,
         keywords: requestData.keywords || null,
         location_collection: requestData.locationCollection || null,
         note: requestData.note || null
-      });
+        // Do not store transaction_hash in the database
+      })
+      .eq('contract_address', contractAddress)
+      .eq('chain_id', chainId)
+      .eq('token_id', tokenId);
 
-    if (insertError) {
-      console.error('Error recording token:', insertError);
+    if (updateError) {
+      console.error('Error updating token:', updateError);
       return json({
         success: false,
-        error: `Failed to record token: ${insertError.message}`
+        error: 'Failed to update token in database'
       }, { status: 500 });
     }
 
     return json({
       success: true,
-      tokenId
+      message: 'Token updated successfully'
     });
-
   } catch (error) {
-    console.error('Error in token mint:', error);
+    console.error('Server error updating token:', error);
     return json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: 'Internal server error'
     }, { status: 500 });
   }
 };
