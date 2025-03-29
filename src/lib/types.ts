@@ -23,6 +23,8 @@ export type GroupHeadingProps = {
 };
 
 // Utility type for Scroll Button props
-export type ScrollButtonProps = {
+export type ScrollButtonProps = WithElementRef & {
   asChild?: boolean;
+  class?: string;
+  children?: unknown;
 }; 

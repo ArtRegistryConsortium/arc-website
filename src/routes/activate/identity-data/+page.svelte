@@ -19,7 +19,7 @@ let links: { name: string; url: string }[] = [];
 let tags: string[] = [];
 let dob = '';
 let location = '';
-let addresses = [''];
+let addresses: string[] = [];
 // Removed representedBy and representedArtists fields
 
 // Form state
@@ -38,8 +38,19 @@ function updateValidState(newState: boolean) {
 // Function to convert date string to timestamp
 function dateToTimestamp(dateStr: string): number | undefined {
     if (!dateStr) return undefined;
-    const date = new Date(dateStr);
+    // Convert from dd-mm-yyyy to yyyy-mm-dd for Date parsing
+    const [day, month, year] = dateStr.split('-');
+    // Create date at local midnight to avoid timezone issues
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return isNaN(date.getTime()) ? undefined : Math.floor(date.getTime() / 1000);
+}
+
+// Function to format timestamp to dd-mm-yyyy string
+function timestampToDateString(timestamp: number | undefined): string {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    // Use UTC methods to avoid timezone issues
+    return `${String(date.getUTCDate()).padStart(2, '0')}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${date.getUTCFullYear()}`;
 }
 
 // Function to format links for the contract
@@ -100,11 +111,8 @@ onMount(async () => {
         }
 
         if (state.dob) {
-            const date = new Date(state.dob * 1000);
-            dob = date.toISOString().split('T')[0];
+            dob = timestampToDateString(state.dob);
         }
-
-        // Removed Date of Death handling
 
         if (state.location) {
             location = state.location;
@@ -305,6 +313,28 @@ function handleAddressInput(index: number, event: Event) {
     validateForm();
 }
 
+// Function to handle DOB input with masking
+function handleDobInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Apply mask dd-mm-yyyy
+    if (value.length > 0) {
+        if (value.length <= 2) {
+            value = value;
+        } else if (value.length <= 4) {
+            value = value.slice(0, 2) + '-' + value.slice(2);
+        } else if (value.length <= 8) {
+            value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4);
+        } else {
+            value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
+        }
+    }
+    
+    dob = value;
+    validateForm();
+}
+
 async function handleContinue() {
     if (validateForm()) {
         // Store all the data in the store
@@ -402,7 +432,7 @@ async function handleLogout() {
         </p>
 
         <!-- Basic Information Section -->
-        <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
+        <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 border border-border/30 shadow-sm">
             <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Basic Information <span class="text-sm font-normal text-muted-foreground ml-2">(Required)</span></h2>
 
             <!-- Name/Username -->
@@ -412,7 +442,7 @@ async function handleLogout() {
                     id="username"
                     type="text"
                     placeholder="Enter your name or alias"
-                    class="w-full p-3 rounded-lg border bg-white/90 dark:bg-neutral-800/50
+                    class="w-full p-3 border bg-white/90 dark:bg-neutral-800/50
                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     value={username}
                     on:input={handleUsernameInput}
@@ -425,7 +455,7 @@ async function handleLogout() {
                 <textarea
                     id="description"
                     placeholder="Brief description of the identity"
-                    class="w-full p-3 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                    class="w-full p-3 border bg-white/90 dark:bg-neutral-800/50
                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     rows="3"
                     value={description}
@@ -438,8 +468,8 @@ async function handleLogout() {
                 <label for="image" class="block text-sm font-medium mb-1.5 text-foreground/80">Profile Image <span class="text-foreground/60">*</span></label>
                 <div class="mt-1 flex items-center gap-4">
                     {#if imagePreview}
-                        <div>
-                            <img src={imagePreview} alt="Preview" class="w-24 h-24 object-cover rounded-md" />
+                        <div class="w-24 h-24 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden">
+                            <img src={imagePreview} alt="Preview" class="max-w-full max-h-full object-contain" />
                         </div>
                     {/if}
                     <div>
@@ -452,14 +482,14 @@ async function handleLogout() {
                             />
                             {imagePreview ? 'Change Image' : 'Upload Image'}
                         </Button>
-                        <p class="text-xs text-muted-foreground mt-1">Recommended: Square image, 500x500px or larger</p>
+                        <p class="text-xs text-muted-foreground mt-1">Max size: 1MB. Supported formats: JPG, PNG, GIF</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Links and Tags Section -->
-        <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
+        <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 border border-border/30 shadow-sm">
             <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Links & Tags <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
             <!-- Links -->
@@ -467,7 +497,7 @@ async function handleLogout() {
                 <label class="block text-sm font-medium mb-1.5 text-foreground/80">Links <span class="text-muted-foreground">(Optional)</span></label>
                 <div class="space-y-2">
                     {#each links as link, i}
-                        <div class="flex flex-col gap-2 mb-3 p-3 bg-white/50 dark:bg-neutral-800/20 rounded-lg border border-border/30">
+                        <div class="flex flex-col gap-2 mb-3 p-3 bg-white/50 dark:bg-neutral-800/20 border border-border/30">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium text-foreground/70">Link #{i+1}</span>
                                 <Button
@@ -485,7 +515,7 @@ async function handleLogout() {
                                 <input
                                     type="text"
                                     placeholder="Name (e.g. X, Instagram, Website)"
-                                    class="w-full p-2 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                                    class="w-full p-2 border bg-white/90 dark:bg-neutral-800/50 
                                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                                     value={link.name}
                                     on:input={(e) => handleLinkNameInput(i, e)}
@@ -493,7 +523,7 @@ async function handleLogout() {
                                 <input
                                     type="url"
                                     placeholder="https://example.com"
-                                    class="w-full p-2 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                                    class="w-full p-2 border bg-white/90 dark:bg-neutral-800/50
                                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                                     value={link.url}
                                     on:input={(e) => handleLinkUrlInput(i, e)}
@@ -503,7 +533,6 @@ async function handleLogout() {
                     {/each}
                     <Button
                         variant="outline"
-                        size="sm"
                         class="w-full mt-2 bg-background/70 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
                         on:click={addLink}
                     >
@@ -524,7 +553,7 @@ async function handleLogout() {
                             <input
                                 type="text"
                                 placeholder="Enter a tag"
-                                class="flex-1 p-2 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                                class="flex-1 p-2 border bg-white/90 dark:bg-neutral-800/50 
                                     focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                                 value={tag}
                                 on:input={(e) => handleTagInput(i, e)}
@@ -532,7 +561,7 @@ async function handleLogout() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                class="h-10 w-10 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
+                                class="h-11 w-11 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
                                 on:click={() => removeTag(i)}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -543,7 +572,6 @@ async function handleLogout() {
                     {/each}
                     <Button
                         variant="outline"
-                        size="sm"
                         class="w-full mt-2 bg-background/70 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
                         on:click={addTag}
                     >
@@ -558,7 +586,7 @@ async function handleLogout() {
 
         <!-- Type-specific Fields -->
         {#if identityType === 'artist'}
-            <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
+            <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 border border-border/30 shadow-sm">
                 <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">Artist Information <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
                 <!-- Date of Birth -->
@@ -566,11 +594,13 @@ async function handleLogout() {
                     <label for="dob" class="block text-sm font-medium mb-1.5 text-foreground/80">Date of Birth <span class="text-muted-foreground">(Optional)</span></label>
                     <input
                         id="dob"
-                        type="date"
-                        class="w-full p-3 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                        type="text"
+                        placeholder="DD-MM-YYYY"
+                        class="w-full p-3 border bg-white/90 dark:bg-neutral-800/50
                             focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         value={dob}
-                        on:input={(e) => { dob = (e.target as HTMLInputElement).value; validateForm(); }}
+                        on:input={handleDobInput}
+                        maxlength="10"
                     />
                 </div>
 
@@ -581,17 +611,15 @@ async function handleLogout() {
                         id="location"
                         type="text"
                         placeholder="City, Country"
-                        class="w-full p-3 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                        class="w-full p-3 border bg-white/90 dark:bg-neutral-800/50
                             focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         value={location}
                         on:input={(e) => { location = (e.target as HTMLInputElement).value; validateForm(); }}
                     />
                 </div>
-
-
             </div>
         {:else if identityType === 'gallery' || identityType === 'institution'}
-            <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 rounded-lg border border-border/30 shadow-sm">
+            <div class="mb-10 text-left p-4 bg-neutral-50 dark:bg-neutral-900/40 border border-border/30 shadow-sm">
                 <h2 class="text-xl font-semibold mb-5 pb-2 border-b border-border/50">{identityType === 'gallery' ? 'Gallery' : 'Institution'} Information <span class="text-sm font-normal text-muted-foreground">(Optional)</span></h2>
 
                 <!-- Physical Addresses -->
@@ -603,7 +631,7 @@ async function handleLogout() {
                                 <input
                                     type="text"
                                     placeholder="Enter address"
-                                    class="flex-1 p-2 rounded-lg border bg-white/90 dark:bg-neutral-800/50 border-border/50
+                                    class="flex-1 p-2 border bg-white/90 dark:bg-neutral-800/50
                                         focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                                     value={address}
                                     on:input={(e) => handleAddressInput(i, e)}
@@ -611,9 +639,8 @@ async function handleLogout() {
                                 <Button
                                     variant="outline"
                                     size="icon"
-                                    class="h-10 w-10 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
+                                    class="h-11 w-11 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
                                     on:click={() => removeAddress(i)}
-                                    disabled={addresses.length === 1 && !addresses[0]}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -623,7 +650,6 @@ async function handleLogout() {
                         {/each}
                         <Button
                             variant="outline"
-                            size="sm"
                             class="w-full mt-2 bg-background/70 hover:bg-accent/80 hover:text-accent-foreground transition-colors duration-200"
                             on:click={addAddress}
                         >

@@ -934,67 +934,77 @@ async function reconnectWallet() {
 import { getWalletSetupStatus } from '$lib/services/walletService';
 
 // Check activation status on mount and clean up on destroy
-onMount(async () => {
-    // Check if wallet is connected and setup is completed
-    const walletAddr = getWalletAddress();
-    if (walletAddr) {
-        try {
-            // Check wallet setup status
-            const setupStatus = await getWalletSetupStatus(walletAddr);
+onMount(() => {
+    let cleanup: (() => void) | undefined;
 
-            // If setup is completed, redirect to dashboard
-            if (setupStatus?.setup_completed) {
-                console.log('Wallet setup is already completed, redirecting to dashboard');
-                await goto('/dashboard');
-                return;
-            }
-        } catch (error) {
-            console.error('Error checking wallet setup status:', error);
-        }
-    }
+    // Create an async IIFE to handle the async operations
+    (async () => {
+        // Check if wallet is connected and setup is completed
+        const walletAddr = getWalletAddress();
+        if (walletAddr) {
+            try {
+                // Check wallet setup status
+                const setupStatus = await getWalletSetupStatus(walletAddr);
 
-    // Show wallet options by default if no wallet is connected
-    if (!isConnected) {
-        showWalletOptions = true;
-    }
-
-    // Load available chains first
-    loadAvailableChains().then(() => {
-        // Try to reconnect wallet, then check activation status
-        reconnectWallet();
-    });
-
-    // Set up a listener for chain changes in the wallet
-    const unwatch = watchChainId(config, {
-        onChange: (chainId) => {
-            console.log('Wallet chain changed to:', chainId);
-
-            // Find the matching chain in our available chains
-            const matchingChain = availableChains.find(chain => chain.chain_id === chainId);
-
-            if (matchingChain) {
-                // Update the selected chain in the UI
-                selectedChain = matchingChain;
-                selectedChainId = chainId;
-                console.log('Updated selected chain to match wallet:', selectedChain);
-
-                // Refresh activation status with the new chain to get the correct ARC wallet address
-                if (walletAddress) {
-                    console.log(`Checking activation status for chain ${chainId} to get the correct ARC wallet address`);
-                    checkWalletActivationStatus(false).catch(err => {
-                        console.error('Error checking wallet status after chain change:', err);
-                    });
+                // If setup is completed, redirect to dashboard
+                if (setupStatus?.setup_completed) {
+                    console.log('Wallet setup is already completed, redirecting to dashboard');
+                    await goto('/dashboard');
+                    return;
                 }
-            } else {
-                console.log('Wallet switched to unsupported chain:', chainId);
-                // We could show a warning here if needed
+            } catch (error) {
+                console.error('Error checking wallet setup status:', error);
             }
         }
-    });
 
-    // Clean up the listener when the component is destroyed
+        // Show wallet options by default if no wallet is connected
+        if (!isConnected) {
+            showWalletOptions = true;
+        }
+
+        // Load available chains first
+        loadAvailableChains().then(() => {
+            // Try to reconnect wallet, then check activation status
+            reconnectWallet();
+        });
+
+        // Set up a listener for chain changes in the wallet
+        const unwatch = watchChainId(config, {
+            onChange: (chainId) => {
+                console.log('Wallet chain changed to:', chainId);
+
+                // Find the matching chain in our available chains
+                const matchingChain = availableChains.find(chain => chain.chain_id === chainId);
+
+                if (matchingChain) {
+                    // Update the selected chain in the UI
+                    selectedChain = matchingChain;
+                    selectedChainId = chainId;
+                    console.log('Updated selected chain to match wallet:', selectedChain);
+
+                    // Refresh activation status with the new chain to get the correct ARC wallet address
+                    if (walletAddress) {
+                        console.log(`Checking activation status for chain ${chainId} to get the correct ARC wallet address`);
+                        checkWalletActivationStatus(false).catch(err => {
+                            console.error('Error checking wallet status after chain change:', err);
+                        });
+                    }
+                } else {
+                    console.log('Wallet switched to unsupported chain:', chainId);
+                    // We could show a warning here if needed
+                }
+            }
+        });
+
+        // Store the cleanup function
+        cleanup = () => {
+            if (unwatch) unwatch();
+        };
+    })();
+
+    // Return the cleanup function
     return () => {
-        if (unwatch) unwatch();
+        if (cleanup) cleanup();
     };
 });
 
@@ -1035,11 +1045,11 @@ onDestroy(() => {
             <p class="text-foreground mb-6">Connect your wallet to access the activation process</p>
 
             {#if showWalletOptions}
-                <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6">
+                <div class="bg-muted/50 p-4 border border-border mb-6">
                     <div class="space-y-3">
                         <Button
                             variant="ghost"
-                            class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+                            class="w-full flex items-center justify-between p-3 hover:bg-accent text-foreground"
                             on:click={() => connectWallet('injected')}
                         >
                             <div class="flex items-center">
@@ -1053,7 +1063,7 @@ onDestroy(() => {
 
                         <Button
                             variant="ghost"
-                            class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+                            class="w-full flex items-center justify-between p-3 hover:bg-accent text-foreground"
                             on:click={() => connectWallet('walletconnect')}
                         >
                             <div class="flex items-center">
@@ -1098,7 +1108,7 @@ onDestroy(() => {
                 <p class="text-sm text-muted-foreground mt-2">This may take a moment</p>
             </div>
         {:else if statusMessage}
-            <div class="bg-muted p-4 rounded-md mb-6 relative overflow-hidden">
+            <div class="bg-muted p-4 mb-6 relative overflow-hidden">
                 <!-- Subtle gradient background animation -->
                 <div class="absolute inset-0 bg-gradient-to-r from-muted via-muted/80 to-muted bg-[length:200%_100%] animate-gradient-slow opacity-50"></div>
 
@@ -1113,7 +1123,7 @@ onDestroy(() => {
                 </div>
             </div>
         {:else if errorMessage}
-            <div class="bg-red-500/10 border border-red-200 p-4 rounded-md mb-6">
+            <div class="bg-red-500/10 border border-red-200 p-4 mb-6">
                 <p class="text-red-600 font-medium mb-2">Error</p>
                 <p class="text-red-600">{errorMessage}</p>
                 {#if errorMessage.includes('recipient does not match')}
@@ -1165,7 +1175,7 @@ onDestroy(() => {
             </div>
         {:else if paymentStatus === 'payment_confirmed' || paymentStatus === 'payment_verified'}
             <!-- Payment success message -->
-            <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded-lg p-6 mb-6 text-center">
+            <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 p-6 mb-6 text-center">
                 <div class="flex justify-center mb-4">
                     <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1196,7 +1206,7 @@ onDestroy(() => {
                         {#each availableChains as chain}
                             <button
                                 type="button"
-                                class="flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors
+                                class="flex items-center gap-2 px-3 py-2 border text-sm transition-colors
                                        ${selectedChainId === chain.chain_id ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:border-primary/50 hover:bg-muted/50'}"
                                 on:click={() => handleChainSelect(chain.chain_id)}
                             >
@@ -1218,7 +1228,7 @@ onDestroy(() => {
                                 {/if}
                                 <span>{chain.name}</span>
                                 {#if chain.is_testnet}
-                                    <span class="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Test</span>
+                                    <span class="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground">Test</span>
                                 {/if}
                             </button>
                         {/each}
@@ -1230,9 +1240,9 @@ onDestroy(() => {
                 {formatCryptoAmount(cryptoAmount)} {cryptoSymbol}
             </div>
 
-            <div class="bg-muted p-4 rounded-md mb-6 text-left">
+            <div class="bg-muted p-4 mb-6 text-left">
                 {#if selectedChain}
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-background rounded-md mb-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-background mb-3">
                         {#if selectedChain.icon_url}
                             <img
                                 src={selectedChain.icon_url}
@@ -1251,14 +1261,14 @@ onDestroy(() => {
                         {/if}
                         <span class="font-medium text-sm">{selectedChain.name}</span>
                         {#if selectedChain.is_testnet}
-                            <span class="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Test</span>
+                            <span class="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground">Test</span>
                         {/if}
                     </div>
                 {/if}
 
                 <p class="text-sm mb-2">Send exactly <span class="font-bold">{formatCryptoAmount(cryptoAmount)} {cryptoSymbol}</span> to:</p>
                 <div class="flex items-center gap-2 mb-3">
-                    <code class="bg-background p-2 rounded text-xs flex-1 overflow-hidden text-ellipsis">{arcWalletAddress}</code>
+                    <code class="bg-background p-2 text-xs flex-1 overflow-hidden text-ellipsis">{arcWalletAddress}</code>
                     <Button variant="outline" size="sm" on:click={copyArcWalletAddress}>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1266,7 +1276,7 @@ onDestroy(() => {
                     </Button>
                 </div>
 
-                <div class="bg-background p-3 rounded mb-3">
+                <div class="bg-background p-3 mb-3">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-xs text-muted-foreground">Amount:</span>
                         <span class="text-sm font-medium">{formatCryptoAmount(cryptoAmount)} {cryptoSymbol}</span>
@@ -1284,13 +1294,13 @@ onDestroy(() => {
                 <p class="text-xs text-muted-foreground">Make sure to send the exact amount from your connected wallet.</p>
 
                 <div class="mt-4">
-                    <div class="p-3 border border-border bg-card dark:bg-card rounded-md">
+                    <div class="p-3 bg-card dark:bg-card">
                         <p class="text-sm font-medium mb-2">Already sent payment?</p>
                         <div class="flex flex-col sm:flex-row gap-2 mb-3">
                             <input
                                 type="text"
                                 placeholder="Enter transaction hash (0x...)"
-                                class="w-full flex-1 px-3 py-2 h-9 text-sm rounded-md border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
+                                class="w-full flex-1 px-3 py-2 h-9 text-sm border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
                                 bind:value={transactionHash}
                                 on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
                                 disabled={isVerifying}
@@ -1327,7 +1337,7 @@ onDestroy(() => {
                 </div>
 
                 {#if transactionHash && (transactionWasSent || transactionStatus)}
-                    <div class="mt-3 p-3 rounded-md
+                    <div class="mt-3 p-3
                         {transactionStatus === 'confirmed' ? 'bg-green-500/10 text-green-600' :
                          transactionStatus === 'failed' ? 'bg-muted' :
                          'bg-primary/10 text-primary'}">
@@ -1364,13 +1374,13 @@ onDestroy(() => {
 
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-muted-foreground">Tx Hash:</span>
-                            <code class="text-xs bg-background p-1 rounded flex-1 overflow-hidden text-ellipsis">{transactionHash}</code>
+                            <code class="text-xs bg-background p-1 flex-1 overflow-hidden text-ellipsis">{transactionHash}</code>
                         </div>
                     </div>
                 {/if}
 
                 {#if transactionError}
-                    <div class="mt-3 p-3 bg-red-500/10 border border-red-200 rounded-md">
+                    <div class="mt-3 p-3 bg-red-500/10 border border-red-200">
                         <p class="text-sm font-medium mb-1 text-red-600">Transaction Failed</p>
                         <p class="text-xs text-red-600">{transactionError}</p>
                         {#if transactionError.includes('recipient does not match')}
@@ -1437,7 +1447,7 @@ onDestroy(() => {
                 {/if}
             </div>
         {:else}
-            <div class="bg-primary/10 text-primary p-4 rounded-md mb-6 relative overflow-hidden">
+            <div class="bg-primary/10 text-primary p-4  mb-6 relative overflow-hidden">
                 <!-- Subtle gradient background animation -->
                 <div class="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 bg-[length:200%_100%] animate-gradient-slow opacity-50"></div>
 

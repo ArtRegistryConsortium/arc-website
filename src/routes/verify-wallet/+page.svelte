@@ -358,7 +358,7 @@ async function closePage() {
     <h1 class="text-3xl font-bold text-foreground mb-8">Verify Your Wallet</h1>
 
     {#if isVerified}
-      <div class="bg-green-500/20 p-6 rounded-lg border border-green-500/50 mb-6">
+      <div class="bg-green-500/20 p-6 border border-green-500/50 mb-6">
         <div class="flex justify-center mb-4">
           <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,13 +378,13 @@ async function closePage() {
       {:else}
         <p class="text-foreground mb-6">Sign a message to confirm ownership. This won't cost gas.</p>
 
-        <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6 text-left">
+        <div class="bg-muted/50 p-4 border border-border mb-6 text-left">
           <p class="text-muted-foreground mb-2 text-sm">Wallet Address:</p>
           <p class="text-foreground font-mono mb-4">{walletAddress ? truncateAddress(walletAddress) : ''}</p>
 
           {#if verificationMessage}
             <p class="text-muted-foreground mb-2 text-sm">Verification Message:</p>
-            <pre class="bg-muted p-3 rounded text-foreground text-sm font-mono overflow-x-auto">{verificationMessage.split('\n').slice(0, 1).join('\n')}</pre>
+            <pre class="bg-muted p-3 text-foreground text-sm font-mono overflow-x-auto">{verificationMessage.split('\n').slice(0, 1).join('\n')}</pre>
           {/if}
         </div>
 
@@ -413,11 +413,11 @@ async function closePage() {
       <p class="text-foreground mb-6">Connect your wallet to verify ownership</p>
 
       {#if showWalletOptions}
-        <div class="bg-muted/50 p-4 rounded-lg border border-border mb-6">
+        <div class="bg-muted/50 p-4 border border-border mb-6">
           <div class="space-y-3">
             <Button
               variant="ghost"
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+              class="w-full flex items-center justify-between p-3 hover:bg-accent text-foreground"
               on:click={() => connectWallet('injected')}
             >
               <div class="flex items-center">
@@ -431,7 +431,7 @@ async function closePage() {
 
             <Button
               variant="ghost"
-              class="w-full flex items-center justify-between p-3 rounded-md hover:bg-accent text-foreground"
+              class="w-full flex items-center justify-between p-3 hover:bg-accent text-foreground"
               on:click={() => connectWallet('walletconnect')}
             >
               <div class="flex items-center">

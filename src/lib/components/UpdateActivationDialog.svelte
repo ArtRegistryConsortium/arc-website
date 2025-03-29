@@ -466,13 +466,15 @@
                           // Links stored as JSON objects in database (JSONB)
                           links: identityData?.links || [],
                           tags: identityData?.tags?.length > 0 ? identityData.tags : [],
-                          dob: identityData?.dob || 0,
-                          dod: identityData?.dod || 0,
-                          location: identityData?.location || '',
-                          // Addresses stored as JSON objects in database (JSONB)
-                          addresses: identityData?.addresses || [],
-                          representedBy: identityData?.representedBy,
-                          representedArtists: identityData?.representedArtists
+                          // Type-specific fields
+                          ...(identityData?.identityType === 'artist' ? {
+                            dob: identityData?.dob || 0,
+                            dod: identityData?.dod || 0,
+                            location: identityData?.location || ''
+                          } : {}),
+                          ...((identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') ? {
+                            addresses: identityData?.addresses || []
+                          } : {})
                         }, null, 2)}</pre>
                       </div>
 
@@ -487,13 +489,15 @@
                           // Links converted to JSON string for contract
                           links: JSON.stringify(identityData?.links || []),
                           tags: identityData?.tags?.length > 0 ? identityData.tags : [],
-                          dob: identityData?.dob || 0,
-                          dod: identityData?.dod || 0,
-                          location: identityData?.location || '',
-                          // Addresses as JSON string for contract
-                          addresses: JSON.stringify(identityData?.addresses || []),
-                          representedBy: identityData?.representedBy ? (typeof identityData.representedBy === 'string' ? identityData.representedBy : JSON.stringify(identityData.representedBy)) : '',
-                          representedArtists: identityData?.representedArtists ? (typeof identityData.representedArtists === 'string' ? identityData.representedArtists : JSON.stringify(identityData.representedArtists)) : ''
+                          // Type-specific fields
+                          ...(identityData?.identityType === 'artist' ? {
+                            dob: identityData?.dob || 0,
+                            dod: identityData?.dod || 0,
+                            location: identityData?.location || ''
+                          } : {}),
+                          ...((identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') ? {
+                            addresses: JSON.stringify(identityData?.addresses || [])
+                          } : {})
                         }, null, 2)}</pre>
                       </div>
                     </div>

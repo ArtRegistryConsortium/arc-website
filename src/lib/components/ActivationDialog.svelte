@@ -47,6 +47,8 @@
     arweaveUrl = '';
     transactionHash = '';
     identityId = 0;
+    // Automatically start the upload when dialog opens
+    handleUploadToArweave();
   }
 
   async function handleUploadToArweave() {
@@ -452,15 +454,6 @@
                       <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                       <span class="text-sm">Uploading...</span>
                     </div>
-                  {:else}
-                    <Button
-                      size="sm"
-                      class="mt-2 w-full"
-                      on:click={handleUploadToArweave}
-                      disabled={isProcessing}
-                    >
-                      Start Upload
-                    </Button>
                   {/if}
                 </div>
               {/if}
@@ -515,40 +508,38 @@
                       <div class="mb-2 pb-2 border-b border-neutral-200 dark:border-neutral-700">
                         <h5 class="text-xs font-medium mb-1">Database Data (JSONB Format):</h5>
                         <pre class="whitespace-pre-wrap break-all">{JSON.stringify({
+                          walletAddress: getWalletAddress(),
                           identityType: mapIdentityType(identityData?.identityType || 'artist'),
                           name: identityData?.username || '',
                           description: identityData?.description || `${identityData?.username || ''} on ${identityData?.selectedChain?.name || ''}`,
                           identityImage: arweaveUrl || identityData?.identityImage || 'https://www.artregistryconsortium.com/favicon.jpg',
-                          // Links stored as JSON objects in database (JSONB)
                           links: identityData?.links || [],
                           tags: identityData?.tags?.length > 0 ? identityData.tags : [],
                           dob: identityData?.dob || 0,
                           dod: identityData?.dod || 0,
                           location: identityData?.location || '',
-                          // Addresses stored as JSON objects in database (JSONB)
                           addresses: identityData?.addresses || [],
-                          representedBy: identityData?.representedBy,
-                          representedArtists: identityData?.representedArtists
+                          representedBy: identityData?.representedBy || '',
+                          representedArtists: identityData?.representedArtists || ''
                         }, null, 2)}</pre>
                       </div>
 
                       <div>
                         <h5 class="text-xs font-medium mb-1">Contract Data (Blockchain Format):</h5>
                         <pre class="whitespace-pre-wrap break-all">{JSON.stringify({
+                          walletAddress: getWalletAddress(),
                           identityType: mapIdentityType(identityData?.identityType || 'artist'),
                           name: identityData?.username || '',
                           description: identityData?.description || `${identityData?.username || ''} on ${identityData?.selectedChain?.name || ''}`,
                           identityImage: arweaveUrl || identityData?.identityImage || 'https://www.artregistryconsortium.com/favicon.jpg',
-                          // Links converted to JSON string for contract
                           links: JSON.stringify(identityData?.links || []),
                           tags: identityData?.tags?.length > 0 ? identityData.tags : [],
                           dob: identityData?.dob || 0,
                           dod: identityData?.dod || 0,
                           location: identityData?.location || '',
-                          // Addresses as JSON string for contract
                           addresses: JSON.stringify(identityData?.addresses || []),
-                          representedBy: identityData?.representedBy ? (typeof identityData.representedBy === 'string' ? identityData.representedBy : JSON.stringify(identityData.representedBy)) : '',
-                          representedArtists: identityData?.representedArtists ? (typeof identityData.representedArtists === 'string' ? identityData.representedArtists : JSON.stringify(identityData.representedArtists)) : ''
+                          representedBy: identityData?.representedBy || '',
+                          representedArtists: identityData?.representedArtists || ''
                         }, null, 2)}</pre>
                       </div>
                     </div>

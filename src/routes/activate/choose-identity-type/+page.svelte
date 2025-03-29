@@ -78,6 +78,33 @@ async function handleContinue() {
     if (selectedType) {
         // Store the selected identity type in the store
         identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian');
+        
+        // Clear fields based on identity type
+        switch (selectedType) {
+            case 'artist':
+                // Keep artist-specific fields (dob, dod, location)
+                identityStore.setAddresses([]);
+                identityStore.setRepresentedArtists(null);
+                break;
+            case 'gallery':
+            case 'institution':
+                // Keep gallery/institution-specific fields (addresses, representedArtists)
+                identityStore.setDob(undefined);
+                identityStore.setDod(undefined);
+                identityStore.setLocation('');
+                identityStore.setRepresentedBy(null);
+                break;
+            case 'collector':
+            case 'custodian':
+                // Clear all type-specific fields
+                identityStore.setDob(undefined);
+                identityStore.setDod(undefined);
+                identityStore.setLocation('');
+                identityStore.setAddresses([]);
+                identityStore.setRepresentedBy(null);
+                identityStore.setRepresentedArtists(null);
+                break;
+        }
 
         // Update setup progress to the next step (2 - Identity Data)
         const walletAddress = getWalletAddress();
@@ -156,7 +183,7 @@ async function handleLogout() {
         <div class="grid gap-4 mb-8">
             {#each identityTypes as type}
                 <button
-                    class="w-full p-4 rounded-lg border-2 transition-all flex flex-col items-start text-left
+                    class="w-full p-4 border-2 transition-all flex flex-col items-start text-left
                         {selectedType === type.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
                     on:click={() => selectedType = type.id}
                 >

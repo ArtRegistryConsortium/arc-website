@@ -141,7 +141,7 @@ async function handleLogout() {
             <input
                 type="text"
                 placeholder="username"
-                class="w-full p-4 text-lg rounded-lg border-2 bg-background
+                class="w-full p-4 text-lg border-2 bg-background
                     {isValid ? 'border-primary' : 'border-border'}
                     focus:outline-none focus:border-primary transition-colors"
                 value={username}

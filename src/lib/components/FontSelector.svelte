@@ -44,7 +44,7 @@
   <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
     <span class="hidden sm:inline mr-1">Font:</span>
     <select
-      class="bg-background border border-input rounded-md pl-3 pr-8 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring dark:border-gray-800 dark:bg-[#09090b] appearance-none relative"
+      class="bg-background border border-input pl-3 pr-8 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring dark:border-gray-800 dark:bg-[#09090b] appearance-none relative"
       value={currentFont}
       on:change={handleFontChange}
       aria-label="Select font"

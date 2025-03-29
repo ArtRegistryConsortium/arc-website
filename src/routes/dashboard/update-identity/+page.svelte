@@ -69,25 +69,26 @@ function handleTypeSelect(type: string) {
     console.log('Type selected:', type);
     identityStore.setIdentityType(type as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian');
 
-    // Reset type-specific fields when changing type
+    // Reset all type-specific fields first
+    dob = '';
+    dod = '';
+    location = '';
+    addresses = [];
+    identityStore.setDob(undefined);
+    identityStore.setDod(undefined);
+    identityStore.setLocation('');
+    identityStore.setAddresses([]);
+    identityStore.setRepresentedBy(undefined);
+    identityStore.setRepresentedArtists(undefined);
+
+    // Set default values based on type
     if (type === 'artist') {
-        dob = '';
-        dod = '';
-        location = '';
-        addresses = [];
-        identityStore.setDob(undefined);
-        identityStore.setDod(undefined);
-        identityStore.setLocation('');
-        identityStore.setAddresses([]);
+        // Artist-specific fields are already cleared
     } else if (type === 'gallery' || type === 'institution') {
-        dob = '';
-        dod = '';
-        location = '';
         addresses = [''];
-        identityStore.setDob(undefined);
-        identityStore.setDod(undefined);
-        identityStore.setLocation('');
         identityStore.setAddresses(['']);
+    } else if (type === 'collector' || type === 'custodian') {
+        // All type-specific fields are already cleared
     }
 
     // Force validation after type selection
@@ -458,33 +459,67 @@ async function handleSubmit() {
             addresses
         });
 
-        // Store all the data in the store
-        identityStore.setIdentityType(selectedType as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian');
-        identityStore.setUsername(username);
-        identityStore.setDescription(description);
-        identityStore.setIdentityImage(identityImage);
-        identityStore.setLinks(links.filter(link => link.url.trim().length > 0));
-        identityStore.setTags(tags.filter(tag => tag.trim().length > 0));
+        // Create a filtered identity data object based on the selected type
+        const filteredIdentityData: IdentityInfo = {
+            identityType: selectedType as 'artist' | 'gallery' | 'institution' | 'collector' | 'custodian',
+            username,
+            description,
+            identityImage,
+            links: links.filter(link => link.url.trim().length > 0),
+            tags: tags.filter(tag => tag.trim().length > 0),
+            selectedChain: selectedChain || undefined
+        };
 
-        // Store type-specific data
+        // Add type-specific fields
         if (selectedType === 'artist') {
             const dobTimestamp = dob ? Math.floor(new Date(dob).getTime() / 1000) : 0;
             const dodTimestamp = dod ? Math.floor(new Date(dod).getTime() / 1000) : 0;
-            identityStore.setDob(dobTimestamp);
-            identityStore.setDod(dodTimestamp);
-            identityStore.setLocation(location);
+            Object.assign(filteredIdentityData, {
+                dob: dobTimestamp,
+                dod: dodTimestamp,
+                location
+            });
         } else if (selectedType === 'gallery' || selectedType === 'institution') {
-            identityStore.setAddresses(addresses.filter(addr => addr.trim().length > 0));
+            Object.assign(filteredIdentityData, {
+                addresses: addresses.filter(addr => addr.trim().length > 0)
+            });
+        }
+
+        // Store the filtered data in the store
+        identityStore.setIdentityType(filteredIdentityData.identityType);
+        identityStore.setUsername(filteredIdentityData.username);
+        identityStore.setDescription(filteredIdentityData.description);
+        identityStore.setIdentityImage(filteredIdentityData.identityImage);
+        identityStore.setLinks(filteredIdentityData.links);
+        identityStore.setTags(filteredIdentityData.tags);
+        if (filteredIdentityData.selectedChain) {
+            identityStore.setSelectedChain(filteredIdentityData.selectedChain);
+        }
+
+        if (selectedType === 'artist') {
+            if ('dob' in filteredIdentityData) {
+                identityStore.setDob(filteredIdentityData.dob);
+            }
+            if ('dod' in filteredIdentityData) {
+                identityStore.setDod(filteredIdentityData.dod);
+            }
+            if ('location' in filteredIdentityData) {
+                identityStore.setLocation(filteredIdentityData.location);
+            }
+        } else if (selectedType === 'gallery' || selectedType === 'institution') {
+            if ('addresses' in filteredIdentityData) {
+                identityStore.setAddresses(filteredIdentityData.addresses);
+            }
         }
 
         // Set the identity ID and original image URL
         if (currentIdentity) {
-            // Create a new object that combines IdentityInfo with the identityId and originalImageUrl
+            // Create a new object that combines filtered IdentityInfo with the identityId and originalImageUrl
             const dialogData = {
-                ...identityData!,
-                identityId: Number(currentIdentity.id), // Ensure it's a valid number
-                chainId: Number(currentIdentity.chain_id), // Pass the chain ID
-                originalImageUrl: currentIdentity.identity_image || '' // Pass the original image URL for comparison
+                ...filteredIdentityData,
+                identityId: Number(currentIdentity.id),
+                chainId: Number(currentIdentity.chain_id),
+                originalImageUrl: currentIdentity.identity_image || ''
             };
             identityData = dialogData;
             console.log('Setting identityId for dialog:', dialogData.identityId, typeof dialogData.identityId);
@@ -633,15 +668,13 @@ async function handleSubmit() {
                                     {#each links as link, i}
                                         <div class="flex gap-2">
                                             <Input
-                                                placeholder="Platform (e.g., Instagram)"
-                                                bind:value={link.name}
-                                                on:input={(e) => handleLinkInput(i, 'name', link.name)}
+                                                value={link.name}
+                                                on:change={(e) => handleLinkInput(i, 'name', (e.target as HTMLInputElement).value)}
                                                 class="flex-1"
                                             />
                                             <Input
-                                                placeholder="URL"
-                                                bind:value={link.url}
-                                                on:input={(e) => handleLinkInput(i, 'url', link.url)}
+                                                value={link.url}
+                                                on:change={(e) => handleLinkInput(i, 'url', (e.target as HTMLInputElement).value)}
                                                 class="flex-1"
                                             />
                                             <Button
@@ -676,9 +709,8 @@ async function handleSubmit() {
                                     {#each tags as tag, i}
                                         <div class="flex gap-2">
                                             <Input
-                                                placeholder="Tag (e.g., Contemporary Art)"
-                                                bind:value={tags[i]}
-                                                on:input={() => {
+                                                value={tags[i]}
+                                                on:change={() => {
                                                     identityStore.setTags([...tags]); // Create a new array to ensure reactivity
                                                     validateForm();
                                                 }}
@@ -718,30 +750,26 @@ async function handleSubmit() {
                                 <div>
                                     <h3 class="text-sm font-medium mb-2">Date of birth</h3>
                                     <Input
-                                        id="dob"
                                         type="date"
-                                        bind:value={dob}
-                                        on:input={handleDobInput}
+                                        value={dob}
+                                        on:change={handleDobInput}
                                         class="mt-1"
                                     />
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-medium mb-2">Date of death</h3>
                                     <Input
-                                        id="dod"
                                         type="date"
-                                        bind:value={dod}
-                                        on:input={handleDodInput}
+                                        value={dod}
+                                        on:change={handleDodInput}
                                         class="mt-1"
                                     />
                                 </div>
                                 <div>
                                     <Label for="location">Location <span class="text-muted-foreground text-sm font-normal">(Optional)</span></Label>
                                     <Input
-                                        id="location"
-                                        bind:value={location}
-                                        on:input={handleLocationInput}
-                                        placeholder="City, Country"
+                                        value={location}
+                                        on:change={handleLocationInput}
                                         class="mt-1"
                                     />
                                 </div>
@@ -755,9 +783,8 @@ async function handleSubmit() {
                                         {#each addresses as address, i}
                                             <div class="flex gap-2">
                                                 <Input
-                                                    placeholder="Address"
-                                                    bind:value={addresses[i]}
-                                                    on:input={(e) => handleAddressInput(i, (e.target as HTMLInputElement).value)}
+                                                    value={addresses[i]}
+                                                    on:change={(e) => handleAddressInput(i, (e.target as HTMLInputElement).value)}
                                                     class="flex-1"
                                                 />
                                                 <Button

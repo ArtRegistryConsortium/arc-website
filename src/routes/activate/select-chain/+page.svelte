@@ -2,7 +2,7 @@
 import { Button } from "$lib/components/ui/button/index.js";
 import { goto } from '$app/navigation';
 import { setUserClosedActivatePage } from '$lib/stores/navigationState';
-import { disconnect } from 'wagmi/actions';
+import { disconnect, getChainId } from 'wagmi/actions';
 import { config } from '$lib/web3/config';
 import { clearSession, getWalletAddress } from '$lib/stores/walletAuth';
 import ProgressSteps from '$lib/components/ProgressSteps.svelte';
@@ -30,6 +30,20 @@ onMount(async () => {
 
     // Unsubscribe to avoid memory leaks
     unsubscribe();
+
+    // Get current chain ID from wallet
+    try {
+        const currentChainId = await getChainId(config);
+        console.log('Current wallet chain ID:', currentChainId);
+        
+        // If no chain is selected yet, select the current wallet's chain
+        if (!selectedChainId) {
+            selectedChainId = currentChainId;
+            console.log('Selected current wallet chain:', currentChainId);
+        }
+    } catch (error) {
+        console.error('Error getting current chain ID:', error);
+    }
 
     const walletAddress = getWalletAddress();
     if (walletAddress) {
@@ -179,18 +193,18 @@ async function handleLogout() {
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         {:else if errorMessage}
-            <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg">
+            <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
                 <p>{errorMessage}</p>
             </div>
         {:else if availableChains.length === 0}
-            <div class="p-4 mb-6 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg">
+            <div class="p-4 mb-6 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300">
                 <p>No chains available for identity creation. Please contact support.</p>
             </div>
         {:else}
             <div class="grid gap-4 mb-8">
                 {#each availableChains as chain}
                     <button
-                        class="w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between
+                        class="w-full p-4 border-2 transition-all flex items-center justify-between
                             {selectedChainId === chain.chain_id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}"
                         on:click={() => selectedChainId = chain.chain_id}
                     >

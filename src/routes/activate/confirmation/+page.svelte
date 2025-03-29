@@ -139,23 +139,23 @@ async function handleLogout() {
         <p class="text-base md:text-lg mb-8 text-muted-foreground">Review your identity information before activation</p>
 
         {#if errorMessage}
-            <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg">
+            <div class="p-4 mb-6 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
                 <p>{errorMessage}</p>
             </div>
         {/if}
 
         <div class="space-y-8 mb-8 text-left">
             <!-- Step 1: Identity Type -->
-            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+            <div class="p-5 border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Type</h3>
-                <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                     <p class="text-sm text-muted-foreground">Type</p>
                     <p class="text-base font-medium capitalize">{identityData?.identityType || 'Not selected'}</p>
                 </div>
             </div>
 
             <!-- Step 2: Identity Data -->
-            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+            <div class="p-5 border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Identity Data</h3>
 
                 <!-- Basic Information Section -->
@@ -164,21 +164,21 @@ async function handleLogout() {
                     ((identityData?.identityType === 'gallery' || identityData?.identityType === 'institution') && identityData?.addresses && identityData.addresses.filter(a => a.trim()).length > 0) ? 'mb-4' : 'mb-0'}">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Basic Information</h4>
                     <div class="space-y-3">
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Name</p>
                             <p class="text-base font-medium">{identityData?.username || 'Not set'}</p>
                         </div>
 
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Description</p>
                             <p class="text-base">{identityData?.description || 'Not set'}</p>
                         </div>
 
                         {#if identityData?.identityImage}
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Profile Image</p>
-                            <div class="mt-2 w-24 h-24 rounded-md overflow-hidden border border-border/50">
-                                <img src={identityData.identityImage} alt="Identity" class="w-full h-full object-cover" />
+                            <div class="mt-2 w-24 h-24 overflow-hidden border border-border/50">
+                                <img src={identityData.identityImage} alt="Identity" class="w-full h-full object-contain" />
                             </div>
                         </div>
                         {/if}
@@ -192,22 +192,27 @@ async function handleLogout() {
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Links & Tags</h4>
                     <div class="space-y-3">
                         {#if identityData?.links && identityData.links.filter(l => l.url.trim()).length > 0}
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
-                            <p class="text-sm text-muted-foreground">Links</p>
-                            <ul class="mt-2 list-disc list-inside">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                            <p class="text-sm text-muted-foreground mb-3">Links</p>
+                            <div class="space-y-2">
                                 {#each identityData.links.filter(l => l.url.trim()) as link}
-                                    <li class="text-sm truncate">
-                                        <a href={link.url} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                                    <div class="p-2 rounded-md hover:bg-accent/50 transition-colors">
+                                        <a 
+                                            href={link.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            class="text-sm text-primary hover:text-primary/80 hover:underline block"
+                                        >
                                             {link.name ? `${link.name}: ${link.url}` : link.url}
                                         </a>
-                                    </li>
+                                    </div>
                                 {/each}
-                            </ul>
+                            </div>
                         </div>
                         {/if}
 
                         {#if identityData?.tags && identityData.tags.filter(t => t.trim()).length > 0}
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Tags</p>
                             <div class="mt-2 flex flex-wrap gap-2">
                                 {#each identityData.tags.filter(t => t.trim()) as tag}
@@ -226,14 +231,14 @@ async function handleLogout() {
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">Artist Information</h4>
                     <div class="space-y-3">
                         {#if identityData?.dob}
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Date of Birth</p>
-                            <p class="text-base">{new Date(identityData.dob * 1000).toLocaleDateString()}</p>
+                            <p class="text-base">{new Date(identityData.dob * 1000).toLocaleDateString(undefined, { timeZone: 'UTC' })}</p>
                         </div>
                         {/if}
 
                         {#if identityData?.location}
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Location</p>
                             <p class="text-base">{identityData.location}</p>
                         </div>
@@ -246,13 +251,13 @@ async function handleLogout() {
                 <div class="mb-0">
                     <h4 class="text-sm font-medium text-muted-foreground mb-2">{identityData.identityType === 'gallery' ? 'Gallery' : 'Institution'} Information</h4>
                     <div class="space-y-3">
-                        <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                        <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                             <p class="text-sm text-muted-foreground">Physical Addresses</p>
-                            <ul class="mt-2 list-disc list-inside">
+                            <div class="mt-2 space-y-2">
                                 {#each identityData.addresses.filter(a => a.trim()) as address}
-                                    <li class="text-sm">{address}</li>
+                                    <div class="text-sm text-foreground/90">{address}</div>
                                 {/each}
-                            </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -260,9 +265,9 @@ async function handleLogout() {
             </div>
 
             <!-- Step 3: Chain Selection -->
-            <div class="p-5 rounded-lg border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
+            <div class="p-5 border border-border/30 bg-neutral-50 dark:bg-neutral-900/40 shadow-sm">
                 <h3 class="text-lg font-semibold mb-3 pb-2 border-b border-border/50">Chain Selection</h3>
-                <div class="p-3 rounded-lg bg-white/80 dark:bg-neutral-800/50 border border-border/30">
+                <div class="p-3 bg-white/80 dark:bg-neutral-800/50 border border-border/30">
                     <p class="text-sm text-muted-foreground">Selected Chain</p>
                     <p class="text-base font-medium">{identityData?.selectedChain?.name || 'Not selected'}</p>
                 </div>

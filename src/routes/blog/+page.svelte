@@ -34,7 +34,7 @@
 
     <div class="grid gap-8">
       {#each blogs as blog}
-        <div class="bg-muted rounded-lg hover:shadow-md transition-all duration-300">
+        <div class="bg-muted hover:shadow-md transition-all duration-300">
           <div class="p-6 md:p-8">
             <div class="flex items-center mb-4 text-sm text-muted-foreground">
               <span class="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full">{blog.date}</span>

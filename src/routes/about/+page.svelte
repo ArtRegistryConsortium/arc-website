@@ -132,8 +132,8 @@
 
     <p class="text-lg md:text-xl font-bold mb-4 md:mb-6">Join ARC today and be part of the future of art documentation.</p>
     <Button variant="default" class="px-4 md:px-6 py-2 md:py-3">
-      <a href="/work-in-progress" class="flex items-center">
-        Launch the Dashboard
+      <a href="https://discord.com/invite/kNmQCnNWSp" class="flex items-center">
+        Join the Discussion on Discord
       </a>
     </Button>
   </section>
