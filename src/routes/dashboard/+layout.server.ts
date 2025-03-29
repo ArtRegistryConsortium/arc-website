@@ -8,8 +8,8 @@ export const load: LayoutServerLoad = async ({ request, cookies }) => {
     const walletAddress = cookies.get('wallet_address');
     
     if (!walletAddress) {
-      console.log('No wallet address found in cookies, redirecting to home');
-      throw redirect(302, '/');
+      console.log('No wallet address found in cookies, redirecting to sign in');
+      throw redirect(302, '/sign-in');
     }
     
     // Check if the wallet setup is completed
@@ -21,13 +21,13 @@ export const load: LayoutServerLoad = async ({ request, cookies }) => {
     
     if (error) {
       console.error('Error checking wallet setup status:', error);
-      throw redirect(302, '/');
+      throw redirect(302, '/sign-in');
     }
     
-    // If setup is not completed, redirect to home
+    // If setup is not completed, redirect to sign in
     if (!data || !data.setup_completed) {
-      console.log('Wallet setup is not completed, redirecting to home');
-      throw redirect(302, '/');
+      console.log('Wallet setup is not completed, redirecting to sign in');
+      throw redirect(302, '/sign-in');
     }
     
     // If we get here, the user is authenticated and setup is completed
@@ -44,7 +44,7 @@ export const load: LayoutServerLoad = async ({ request, cookies }) => {
     }
     
     console.error('Error in dashboard layout server load:', error);
-    // For any other error, redirect to home
-    throw redirect(302, '/');
+    // For any other error, redirect to sign in
+    throw redirect(302, '/sign-in');
   }
 };

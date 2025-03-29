@@ -243,7 +243,7 @@
     </Button>
 
     {#if showPopup}
-      <div class="wallet-popup absolute right-0 mt-2 w-64 bg-background rounded-md shadow-lg z-50 border border-border overflow-hidden">
+      <div class="wallet-popup absolute right-0 mt-2 w-64 bg-background shadow-lg z-50 border border-border overflow-hidden">
         <div class="p-4">
           <h3 class="text-sm font-medium text-foreground mb-3">Connect Wallet</h3>
           <div class="space-y-2">

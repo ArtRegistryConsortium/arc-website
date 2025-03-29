@@ -236,15 +236,49 @@ function handleImageUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        console.log('Image file selected:', file.name);
+        console.log('Image file selected:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            sizeInMB: (file.size / (1024 * 1024)).toFixed(2)
+        });
+        
+        // Check file size (1MB = 1024 * 1024 bytes)
+        const maxSize = 1024 * 1024; // 1MB in bytes
+        if (file.size > maxSize) {
+            console.log('File too large:', {
+                fileSize: file.size,
+                maxSize: maxSize,
+                sizeInMB: (file.size / (1024 * 1024)).toFixed(2)
+            });
+            errorMessage = `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) must be less than 1MB`;
+            // Reset the input
+            input.value = '';
+            return;
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            console.log('Invalid file type:', file.type);
+            errorMessage = 'Please select an image file (JPG, PNG, GIF)';
+            input.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             if (e.target && typeof e.target.result === 'string') {
                 identityImage = e.target.result;
                 imagePreview = e.target.result;
+                errorMessage = ''; // Clear any previous error messages
                 console.log('Image loaded successfully, preview set');
                 validateForm();
             }
+        };
+        reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+            errorMessage = 'Error reading file. Please try again.';
+            input.value = '';
         };
         reader.readAsDataURL(file);
     } else {
@@ -472,7 +506,7 @@ async function handleLogout() {
                             <img src={imagePreview} alt="Preview" class="max-w-full max-h-full object-contain" />
                         </div>
                     {/if}
-                    <div>
+                    <div class="flex-1">
                         <Button variant="outline" class="relative overflow-hidden" type="button">
                             <input
                                 type="file"
@@ -483,6 +517,9 @@ async function handleLogout() {
                             {imagePreview ? 'Change Image' : 'Upload Image'}
                         </Button>
                         <p class="text-xs text-muted-foreground mt-1">Max size: 1MB. Supported formats: JPG, PNG, GIF</p>
+                        {#if errorMessage}
+                            <p class="text-xs text-red-500 mt-1">{errorMessage}</p>
+                        {/if}
                     </div>
                 </div>
             </div>

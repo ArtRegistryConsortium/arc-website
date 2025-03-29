@@ -1292,58 +1292,60 @@ onDestroy(() => {
                 </div>
 
                 <p class="text-xs text-muted-foreground">Make sure to send the exact amount from your connected wallet.</p>
-
+                {#if !transactionWasSent}
                 <div class="mt-4">
                     <div class="p-3 bg-card dark:bg-card">
-                        <p class="text-sm font-medium mb-2">Already sent payment?</p>
-                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
-                            <input
-                                type="text"
-                                placeholder="Enter transaction hash (0x...)"
-                                class="w-full flex-1 px-3 py-2 h-9 text-sm border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
-                                bind:value={transactionHash}
-                                on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
-                                disabled={isVerifying}
-                            />
-                            <Button
-                                variant="outline"
-                                size="default"
-                                class="bg-background hover:bg-accent w-full sm:w-auto py-2 h-9"
-                                disabled={isVerifying || !transactionHash || transactionHash.length < 10}
-                                on:click={startPeriodicVerification}
-                            >
-                                {#if isVerifying}
-                                    <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                                    Verifying...
-                                {:else}
-                                    Verify
-                                {/if}
-                            </Button>
-                        </div>
-
-                        {#if transactionHash && transactionHash.length >= 10}
-                            <div class="flex justify-end">
+                        
+                            <p class="text-sm font-medium mb-2">Already sent payment?</p>
+                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    placeholder="Enter transaction hash (0x...)"
+                                    class="w-full flex-1 px-3 py-2 h-9 text-sm border {isVerifying ? 'border-primary/50 shadow-sm shadow-primary/20' : 'border-border'} bg-background transition-all duration-300 {isVerifying ? 'opacity-90' : ''}"
+                                    bind:value={transactionHash}
+                                    on:input={() => { if (transactionWasSent) transactionWasSent = false; }}
+                                    disabled={isVerifying}
+                                />
                                 <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
-                                    on:click={() => window.open(`https://sepolia.etherscan.io/tx/${transactionHash}`, '_blank')}
+                                    variant="outline"
+                                    size="default"
+                                    class="bg-background hover:bg-accent w-full sm:w-auto py-2 h-9"
+                                    disabled={isVerifying || !transactionHash || transactionHash.length < 10}
+                                    on:click={startPeriodicVerification}
                                 >
-                                    View on Etherscan →
+                                    {#if isVerifying}
+                                        <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                                        Verifying...
+                                    {:else}
+                                        Verify
+                                    {/if}
                                 </Button>
                             </div>
-                        {/if}
+
+                            {#if transactionHash && transactionHash.length >= 10}
+                                <div class="flex justify-end">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
+                                        on:click={() => window.open(`https://sepolia.etherscan.io/tx/${transactionHash}`, '_blank')}
+                                    >
+                                        View on Etherscan →
+                                    </Button>
+                                </div>
+                            {/if}
+                        
                     </div>
                 </div>
-
+                {/if}
                 {#if transactionHash && (transactionWasSent || transactionStatus)}
                     <div class="mt-3 p-3
                         {transactionStatus === 'confirmed' ? 'bg-green-500/10 text-green-600' :
                          transactionStatus === 'failed' ? 'bg-muted' :
-                         'bg-primary/10 text-primary'}">
+                         'bg-primary/5 text-primary/80'}">
                         <div class="flex items-center gap-2 mb-1">
                             {#if transactionStatus === 'pending'}
-                                <span class="inline-block h-3 w-3 rounded-full bg-primary"></span>
+                                <span class="inline-block h-3 w-3 rounded-full bg-primary/80"></span>
                                 <p class="text-sm font-medium">Transaction Pending</p>
                             {:else if transactionStatus === 'confirmed'}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -247,7 +247,7 @@
 
 
     <Button>
-      <a href="https://discord.com/invite/kNmQCnNWSp" class="flex items-center">
+      <a href="/sign-in" class="flex items-center">
         Join the Consortium
       </a>
     </Button>
