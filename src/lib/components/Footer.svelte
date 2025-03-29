@@ -38,7 +38,7 @@
       <div>
         <h3 class="font-semibold text-lg mb-3 md:mb-4 dark:text-white">Connect</h3>
         <ul class="space-y-1 md:space-y-2">
-          <li><a href="https://x.com/art_registry_c" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Twitter</a></li>
+          <li><a href="https://x.com/art_registry_c" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">X</a></li>
           <li><a href="https://www.threads.net/@art_registry_c" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Threads</a></li>
           <li><a href="https://discord.com/invite/kNmQCnNWSp" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">Discord</a></li>
           <li><a href="https://github.com/ArtRegistryConsortium" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm">GitHub</a></li>

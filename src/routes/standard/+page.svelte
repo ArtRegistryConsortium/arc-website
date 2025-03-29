@@ -99,7 +99,7 @@
         <li><span class="font-semibold">Series:</span> A label used to group artworks that belong to the same thematic or conceptual body of work. This allows artists to document and organize pieces that are part of a unified vision, making it easier for collectors and institutions to understand the context of each artwork within a larger narrative.</li>
         <li><span class="font-semibold">Catalogue Inventory:</span> <span class="text-red-500">[REMOVED - Catalogue Inventory should be stored in the Note field]</span></li>
         <li><span class="font-semibold">Image:</span> A high-resolution image or scan of the artwork stored on Arweave.</li>
-        <li><span class="font-semibold">Sales Information:</span> <span class="text-red-500">[REMOVED - Sales information will be stored on-chain]</span></li>
+        <li><span class="font-semibold">Sales Information:</span> <span class="text-red-500">[REMOVED - Sales information will be stored on-chain with events]</span></li>
         <li><span class="font-semibold">Certification Method:</span> <span class="text-red-500">[REMOVED - Certification method is always the ART Stamp]</span></li>
         <li><span class="font-semibold">Exhibition History:</span> JSON string containing an array of exhibitions with name, date, and location.</li>
         <li><span class="font-semibold">Condition Reports:</span> JSON string containing an array of reports with date and description of the artwork's condition.</li>
@@ -107,7 +107,7 @@
         <li><span class="font-semibold">Bibliography:</span> JSON string containing an array of references with title, author, and page.</li>
         <li><span class="font-semibold">Keywords or Tags:</span> An array of themes, styles, or movements related to the artwork (e.g., "surrealism," "landscape").</li>
         <li><span class="font-semibold">Location / Collection:</span> JSON string containing location and collection information where the artwork resides.</li>
-        <li><span class="font-semibold">Status:</span> <span class="text-red-500">[REMOVED]</span></li>
+        <li><span class="font-semibold">Status:</span> <span class="text-red-500">[REMOVED - Status will be determined by automated rules E.G. on sale on a marketplace]</span></li>
         <li><span class="font-semibold">Note:</span> A flexible field for additional remarks, context, or annotations related to the artwork. This could include restoration notes, collector insights, special dedications, artist statements, or any other relevant information that does not fit into the predefined fields.</li>
         <li><span class="font-semibold">Royalties:</span> Percentage of resale royalties set by the artist (in basis points, e.g., 1000 = 10%).</li>
       </ol>
@@ -247,7 +247,7 @@
 
 
     <Button>
-      <a href="/work-in-progress" class="flex items-center">
+      <a href="https://discord.com/invite/kNmQCnNWSp" class="flex items-center">
         Join the Consortium
       </a>
     </Button>
